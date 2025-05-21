@@ -1,0 +1,39 @@
+{
+  "name": "voxnexus",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ryahn/VoxNexus.git"
+  },
+  "keywords": [
+    "discord",
+    "discord clone",
+    "voice chat",
+    "video chat",
+    "private chat",
+    "public chat"
+  ],
+  "author": "Ryahn",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Ryahn/VoxNexus/issues"
+  },
+  "homepage": "https://github.com/Ryahn/VoxNexus#readme",
+  "description": "A discord clone plus more",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@vue/cli": "^5.0.8"
+  }
+}
