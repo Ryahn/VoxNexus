@@ -32,7 +32,27 @@ const utility = {
         const sequence = Math.floor(Math.random() * 4096);
         
         return BigInt(timestamp) << 22n | BigInt(workerId) << 17n | BigInt(processId) << 12n | BigInt(sequence);
-    }
+    },
+
+    getHumanReadableSize: (size) => {
+        if (size < 1024) {
+            return `${size} B`;
+        } else if (size < 1024 * 1024) {
+            return `${(size / 1024).toFixed(2)} KB`;
+        } else if (size < 1024 * 1024 * 1024) {
+            return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+        } else {
+            return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+    },
+
+    getHumanReadableDuration: (duration) => {
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
+        const seconds = duration % 60;
+    },
+
+    
 }
 
 export default utility;
