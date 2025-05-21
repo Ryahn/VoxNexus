@@ -103,4 +103,22 @@ ReactionSchema.statics.removeAllByUser = async function(userId) {
   return this.deleteMany({ user: userId });
 };
 
+ReactionSchema.statics.addReaction = async function(messageId, userId, emoji) {
+  const reaction = await this.findOne({ message: messageId, user: userId, emoji });
+  if (reaction) {
+    await reaction.incrementCount();
+  } else {
+    await this.create({ message: messageId, user: userId, emoji });
+  }
+};
+
+ReactionSchema.statics.removeReaction = async function(messageId, userId, emoji) {
+  const reaction = await this.findOne({ message: messageId, user: userId, emoji });
+  if (reaction) {
+    await reaction.decrementCount();
+  }
+};
+
+
+
 export default mongoose.model('Reaction', ReactionSchema); 

@@ -113,4 +113,125 @@ CategorySchema.methods.getAllChannels = function() {
   return [...this.channels, ...this.voiceChannels];
 };
 
+// Method to add a text channel
+CategorySchema.methods.addTextChannel = async function(channelId) {
+  if (!this.channels.includes(channelId)) {
+    this.channels.push(channelId);
+    await this.save();
+  }
+};
+
+// Method to add a voice channel
+CategorySchema.methods.addVoiceChannel = async function(channelId) {
+  if (!this.voiceChannels.includes(channelId)) {
+    this.voiceChannels.push(channelId);
+    await this.save();
+  }
+};
+
+// Method to remove a text channel
+CategorySchema.methods.removeTextChannel = async function(channelId) {
+  this.channels = this.channels.filter(c => c.toString() !== channelId.toString());
+  await this.save();
+};
+
+// Method to remove a voice channel
+CategorySchema.methods.removeVoiceChannel = async function(channelId) {
+  this.voiceChannels = this.voiceChannels.filter(c => c.toString() !== channelId.toString());
+  await this.save();
+};
+
+// Method to update position
+CategorySchema.methods.updatePosition = async function(newPosition) {
+  if (newPosition >= 0) {
+    this.position = newPosition;
+    await this.save();
+  }
+};
+
+// Method to toggle collapse state
+CategorySchema.methods.toggleCollapse = async function() {
+  this.isCollapsed = !this.isCollapsed;
+  await this.save();
+};
+
+// Method to toggle privacy
+CategorySchema.methods.togglePrivacy = async function() {
+  this.isPrivate = !this.isPrivate;
+  await this.save();
+};
+
+// Method to add allowed role
+CategorySchema.methods.addAllowedRole = async function(roleId) {
+  if (!this.allowedRoles.includes(roleId)) {
+    this.allowedRoles.push(roleId);
+    await this.save();
+  }
+};
+
+// Method to remove allowed role
+CategorySchema.methods.removeAllowedRole = async function(roleId) {
+  this.allowedRoles = this.allowedRoles.filter(r => r.toString() !== roleId.toString());
+  await this.save();
+};
+
+// Method to update allowed roles
+CategorySchema.methods.updateAllowedRoles = async function(roleIds) {
+  this.allowedRoles = roleIds;
+  await this.save();
+};
+
+// Static method to get categories by server
+CategorySchema.statics.getServerCategories = async function(serverId) {
+  return this.find({ server: serverId })
+    .populate('channels', 'name type')
+    .populate('voiceChannels', 'name')
+    .populate('allowedRoles', 'name color')
+    .sort({ position: 1 });
+};
+
+// Static method to get private categories
+CategorySchema.statics.getPrivateCategories = async function(serverId, userRoles) {
+  return this.find({
+    server: serverId,
+    isPrivate: true,
+    allowedRoles: { $in: userRoles }
+  })
+    .populate('channels', 'name type')
+    .populate('voiceChannels', 'name')
+    .populate('allowedRoles', 'name color')
+    .sort({ position: 1 });
+};
+
+// Static method to get category by name
+CategorySchema.statics.getCategoryByName = async function(serverId, name) {
+  return this.findOne({ server: serverId, name })
+    .populate('channels', 'name type')
+    .populate('voiceChannels', 'name')
+    .populate('allowedRoles', 'name color');
+};
+
+// Static method to reorder categories
+CategorySchema.statics.reorderCategories = async function(serverId, categoryIds) {
+  const updates = categoryIds.map((id, index) => ({
+    updateOne: {
+      filter: { _id: id, server: serverId },
+      update: { position: index }
+    }
+  }));
+  
+  return this.bulkWrite(updates);
+};
+
+// Static method to create category
+CategorySchema.statics.createCategory = async function(data) {
+  return this.create({
+    name: data.name,
+    server: data.server,
+    position: data.position,
+    isPrivate: data.isPrivate,
+    allowedRoles: data.allowedRoles
+  });
+};
+
 export default mongoose.model('Category', CategorySchema); 
