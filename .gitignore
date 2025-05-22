@@ -5,3 +5,11 @@ server/.env
 client/.env
 .cursor/*
 .cursor/
+client/dist_electron/
+client/android/
+client/ios/
+client/web/
+client/windows/
+client/macos/
+client/linux/
+client/dist/

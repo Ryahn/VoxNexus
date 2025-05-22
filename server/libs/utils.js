@@ -52,7 +52,6 @@ const utility = {
         const seconds = duration % 60;
     },
 
-    
 }
 
 export default utility;

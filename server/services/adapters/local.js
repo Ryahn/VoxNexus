@@ -11,6 +11,19 @@ class LocalAdapter extends BaseAdapter {
   constructor() {
     super();
     this.storagePath = path.join(process.cwd(), 'storage');
+    this.maxFileSize = parseInt(process.env.LOCAL_MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB default
+  }
+
+  /**
+   * Validate file size
+   * @private
+   * @param {Buffer} fileBuffer - The file buffer to validate
+   * @throws {Error} If file size exceeds the limit
+   */
+  validateFileSize(fileBuffer) {
+    if (fileBuffer.length > this.maxFileSize) {
+      throw new Error(`File size exceeds the limit of ${this.maxFileSize} bytes`);
+    }
   }
 
   /**
@@ -85,6 +98,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the file was stored
    */
   async upload(fileBuffer, filename, mimeType) {
+    this.validateFileSize(fileBuffer);
     await this.ensureDirectory();
     const uniqueFilename = this.generateUniqueFilename(filename);
     const filePath = path.join(this.storagePath, uniqueFilename);
@@ -101,6 +115,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the avatar was stored
    */
   async uploadUserAvatar(fileBuffer, userId, mimeType) {
+    this.validateFileSize(fileBuffer);
     const userDir = this.getAttachmentDirectory('user', userId);
     await this.ensureDirectoryExists(userDir);
     
@@ -120,6 +135,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the banner was stored
    */
   async uploadUserBanner(fileBuffer, userId, mimeType) {
+    this.validateFileSize(fileBuffer);
     const userDir = this.getAttachmentDirectory('user', userId);
     await this.ensureDirectoryExists(userDir);
     
@@ -139,6 +155,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the icon was stored
    */
   async uploadServerIcon(fileBuffer, serverId, mimeType) {
+    this.validateFileSize(fileBuffer);
     const serverDir = this.getAttachmentDirectory('server', serverId);
     await this.ensureDirectoryExists(serverDir);
     
@@ -158,6 +175,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the banner was stored
    */
   async uploadServerBanner(fileBuffer, serverId, mimeType) {
+    this.validateFileSize(fileBuffer);
     const serverDir = this.getAttachmentDirectory('server', serverId);
     await this.ensureDirectoryExists(serverDir);
     
@@ -177,6 +195,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the icon was stored
    */
   async uploadChannelIcon(fileBuffer, channelId, mimeType) {
+    this.validateFileSize(fileBuffer);
     const channelDir = this.getAttachmentDirectory('channel', channelId);
     await this.ensureDirectoryExists(channelDir);
     
@@ -197,6 +216,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the attachment was stored
    */
   async uploadChannelAttachment(fileBuffer, channelId, filename, mimeType) {
+    this.validateFileSize(fileBuffer);
     const channelDir = this.getAttachmentDirectory('channel', channelId);
     await this.ensureDirectoryExists(channelDir);
     
@@ -217,6 +237,7 @@ class LocalAdapter extends BaseAdapter {
    * @returns {Promise<string>} The path where the attachment was stored
    */
   async uploadGroupChatAttachment(fileBuffer, groupId, filename, mimeType) {
+    this.validateFileSize(fileBuffer);
     const groupDir = this.getAttachmentDirectory('group', groupId);
     await this.ensureDirectoryExists(groupDir);
     
