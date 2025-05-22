@@ -1,7 +1,7 @@
-const Client = require('basic-ftp');
-const path = require('path');
-const BaseAdapter = require('./base');
-const utility = require('../../libs/utils');
+import { Client } from 'basic-ftp';
+import path from 'path';
+import BaseAdapter from './base.js';
+import { utility } from '../../libs/utils.js';
 
 /**
  * FTP storage adapter
@@ -10,6 +10,11 @@ const utility = require('../../libs/utils');
 class FTPAdapter extends BaseAdapter {
   constructor() {
     super();
+    this.client = new Client();
+    this.host = process.env.FTP_HOST;
+    this.user = process.env.FTP_USER;
+    this.password = process.env.FTP_PASSWORD;
+    this.port = process.env.FTP_PORT || 21;
 
     // Validate required environment variables
     if (!process.env.FTP_HOST || !process.env.FTP_ROOT_PATH) {
@@ -552,4 +557,4 @@ class FTPAdapter extends BaseAdapter {
   }
 }
 
-module.exports = FTPAdapter;
+export default FTPAdapter;

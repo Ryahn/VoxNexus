@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+
 /**
  * Utility functions module
  * @module utility
@@ -54,4 +56,14 @@ const utility = {
 
 }
 
-export default utility;
+const auth = {
+    hashPassword: (password) => {
+        return bcrypt.hash(password, 10);
+    },
+
+    comparePassword: (password, hash) => {
+        return bcrypt.compare(password, hash);
+    }
+}
+
+export { utility, auth };

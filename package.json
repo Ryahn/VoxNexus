@@ -1,0 +1,14 @@
+{
+  "name": "discord-clone",
+  "version": "1.0.0",
+  "description": "Discord clone with client and server",
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "cd server && npm run serve",
+    "start:client": "cd client && npm run serve",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 

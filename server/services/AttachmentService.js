@@ -1,7 +1,7 @@
-const LocalAdapter = require('./adapters/local');
-const S3Adapter = require('./adapters/s3');
-const FTPAdapter = require('./adapters/ftp');
-const SFTPAdapter = require('./adapters/sftp');
+import LocalAdapter from './adapters/local.js';
+import S3Adapter from './adapters/s3.js';
+import FTPAdapter from './adapters/ftp.js';
+import SFTPAdapter from './adapters/sftp.js';
 
 /**
  * Service for handling file attachments
@@ -34,14 +34,32 @@ class AttachmentService {
   }
 
   /**
-   * Upload a file attachment
+   * Upload a file to storage
    * @param {Buffer} fileBuffer - The file buffer to upload
    * @param {string} filename - The name of the file
    * @param {string} mimeType - The MIME type of the file
-   * @returns {Promise<string>} The path or URL where the file was stored
+   * @returns {Promise<string>} The URL or path where the file was stored
    */
-  async uploadAttachment(fileBuffer, filename, mimeType) {
+  async upload(fileBuffer, filename, mimeType) {
     return this.adapter.upload(fileBuffer, filename, mimeType);
+  }
+
+  /**
+   * Delete a file from storage
+   * @param {string} filePath - The path or identifier of the file to delete
+   * @returns {Promise<boolean>} Whether the deletion was successful
+   */
+  async delete(filePath) {
+    return this.adapter.delete(filePath);
+  }
+
+  /**
+   * Get a file from storage
+   * @param {string} filePath - The path or identifier of the file to retrieve
+   * @returns {Promise<Buffer>} The file buffer
+   */
+  async get(filePath) {
+    return this.adapter.get(filePath);
   }
 
   /**
@@ -158,24 +176,7 @@ class AttachmentService {
   async getGroupChatFiles(groupId) {
     return this.adapter.getGroupChatFiles(groupId);
   }
-
-  /**
-   * Delete a file attachment
-   * @param {string} filePath - The path or identifier of the file to delete
-   * @returns {Promise<boolean>} Whether the deletion was successful
-   */
-  async deleteAttachment(filePath) {
-    return this.adapter.delete(filePath);
-  }
-
-  /**
-   * Get a file attachment
-   * @param {string} filePath - The path or identifier of the file to retrieve
-   * @returns {Promise<Buffer>} The file buffer
-   */
-  async getAttachment(filePath) {
-    return this.adapter.get(filePath);
-  }
 }
 
-module.exports = new AttachmentService();
+// Export a singleton instance
+export default new AttachmentService();

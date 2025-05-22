@@ -1,7 +1,7 @@
-const fs = require('fs').promises;
-const path = require('path');
-const BaseAdapter = require('./base');
-const utility = require('../../libs/utils');
+import fs from 'fs/promises';
+import path from 'path';
+import BaseAdapter from './base.js';
+import { utility } from '../../libs/utils.js';
 
 /**
  * Local filesystem storage adapter
@@ -364,4 +364,4 @@ class LocalAdapter extends BaseAdapter {
   }
 }
 
-module.exports = LocalAdapter;
+export default LocalAdapter;

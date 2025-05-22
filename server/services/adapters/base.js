@@ -158,4 +158,4 @@ class BaseAdapter {
   }
 }
 
-module.exports = BaseAdapter; 
+export default BaseAdapter; 

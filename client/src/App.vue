@@ -1,13 +1,19 @@
 <template>
   <div id="app">
-    <MainLayout>
+    <component :is="isAuthRoute ? 'div' : 'MainLayout'">
       <router-view></router-view>
-    </MainLayout>
+    </component>
   </div>
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+// eslint-disable-next-line no-unused-vars
 import MainLayout from './components/Layout/MainLayout.vue'
+
+const route = useRoute()
+const isAuthRoute = computed(() => route.path === '/auth')
 </script>
 
 <style>

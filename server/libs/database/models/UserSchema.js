@@ -2,6 +2,29 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import utility from '../../utils';
 
+const RefreshTokenSchema = new mongoose.Schema({
+    token: {
+        type: String,
+        required: true
+    },
+    expiresAt: {
+        type: Date,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    deviceInfo: {
+        type: String,
+        default: 'Unknown'
+    },
+    isValid: {
+        type: Boolean,
+        default: true
+    }
+});
+
 const UserSchema = new mongoose.Schema({
   _id: {
     type: String,
@@ -131,6 +154,7 @@ const UserSchema = new mongoose.Schema({
       required: true
     }]
   }],
+  refreshTokens: [RefreshTokenSchema],
   createdAt: {
     type: Date,
     default: Date.now

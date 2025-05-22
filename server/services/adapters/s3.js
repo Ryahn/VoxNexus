@@ -1,11 +1,11 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const BaseAdapter = require('./base');
-const utility = require('../../libs/utils');
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import BaseAdapter from './base.js';
+import { utility } from '../../libs/utils.js';
 
 /**
- * S3 storage adapter
- * Stores files in AWS S3
+ * AWS S3 storage adapter
+ * Stores files in an S3 bucket
  */
 class S3Adapter extends BaseAdapter {
   constructor() {
@@ -350,4 +350,4 @@ class S3Adapter extends BaseAdapter {
   }
 }
 
-module.exports = S3Adapter;
+export default S3Adapter;

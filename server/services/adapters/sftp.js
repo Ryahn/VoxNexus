@@ -1,7 +1,7 @@
-const Client = require('ssh2-sftp-client');
-const path = require('path');
-const BaseAdapter = require('./base');
-const utility = require('../../libs/utils');
+import Client from 'ssh2-sftp-client';
+import path from 'path';
+import BaseAdapter from './base.js';
+import { utility } from '../../libs/utils.js';
 
 /**
  * SFTP storage adapter
@@ -10,6 +10,11 @@ const utility = require('../../libs/utils');
 class SFTPAdapter extends BaseAdapter {
   constructor() {
     super();
+    this.client = new Client();
+    this.host = process.env.SFTP_HOST;
+    this.user = process.env.SFTP_USER;
+    this.password = process.env.SFTP_PASSWORD;
+    this.port = process.env.SFTP_PORT || 22;
 
     // Validate required environment variables
     if (!process.env.SFTP_HOST || !process.env.SFTP_ROOT_PATH) {
@@ -530,4 +535,4 @@ class SFTPAdapter extends BaseAdapter {
   }
 }
 
-module.exports = SFTPAdapter;
+export default SFTPAdapter;
