@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 const RefreshTokenSchema = new mongoose.Schema({
     token: {
@@ -33,7 +33,6 @@ const UserSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true,
     maxlength: 32,
     trim: true,
     validate: {
@@ -46,7 +45,6 @@ const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     maxlength: 255,
     trim: true,
     validate: {
@@ -174,20 +172,6 @@ UserSchema.index({ is_verified: 1, is_banned: 1 });
 UserSchema.index({ last_online: 1, birthday: 1 });
 UserSchema.index({ accent_color: 1, bio: 1 });
 UserSchema.index({ profile_banner: 1, avatar: 1 });
-
-// Hash password before saving
-UserSchema.pre('save', async function(next) {
-  this.updatedAt = new Date();
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
 
 // Method to ban a user
 UserSchema.methods.ban = async function(reason = '') {

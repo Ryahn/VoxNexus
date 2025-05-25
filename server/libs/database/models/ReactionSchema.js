@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 /**
  * Schema for message reactions
@@ -55,8 +55,6 @@ const ReactionSchema = new mongoose.Schema({
 
 // Create compound index for unique reactions per user per message
 ReactionSchema.index({ message: 1, user: 1, emoji: 1 }, { unique: true });
-ReactionSchema.index({ message: 1, emoji: 1 });
-ReactionSchema.index({ user: 1 });
 ReactionSchema.index({ createdAt: 1 });
 
 // Update timestamp before saving

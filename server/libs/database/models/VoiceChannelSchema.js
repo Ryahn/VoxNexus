@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 /**
  * Schema for voice channels
@@ -118,8 +118,7 @@ const VoiceChannelSchema = new mongoose.Schema({
 
 // Create indexes
 VoiceChannelSchema.index({ server: 1, position: 1 });
-VoiceChannelSchema.index({ server: 1, name: 1 });
-VoiceChannelSchema.index({ category: 1 });
+VoiceChannelSchema.index({ category: 1, name: 1 });
 VoiceChannelSchema.index({ 'participants.user': 1 });
 VoiceChannelSchema.index({ isPrivate: 1 });
 

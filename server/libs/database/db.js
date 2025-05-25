@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
-import glob from "glob";
+import { glob } from "glob";
 import path from "path";
+import { fileURLToPath } from 'url';
+
+// Get the equivalent of __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class Database {
     /**
@@ -18,7 +23,13 @@ class Database {
      * @returns {Promise<void>}
      */
     async connect() {
-        await this.mongoose.connect(this.config.uri);
+        try {
+            await this.mongoose.connect(this.config.uri);
+            console.log('Connected to MongoDB successfully');
+        } catch (error) {
+            console.error('Failed to connect to MongoDB:', error);
+            throw error;
+        }
     }
 
     /**
@@ -51,11 +62,22 @@ class Database {
      * @returns {Promise<void>}
      */
     async loadModels() {
-        const models = glob.sync(path.join(__dirname, 'models', '*.js'));
-        for (const model of models) {
-            const modelModule = await import(model);
-            const modelName = path.basename(model, '.js');
-            this.models[modelName] = modelModule.default;
+        try {
+            const models = await glob('*.js', { cwd: path.join(__dirname, 'models') });
+            for (const model of models) {
+                try {
+                    const modelPath = path.join(__dirname, 'models', model);
+                    const modelModule = await import(modelPath);
+                    const modelName = path.basename(model, '.js').replace('Schema', '');
+                    this.models[modelName] = modelModule.default;
+                } catch (error) {
+                    console.error(`Failed to load model ${model}:`, error);
+                }
+            }
+            console.log('Models loaded successfully');
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            throw error;
         }
     }
 }

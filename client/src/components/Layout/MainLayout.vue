@@ -17,8 +17,18 @@
   </div>
 </template>
 
-<script setup>
-import ServerList from '../Server/ServerList.vue'
-import ChannelList from '../Server/ChannelList.vue'
-import UserProfile from '../User/UserProfile.vue'
+<script setup lang="ts">
+import { defineComponent } from 'vue'
+import ServerList from '@/components/Server/ServerList.vue'
+import ChannelList from '@/components/Server/ChannelList.vue'
+import UserProfile from '@/components/User/UserProfile.vue'
+
+defineComponent({
+  name: 'MainLayout',
+  components: {
+    ServerList,
+    ChannelList,
+    UserProfile
+  }
+})
 </script> 

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 /**
  * Schema for channel categories
@@ -90,8 +90,7 @@ const CategorySchema = new mongoose.Schema({
 
 // Create indexes
 CategorySchema.index({ server: 1, position: 1 });
-CategorySchema.index({ server: 1, name: 1 });
-CategorySchema.index({ isPrivate: 1 });
+CategorySchema.index({ isPrivate: 1, name: 1 });
 
 // Update timestamp before saving
 CategorySchema.pre('save', function(next) {

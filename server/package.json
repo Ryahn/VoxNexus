@@ -30,18 +30,23 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.815.0",
     "@aws-sdk/s3-request-presigner": "^3.815.0",
+    "@dr.pogodin/csurf": "^1.16.3",
     "basic-ftp": "^5.0.5",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "csurf": "^1.11.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "generate-password": "^1.7.1",
+    "glob": "^11.0.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
     "multer": "^1.4.5-lts.1",
     "socket.io": "^4.8.1",
     "ssh2-sftp-client": "^12.0.0"
+  },
+  "resolutions": {
+    "@achrinza/node-ipc": "^10.1.9"
   },
   "devDependencies": {
     "@vue/cli": "^5.0.8",

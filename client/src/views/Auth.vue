@@ -2,6 +2,11 @@
   <div class="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
+        <img
+          class="mx-auto h-24 w-auto"
+          src="/assets/logo.png"
+          alt="VoxNexus Logo"
+        />
         <h2 class="mt-6 text-center text-3xl font-extrabold text-white">
           {{ isLogin ? 'Sign in to your account' : 'Create your account' }}
         </h2>
@@ -122,128 +127,131 @@
   </div>
 </template>
 
-<script>
-import { ref, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-export default {
-  name: 'AuthView',
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
-    const authStore = useAuthStore();
+interface FormData {
+  username: string
+  email: string
+  password: string
+  confirmPassword: string
+}
 
-    const isLogin = ref(true);
-    const loading = ref(false);
-    const error = ref('');
+interface PasswordValidation {
+  length: boolean
+  number: boolean
+  special: boolean
+  uppercase: boolean
+  lowercase: boolean
+  match: boolean
+}
 
-    const form = ref({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
+// Initialize composables
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
 
-    const passwordValidation = ref({
-      length: false,
-      number: false,
-      special: false,
-      uppercase: false,
-      lowercase: false,
-      match: false
-    });
+// State
+const isLogin = ref<boolean>(true)
+const loading = ref<boolean>(false)
+const error = ref<string>('')
 
-    const isPasswordValid = computed(() => {
-      return Object.values(passwordValidation.value).every(valid => valid);
-    });
+const form = ref<FormData>({
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+})
 
-    const toggleMode = () => {
-      isLogin.value = !isLogin.value;
-      form.value = {
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      };
-      passwordValidation.value = {
-        length: false,
-        number: false,
-        special: false,
-        uppercase: false,
-        lowercase: false,
-        match: false
-      };
-      error.value = '';
-    };
+const passwordValidation = ref<PasswordValidation>({
+  length: false,
+  number: false,
+  special: false,
+  uppercase: false,
+  lowercase: false,
+  match: false
+})
 
-    const validatePassword = () => {
-      const password = form.value.password;
-      const confirmPassword = form.value.confirmPassword;
-      
-      // Length validation (12-36 characters)
-      passwordValidation.value.length = password.length >= 12 && password.length <= 36;
-      
-      // Number validation (at least 1 number)
-      passwordValidation.value.number = /\d/.test(password);
-      
-      // Special character validation
-      passwordValidation.value.special = /[!@#$%^&*()_+=?<>:;{}[\]-]/.test(password);
-      
-      // Uppercase validation (at least 2 uppercase letters)
-      const uppercaseCount = (password.match(/[A-Z]/g) || []).length;
-      passwordValidation.value.uppercase = uppercaseCount >= 2;
-      
-      // Lowercase validation (at least 2 lowercase letters)
-      const lowercaseCount = (password.match(/[a-z]/g) || []).length;
-      passwordValidation.value.lowercase = lowercaseCount >= 2;
+// Computed
+const isPasswordValid = computed<boolean>(() => {
+  return Object.values(passwordValidation.value).every(valid => valid)
+})
 
-      // Password match validation
-      passwordValidation.value.match = !isLogin.value ? password === confirmPassword : true;
-    };
-
-    const handleSubmit = async () => {
-      try {
-        loading.value = true;
-        error.value = '';
-
-        if (!isLogin.value && !isPasswordValid.value) {
-          throw new Error('Password does not meet requirements');
-        }
-
-        if (isLogin.value) {
-          await authStore.login(form.value.email, form.value.password);
-        } else {
-          await authStore.register(
-            form.value.username,
-            form.value.email,
-            form.value.password,
-            form.value.confirmPassword
-          );
-        }
-
-        const redirectPath = route.query.redirect || '/';
-        router.push(redirectPath);
-      } catch (err) {
-        error.value = err.message || (isLogin.value ? 'Login failed' : 'Registration failed');
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    return {
-      isLogin,
-      loading,
-      error,
-      form,
-      passwordValidation,
-      isPasswordValid,
-      toggleMode,
-      validatePassword,
-      handleSubmit
-    };
+// Methods
+const toggleMode = (): void => {
+  isLogin.value = !isLogin.value
+  form.value = {
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
   }
-};
+  passwordValidation.value = {
+    length: false,
+    number: false,
+    special: false,
+    uppercase: false,
+    lowercase: false,
+    match: false
+  }
+  error.value = ''
+}
+
+const validatePassword = (): void => {
+  const password = form.value.password
+  const confirmPassword = form.value.confirmPassword
+  
+  // Length validation (12-36 characters)
+  passwordValidation.value.length = password.length >= 12 && password.length <= 36
+  
+  // Number validation (at least 1 number)
+  passwordValidation.value.number = /\d/.test(password)
+  
+  // Special character validation
+  passwordValidation.value.special = /[!@#$%^&*()_+=?<>:;{}[\]-]/.test(password)
+  
+  // Uppercase validation (at least 2 uppercase letters)
+  const uppercaseCount = (password.match(/[A-Z]/g) || []).length
+  passwordValidation.value.uppercase = uppercaseCount >= 2
+  
+  // Lowercase validation (at least 2 lowercase letters)
+  const lowercaseCount = (password.match(/[a-z]/g) || []).length
+  passwordValidation.value.lowercase = lowercaseCount >= 2
+
+  // Password match validation
+  passwordValidation.value.match = !isLogin.value ? password === confirmPassword : true
+}
+
+const handleSubmit = async (): Promise<void> => {
+  try {
+    loading.value = true
+    error.value = ''
+
+    if (!isLogin.value && !isPasswordValid.value) {
+      throw new Error('Password does not meet requirements')
+    }
+
+    if (isLogin.value) {
+      await authStore.login(form.value.email, form.value.password)
+    } else {
+      await authStore.register(
+        form.value.username,
+        form.value.email,
+        form.value.password,
+        form.value.confirmPassword
+      )
+    }
+
+    const redirectPath = route.query.redirect as string || '/'
+    router.push(redirectPath)
+  } catch (err: any) {
+    error.value = err?.message || (isLogin.value ? 'Login failed' : 'Registration failed')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>

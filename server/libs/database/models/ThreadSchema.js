@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 const ThreadSchema = new mongoose.Schema({
   _id: {
@@ -101,10 +101,8 @@ const ThreadSchema = new mongoose.Schema({
 
 // Indexes for common queries
 ThreadSchema.index({ channel: 1, lastMessageAt: -1 });
-ThreadSchema.index({ forumPost: 1, lastMessageAt: -1 });
-ThreadSchema.index({ directMessage: 1, lastMessageAt: -1 });
-ThreadSchema.index({ parentMessage: 1 });
-ThreadSchema.index({ createdBy: 1 });
+ThreadSchema.index({ forumPost: 1, parentMessage: 1 });
+ThreadSchema.index({ directMessage: 1, createdBy: 1 });
 ThreadSchema.index({ 'members.user': 1 });
 ThreadSchema.index({ isArchived: 1 });
 ThreadSchema.index({ isLocked: 1 });

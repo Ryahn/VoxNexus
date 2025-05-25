@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 const ChannelSchema = new mongoose.Schema({
   _id: {
@@ -171,9 +171,7 @@ const ChannelSchema = new mongoose.Schema({
 
 // Compound indexes for common queries
 ChannelSchema.index({ server: 1, category: 1, position: 1 });
-ChannelSchema.index({ server: 1, type: 1, position: 1 });
-ChannelSchema.index({ server: 1, isPrivate: 1 });
-ChannelSchema.index({ server: 1, isNSFW: 1 });
+ChannelSchema.index({ isPrivate: 1, type: 1, isNSFW: 1 });
 ChannelSchema.index({ lastMessageAt: -1 });
 ChannelSchema.index({ 'members': 1 });
 ChannelSchema.index({ 'rolePermissions.role': 1 });

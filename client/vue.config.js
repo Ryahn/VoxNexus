@@ -2,30 +2,51 @@ const { defineConfig } = require('@vue/cli-service')
 
 module.exports = defineConfig({
   transpileDependencies: true,
-  pluginOptions: {
-    electronBuilder: {
-      mainProcessWatch: ['src/background.js'],
-      mainProcessFile: 'src/background.js',
-      rendererProcessFile: 'src/main.js',
-      removeDevtoolsExtension: true,
-      builderOptions: {
-        appId: 'com.voxnexus.app',
-        productName: 'VoxNexus',
-        win: {
-          target: ['nsis'],
-          icon: 'public/icon.ico'
-        },
-        linux: {
-          target: ['AppImage', 'deb'],
-          icon: 'public/icon.png'
-        },
-        mac: {
-          target: ['dmg'],
-          icon: 'public/icon.icns'
-        },
-        extraResources: ['./public'],
-        asar: false
+  // Set the entry point to main.ts
+  pages: {
+    index: {
+      entry: 'src/main.ts'
+    }
+  },
+  // Add performance optimization settings
+  configureWebpack: {
+    performance: {
+      hints: false
+    },
+    optimization: {
+      splitChunks: {
+        minSize: 10000,
+        maxSize: 250000
       }
     }
+  },
+  // Configure asset handling
+  chainWebpack: config => {
+    // Configure image handling
+    config.module
+      .rule('images')
+      .test(/\.(png|jpe?g|gif|webp|avif|svg)$/i)
+      .use('url-loader')
+      .loader('url-loader')
+      .options({
+        limit: 4096,
+        fallback: {
+          loader: 'file-loader',
+          options: {
+            name: 'img/[name].[hash:8].[ext]'
+          }
+        }
+      })
+      .end()
+
+    // Disable thread-loader for TypeScript
+    config.module
+      .rule('ts')
+      .use('ts-loader')
+      .tap(options => ({
+        ...options,
+        transpileOnly: true,
+        appendTsSuffixTo: [/\.vue$/]
+      }))
   }
 })

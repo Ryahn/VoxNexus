@@ -108,6 +108,8 @@ export const login = async (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
+        console.log('Login attempt:', { email, password });
+
         const user = await models.User.findOne({ email });
 
         if (!user) {
@@ -122,6 +124,7 @@ export const login = async (req, res) => {
         }
 
         const isPasswordValid = await auth.comparePassword(password, user.password);
+        console.log('Is password valid:', isPasswordValid);
 
         if (!isPasswordValid) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -338,7 +341,7 @@ export const uploadAvatar = async (req, res) => {
 
         // Delete old avatar if exists
         if (user.avatar) {
-            await AttachmentService.deleteAttachment(user.avatar);
+            await AttachmentService.delete(user.avatar);
         }
 
         // Upload new avatar
@@ -380,7 +383,7 @@ export const uploadBanner = async (req, res) => {
 
         // Delete old banner if exists
         if (user.banner) {
-            await AttachmentService.deleteAttachment(user.banner);
+            await AttachmentService.delete(user.banner);
         }
 
         // Upload new banner
@@ -457,5 +460,22 @@ export const logoutSession = async (req, res) => {
         res.status(500).json({
             error: 'Failed to logout session'
         });
+    }
+};
+
+export const getCsrfToken = async (req, res) => {
+    try {
+        const token = req.csrfToken();
+        console.log('Generating CSRF token:', {
+            token,
+            cookies: req.cookies,
+            headers: req.headers,
+            url: req.url,
+            method: req.method
+        });
+        res.json({ csrfToken: token });
+    } catch (error) {
+        console.error('Error generating CSRF token:', error);
+        res.status(500).json({ error: 'Failed to generate CSRF token' });
     }
 };

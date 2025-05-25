@@ -183,156 +183,169 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
-import { useRouter } from 'vue-router';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faCamera } from '@fortawesome/free-solid-svg-icons';
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faCamera } from '@fortawesome/free-solid-svg-icons'
+import type { User } from '@/types'
 
-library.add(faCamera);
+interface Session {
+  id: string
+  device: string
+  lastActive: Date
+}
 
-const router = useRouter();
-const authStore = useAuthStore();
-const isEditing = ref(false);
-const loading = ref(false);
-const error = ref('');
+interface ProfileForm {
+  username: string
+  email: string
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
 
-const form = ref({
+// Register Font Awesome icons
+library.add(faCamera)
+
+// Initialize composables
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Refs
+const bannerInput = ref<HTMLInputElement | null>(null)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const isEditing = ref<boolean>(false)
+const loading = ref<boolean>(false)
+const error = ref<string>('')
+
+const form = ref<ProfileForm>({
   username: '',
   email: '',
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
-});
+})
 
-const sessions = ref([]);
+const sessions = ref<Session[]>([])
 
-const user = computed(() => authStore.user);
+// Computed
+const user = computed<User | null>(() => authStore.user)
 
-const userInitials = computed(() => {
-  if (!user.value?.username) return '';
+const userInitials = computed<string>(() => {
+  if (!user.value?.username) return ''
   return user.value.username
     .split(' ')
     .map(word => word[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2);
-});
+    .slice(0, 2)
+})
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleString();
-};
+// Methods
+const formatDate = (date: Date): string => {
+  return new Date(date).toLocaleString()
+}
 
-const loadSessions = async () => {
+const loadSessions = async (): Promise<void> => {
   try {
-    sessions.value = await authStore.getSessions();
+    sessions.value = await authStore.getSessions()
   } catch (err) {
-    console.error('Failed to load sessions:', err);
+    console.error('Failed to load sessions:', err)
   }
-};
+}
 
-const handleSubmit = async () => {
+const handleSubmit = async (): Promise<void> => {
   try {
-    loading.value = true;
-    error.value = '';
+    loading.value = true
+    error.value = ''
 
     if (form.value.newPassword) {
       if (form.value.newPassword !== form.value.confirmPassword) {
-        throw new Error('New passwords do not match');
+        throw new Error('New passwords do not match')
       }
       if (!form.value.currentPassword) {
-        throw new Error('Current password is required to set a new password');
+        throw new Error('Current password is required to set a new password')
       }
-      await authStore.updatePassword(form.value.currentPassword, form.value.newPassword);
+      await authStore.updatePassword(form.value.currentPassword, form.value.newPassword)
     }
 
     await authStore.updateProfile({
       username: form.value.username,
       email: form.value.email
-    });
+    })
 
-    isEditing.value = false;
+    isEditing.value = false
     form.value = {
       username: '',
       email: '',
       currentPassword: '',
       newPassword: '',
       confirmPassword: ''
-    };
+    }
   } catch (err) {
-    error.value = err.message;
+    error.value = err instanceof Error ? err.message : 'Failed to update profile'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-const logoutSession = async (sessionId) => {
+const triggerBannerUpload = (): void => {
+  bannerInput.value?.click()
+}
+
+const triggerAvatarUpload = (): void => {
+  avatarInput.value?.click()
+}
+
+const handleBannerUpload = async (event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    try {
+      await authStore.updateBanner(file)
+    } catch (err) {
+      console.error('Failed to upload banner:', err)
+    }
+  }
+}
+
+const handleAvatarUpload = async (event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    try {
+      await authStore.updateAvatar(file)
+    } catch (err) {
+      console.error('Failed to upload avatar:', err)
+    }
+  }
+}
+
+const logoutSession = async (sessionId: string): Promise<void> => {
   try {
-    await authStore.logoutSession(sessionId);
-    sessions.value = sessions.value.filter(session => session.id !== sessionId);
+    await authStore.logoutSession(sessionId)
+    await loadSessions()
   } catch (err) {
-    console.error('Failed to logout session:', err);
+    console.error('Failed to logout session:', err)
   }
-};
+}
 
-const logoutAll = async () => {
+const logoutAll = async (): Promise<void> => {
   try {
-    await authStore.logoutAll();
-    router.push('/login');
+    await authStore.logoutAllSessions()
+    router.push('/login')
   } catch (err) {
-    console.error('Failed to logout all sessions:', err);
+    console.error('Failed to logout all sessions:', err)
   }
-};
+}
 
-const avatarInput = ref(null);
-const bannerInput = ref(null);
-
-const triggerAvatarUpload = () => {
-  avatarInput.value.click();
-};
-
-const triggerBannerUpload = () => {
-  bannerInput.value.click();
-};
-
-const handleAvatarUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    loading.value = true;
-    const formData = new FormData();
-    formData.append('avatar', file);
-    await authStore.uploadAvatar(formData);
-  } catch (err) {
-    error.value = err.message;
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleBannerUpload = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    loading.value = true;
-    const formData = new FormData();
-    formData.append('banner', file);
-    await authStore.uploadBanner(formData);
-  } catch (err) {
-    error.value = err.message;
-  } finally {
-    loading.value = false;
-  }
-};
-
+// Lifecycle hooks
 onMounted(() => {
   if (user.value) {
-    form.value.username = user.value.username;
-    form.value.email = user.value.email;
+    form.value.username = user.value.username
+    form.value.email = user.value.email
   }
-  loadSessions();
-});
+  loadSessions()
+})
 </script> 

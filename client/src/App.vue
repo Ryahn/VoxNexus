@@ -1,30 +1,43 @@
 <template>
-  <div id="app">
-    <component :is="isAuthRoute ? 'div' : 'MainLayout'">
-      <router-view></router-view>
-    </component>
+  <div class="app">
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
   </div>
 </template>
 
-<script setup>
-import { useRoute } from 'vue-router'
-import { computed } from 'vue'
-// eslint-disable-next-line no-unused-vars
-import MainLayout from './components/Layout/MainLayout.vue'
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { websocketService } from '@/services/websocket/websocketService'
 
-const route = useRoute()
-const isAuthRoute = computed(() => route.path === '/auth')
+export default defineComponent({
+  name: 'App',
+  setup() {
+    // Initialize WebSocket connection when app starts
+    const token = localStorage.getItem('token')
+    if (token) {
+      websocketService.connect(token)
+    }
+
+    return {}
+  }
+})
 </script>
 
 <style>
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+.app {
+  @apply h-screen w-screen bg-gray-900 text-white;
+}
 
-body {
-  font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  @apply bg-[#36393f] text-[#dcddde];
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

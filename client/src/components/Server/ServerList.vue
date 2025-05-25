@@ -14,6 +14,7 @@
         v-for="server in servers" 
         :key="server.id" 
         class="w-12 h-12 rounded-full bg-[#36393f] flex items-center justify-center cursor-pointer transition-all duration-200 hover:rounded-2xl hover:bg-[#5865f2] overflow-hidden"
+        @click="selectServer(server)"
       >
         <img 
           v-if="server.icon" 
@@ -29,15 +30,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { HomeIcon } from '@heroicons/vue/24/solid'
 
-const servers = ref([
-  { id: 1, name: 'Gaming', icon: null },
-  { id: 2, name: 'Music', icon: null },
-  { id: 3, name: 'Coding', icon: null }
+interface ServerListItem {
+  id: string
+  name: string
+  icon: string | null
+}
+
+const router = useRouter()
+
+// State
+const servers = ref<ServerListItem[]>([
+  { id: '1', name: 'Gaming', icon: null },
+  { id: '2', name: 'Music', icon: null },
+  { id: '3', name: 'Coding', icon: null }
 ])
+
+// Methods
+const selectServer = (server: ServerListItem): void => {
+  router.push(`/servers/${server.id}`)
+}
 </script>
 
 <style scoped>
