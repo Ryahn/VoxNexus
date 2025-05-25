@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 /**
  * Schema for server bans
@@ -70,11 +70,8 @@ const BanSchema = new mongoose.Schema({
 
 // Create indexes
 BanSchema.index({ server: 1, user: 1 }, { unique: true });
-BanSchema.index({ server: 1, isActive: 1 });
-BanSchema.index({ user: 1, isActive: 1 });
-BanSchema.index({ bannedBy: 1 });
-BanSchema.index({ expiresAt: 1 });
-BanSchema.index({ createdAt: 1 });
+BanSchema.index({ expiresAt: 1, createdAt: 1 });
+BanSchema.index({ bannedBy: 1, isActive: 1 });
 
 // Update timestamp before saving
 BanSchema.pre('save', function(next) {
@@ -83,7 +80,7 @@ BanSchema.pre('save', function(next) {
 });
 
 // Method to check if ban is still active
-BanSchema.methods.isActive = function() {
+BanSchema.methods.isActiveMethod = function() {
   if (!this.isActive) return false;
   if (this.expiresAt && new Date() > this.expiresAt) {
     this.isActive = false;

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 import crypto from 'crypto';
 
 /**
@@ -93,7 +93,6 @@ const WebhookSchema = new mongoose.Schema({
 
 // Create indexes
 WebhookSchema.index({ server: 1, channel: 1 });
-WebhookSchema.index({ token: 1 }, { unique: true });
 WebhookSchema.index({ createdBy: 1 });
 WebhookSchema.index({ isActive: 1 });
 WebhookSchema.index({ lastUsed: 1 });

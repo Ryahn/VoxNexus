@@ -52,6 +52,14 @@ const utility = {
         const hours = Math.floor(duration / 3600);
         const minutes = Math.floor((duration % 3600) / 60);
         const seconds = duration % 60;
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
     },
 
 }
@@ -67,3 +75,11 @@ const auth = {
 }
 
 export { utility, auth };
+
+// Add default export
+const utils = {
+    ...utility,
+    ...auth
+};
+
+export default utils;

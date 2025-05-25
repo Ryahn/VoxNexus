@@ -55,43 +55,52 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import { library } from '@fortawesome/fontawesome-svg-core';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { library } from '@fortawesome/fontawesome-svg-core'
 import { 
   faUser, 
   faMoon, 
   faBell, 
   faSignOutAlt, 
   faTimes 
-} from '@fortawesome/free-solid-svg-icons';
+} from '@fortawesome/free-solid-svg-icons'
 
-library.add(faUser, faMoon, faBell, faSignOutAlt, faTimes);
+// Define component emits
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
-const router = useRouter();
-const authStore = useAuthStore();
+// Register Font Awesome icons
+library.add(faUser, faMoon, faBell, faSignOutAlt, faTimes)
 
-const isDarkMode = ref(true);
-const notificationsEnabled = ref(true);
+// Initialize composables
+const router = useRouter()
+const authStore = useAuthStore()
 
-const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value;
+// State
+const isDarkMode = ref<boolean>(true)
+const notificationsEnabled = ref<boolean>(true)
+
+// Methods
+const toggleTheme = (): void => {
+  isDarkMode.value = !isDarkMode.value
   // TODO: Implement theme switching
-};
+}
 
-const toggleNotifications = () => {
-  notificationsEnabled.value = !notificationsEnabled.value;
+const toggleNotifications = (): void => {
+  notificationsEnabled.value = !notificationsEnabled.value
   // TODO: Implement notification toggling
-};
+}
 
-const handleLogout = async () => {
+const handleLogout = async (): Promise<void> => {
   try {
-    await authStore.logout();
-    router.push('/login');
+    await authStore.logout()
+    router.push('/login')
   } catch (error) {
-    console.error('Logout failed:', error);
+    console.error('Logout failed:', error)
   }
-};
+}
 </script> 

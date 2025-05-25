@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 const MessageSchema = new mongoose.Schema({
   _id: {
@@ -186,7 +186,7 @@ MessageSchema.statics.searchMessages = async function(query, options = {}) {
 
 // Indexes for common queries
 MessageSchema.index({ channel: 1, createdAt: -1 });
-MessageSchema.index({ thread: 1, createdAt: -1 });
+MessageSchema.index({ thread: 1 });
 MessageSchema.index({ type: 1, deleted: 1 });
 MessageSchema.index({ sender: 1, mentions: 1 });
 

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 /**
  * Schema for server invites
@@ -13,7 +13,6 @@ const InviteSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     validate: {
       validator: function(v) {

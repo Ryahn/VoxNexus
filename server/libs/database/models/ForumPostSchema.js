@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import utility from '../../utils';
+import { utility } from '../../utils.js';
 
 const ForumPostSchema = new mongoose.Schema({
   _id: {
@@ -85,8 +85,7 @@ const ForumPostSchema = new mongoose.Schema({
 
 // Indexes for common queries
 ForumPostSchema.index({ forum: 1, createdAt: -1 });
-ForumPostSchema.index({ forum: 1, isPinned: -1, createdAt: -1 });
-ForumPostSchema.index({ forum: 1, isSolved: 1 });
+ForumPostSchema.index({ isSolved: 1, isPinned: -1});
 ForumPostSchema.index({ author: 1 });
 ForumPostSchema.index({ lastReplyAt: -1 });
 ForumPostSchema.index({ viewCount: -1 });

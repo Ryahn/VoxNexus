@@ -41,34 +41,53 @@
   </TransitionRoot>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { defineProps, defineEmits } from 'vue'
 import { Dialog, TransitionRoot } from '@headlessui/vue'
 
-const props = defineProps({
-  open: Boolean,
-  username: String,
-  userId: String,
-  presence: String
-})
-const emit = defineEmits(['close', 'update:presence'])
+type PresenceType = 'online' | 'idle' | 'dnd' | 'invisible'
 
-const presenceOptions = [
+interface PresenceOption {
+  label: string
+  value: PresenceType
+  dotClass: string
+  activeClass: string
+}
+
+interface Props {
+  open: boolean
+  username: string
+  userId: string
+  presence: PresenceType
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'update:presence', value: PresenceType): void
+}>()
+
+const presenceOptions: PresenceOption[] = [
   { label: 'Online', value: 'online', dotClass: 'bg-green-500', activeClass: 'bg-green-600' },
   { label: 'Idle', value: 'idle', dotClass: 'bg-yellow-400', activeClass: 'bg-yellow-500' },
   { label: 'Do Not Disturb', value: 'dnd', dotClass: 'bg-red-500', activeClass: 'bg-red-600' },
   { label: 'Invisible', value: 'invisible', dotClass: 'bg-gray-400', activeClass: 'bg-gray-500' },
 ]
 
-function close() {
+const close = (): void => {
   emit('close')
 }
 
-function setPresence(val) {
+const setPresence = (val: PresenceType): void => {
   emit('update:presence', val)
 }
 
-function copyUserId() {
-  navigator.clipboard.writeText(props.userId)
+const copyUserId = async (): Promise<void> => {
+  try {
+    await navigator.clipboard.writeText(props.userId)
+  } catch (error) {
+    console.error('Failed to copy user ID:', error)
+  }
 }
 </script> 

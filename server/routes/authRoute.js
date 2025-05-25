@@ -12,7 +12,8 @@ import {
     uploadAvatar,
     uploadBanner,
     getSessions,
-    logoutSession
+    logoutSession,
+    getCsrfToken
 } from '../controllers/AuthController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -36,6 +37,7 @@ const upload = multer({
 router.post('/register', register);
 router.post('/login', login);
 router.post('/refresh-token', refreshToken);
+router.get('/csrf-token', getCsrfToken);
 
 // Protected routes
 router.use(authenticate);

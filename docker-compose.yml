@@ -1,12 +1,91 @@
 version: '3.8'
 
 services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    ports:
+      - "8080:80"  # Nginx serving the web app
+    environment:
+      - NODE_ENV=production
+      - VUE_APP_API_URL=/api
+      - VUE_APP_WS_URL=/ws
+      - VUE_APP_TURN_SERVER=turn:3478
+      - VUE_APP_TURN_USERNAME=${TURN_USERNAME}
+      - VUE_APP_TURN_PASSWORD=${TURN_PASSWORD}
+    depends_on:
+      - server
+    networks:
+      - voxnexus-network
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "3000:3000"  # API port (external access)
+      - "3001:3001"  # WebRTC signaling server (external access)
+    depends_on:
+      - mongo
+      - turn
+      - zincsearch
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/discord-clone
+      - API_PORT=3000
+      - SITE_DOMAIN=voxnexus.test
+      - API_HOST=0.0.0.0
+      - BOT_API_ENABLED=true
+      - ZINC_SEARCH_URL=http://zincsearch:4080
+      - WEBRTC_SIGNALING_PORT=3001
+      - TURN_SERVER=turn:3478
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+      - WEBRTC_ICE_SERVERS=[{"urls":["stun:turn:3478","turn:turn:3478"],"username":"${TURN_USERNAME}","credential":"${TURN_PASSWORD}"}]
+    networks:
+      - voxnexus-network
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  turn:
+    image: coturn/coturn:latest
+    ports:
+      - "3478:3478"  # STUN/TURN (external access)
+      - "3478:3478/udp"  # STUN/TURN UDP (external access)
+      - "5349:5349"  # STUN/TURN TLS (external access)
+      - "5349:5349/udp"  # STUN/TURN TLS UDP (external access)
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf
+    command: -c /etc/coturn/turnserver.conf
+    networks:
+      - voxnexus-network
+
   mongo:
     image: mongo:latest
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
       - ./mongo_data:/data/db
+    networks:
+      - voxnexus-network
+
+  zincsearch:
+    container_name: zincsearch
+    image: public.ecr.aws/zinclabs/zincsearch:latest
+    environment:
+        - ZINC_DATA_PATH=/data
+        - ZINC_FIRST_ADMIN_USER=admin
+        - ZINC_FIRST_ADMIN_PASSWORD=admin
+        - ZINC_PROMETHEUS_ENABLE=true
+    ports:
+        - 4080:4080
+    volumes:
+        - ./zincsearch_data:/data
     networks:
       - voxnexus-network
 

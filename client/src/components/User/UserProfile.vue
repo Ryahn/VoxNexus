@@ -57,7 +57,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { 
   MicrophoneIcon, 
@@ -67,14 +67,18 @@ import {
 } from '@heroicons/vue/24/solid'
 import UserProfileModal from './UserProfileModal.vue'
 
-const username = ref('User')
-const userId = ref('1234567890')
-const isMicMuted = ref(false)
-const isSpeakerMuted = ref(false)
-const modalOpen = ref(false)
-const presence = ref('online')
+type PresenceType = 'online' | 'idle' | 'dnd' | 'invisible'
 
-const presenceLabel = computed(() => {
+// State
+const username = ref<string>('User')
+const userId = ref<string>('1234567890')
+const isMicMuted = ref<boolean>(false)
+const isSpeakerMuted = ref<boolean>(false)
+const modalOpen = ref<boolean>(false)
+const presence = ref<PresenceType>('online')
+
+// Computed
+const presenceLabel = computed<string>(() => {
   switch (presence.value) {
     case 'online': return 'Online'
     case 'idle': return 'Idle'
@@ -84,19 +88,20 @@ const presenceLabel = computed(() => {
   }
 })
 
-function toggleMic() {
+// Methods
+const toggleMic = (): void => {
   isMicMuted.value = !isMicMuted.value
 }
 
-function toggleSpeaker() {
+const toggleSpeaker = (): void => {
   isSpeakerMuted.value = !isSpeakerMuted.value
 }
 
-function openModal() {
+const openModal = (): void => {
   modalOpen.value = true
 }
 
-function setPresence(val) {
+const setPresence = (val: PresenceType): void => {
   presence.value = val
 }
 </script>
