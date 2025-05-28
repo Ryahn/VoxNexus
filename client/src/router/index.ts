@@ -21,6 +21,18 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPassword.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/reset-password/:token',
+    name: 'ResetPassword',
+    component: () => import('@/views/ResetPassword.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/servers/:serverId',
     name: 'Server',
     component: () => import('@/views/Server.vue'),

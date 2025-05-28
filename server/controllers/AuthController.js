@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import AttachmentService from '../services/AttachmentService.js';
+import mailer from '../libs/mailer.js';
 
 // Helper function to generate tokens
 const generateTokens = async (user, deviceInfo = 'Unknown') => {
@@ -48,6 +49,10 @@ const sanitizeUser = (user) => {
     const sanitized = user.toObject();
     delete sanitized.password;
     delete sanitized.refreshTokens;
+    delete sanitized.verificationToken;
+    delete sanitized.verificationTokenExpiry;
+    delete sanitized.passwordResetToken;
+    delete sanitized.passwordResetTokenExpiry;
     delete sanitized.__v;
     return sanitized;
 };
@@ -77,16 +82,21 @@ export const register = async (req, res) => {
         }
 
         const hashedPassword = await auth.hashPassword(password);
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         const user = await models.User.create({ 
             username, 
             email, 
-            password: hashedPassword 
+            password: hashedPassword,
+            verificationToken,
+            verificationTokenExpiry
         });
 
         const deviceInfo = req.headers['user-agent'] || 'Unknown';
         const tokens = await generateTokens(user, deviceInfo);
         const sanitizedUser = sanitizeUser(user);
+        await mailer.sendVerificationEmail(email, verificationToken);
 
         return res.status(201).json({ 
             message: 'User created successfully', 
@@ -98,6 +108,101 @@ export const register = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+export const verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const user = await models.User.findOne({ 
+            verificationToken: token,
+            verificationTokenExpiry: { $gt: new Date() }
+        });
+        
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired verification token' });
+        }
+        
+        user.is_verified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpiry = undefined;
+        await user.save();
+        
+        return res.status(200).json({ message: 'Email verified successfully' });
+    } catch (error) {
+        console.error('Verify email error:', error);
+        return res.status(500).json({ error: 'Failed to verify email' });
+    }
+}
+
+export const resendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await models.User.findOne({ email });
+        
+        if (!user) {
+            return res.status(400).json({ error: 'User not found' });
+        }
+        
+        if (user.is_verified) {
+            return res.status(400).json({ error: 'Email already verified' });
+        }
+
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        user.verificationToken = verificationToken;
+        user.verificationTokenExpiry = verificationTokenExpiry;
+        await user.save();
+        
+        await mailer.sendVerificationEmail(email, verificationToken);
+        return res.status(200).json({ message: 'Verification email sent successfully' });
+    } catch (error) {
+        console.error('Resend verification email error:', error);
+        return res.status(500).json({ error: 'Failed to resend verification email' });
+    }
+}
+
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await models.User.findOne({ email });
+        
+        if (!user) {
+            return res.status(400).json({ error: 'User not found' });
+        }
+        
+        const passwordResetToken = crypto.randomBytes(32).toString('hex');
+        const passwordResetTokenExpiry = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+        
+        user.passwordResetToken = passwordResetToken;
+        user.passwordResetTokenExpiry = passwordResetTokenExpiry;
+        await user.save();
+        
+        await mailer.sendPasswordResetEmail(email, passwordResetToken);
+        return res.status(200).json({ message: 'Password reset email sent successfully' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+}
+
+export const verifyPasswordResetToken = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const user = await models.User.findOne({ 
+            passwordResetToken: token,
+            passwordResetTokenExpiry: { $gt: new Date() }
+        });
+        
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired password reset token' });
+        }
+        
+        return res.status(200).json({ message: 'Password reset token verified successfully' });
+    } catch (error) {
+        console.error('Verify password reset token error:', error);
+        return res.status(500).json({ error: 'Failed to verify password reset token' });
+    }
+}
 
 export const login = async (req, res) => {
     try {
@@ -477,5 +582,53 @@ export const getCsrfToken = async (req, res) => {
     } catch (error) {
         console.error('Error generating CSRF token:', error);
         res.status(500).json({ error: 'Failed to generate CSRF token' });
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword, confirmPassword } = req.body;
+
+        // Validation
+        if (!token || !newPassword || !confirmPassword) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'Passwords do not match' });
+        }
+
+        // Password strength validation
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+        }
+
+        // Find user with valid reset token
+        const user = await models.User.findOne({
+            passwordResetToken: token,
+            passwordResetTokenExpiry: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired password reset token' });
+        }
+
+        // Hash new password
+        const hashedPassword = await auth.hashPassword(newPassword);
+
+        // Update user's password and clear reset token
+        user.password = hashedPassword;
+        user.passwordResetToken = undefined;
+        user.passwordResetTokenExpiry = undefined;
+        await user.save();
+
+        // Invalidate all existing refresh tokens for security
+        user.refreshTokens = [];
+        await user.save();
+
+        return res.status(200).json({ message: 'Password reset successful' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        return res.status(500).json({ error: 'Failed to reset password' });
     }
 };

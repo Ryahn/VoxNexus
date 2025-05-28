@@ -96,6 +96,14 @@ const ServerSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isPublic: {
+    type: Boolean,
+    default: false
+  },
+  isNsfw: {
+    type: Boolean,
+    default: false
+  },
   deletedAt: {
     type: Date,
     default: null
@@ -125,6 +133,7 @@ ServerSchema.index({ owner: 1 }, { unique: true });
 ServerSchema.index({ type: 1, status: 1 });
 ServerSchema.index({ icon: 1, banner: 1 });
 ServerSchema.index({ description: 1 });
+ServerSchema.index({ isPublic: 1, isNsfw: 1 });
 
 // Method to ban a user from the server
 ServerSchema.methods.banUser = async function(userId, reason = '') {

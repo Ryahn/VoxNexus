@@ -44,6 +44,14 @@ export interface CreateChannelRequest {
 export interface AuthResponse {
   user: User
   token: string
+  refreshToken: string
+  expiresIn: number // Token expiration time in seconds
+}
+
+export interface TokenResponse {
+  token: string
+  refreshToken: string
+  expiresIn: number
 }
 
 export interface AvatarResponse {
@@ -58,4 +66,14 @@ export interface MessagesResponse {
   messages: Message[]
   hasMore: boolean
   nextCursor?: string
-} 
+}
+
+export interface CreateServerRequest {
+  name: string
+  icon?: File
+  banner?: File
+  description?: string
+  isPublic?: boolean
+  isNsfw?: boolean
+  type?: 'public' | 'private' | 'community'
+}

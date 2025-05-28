@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { Server, ServerMember, Role } from '@/types'
+import type { Server, ServerMember, Role, CreateServerRequest } from '@/types'
 
 export class ServerService {
   private static instance: ServerService
@@ -25,11 +25,26 @@ export class ServerService {
     return response.data
   }
 
-  async createServer(name: string, icon?: File): Promise<Server> {
+  async createServer(data: CreateServerRequest): Promise<Server> {
     const formData = new FormData()
-    formData.append('name', name)
-    if (icon) {
-      formData.append('icon', icon)
+    formData.append('name', data.name)
+    if (data.icon) {
+      formData.append('icon', data.icon)
+    }
+    if (data.banner) {
+      formData.append('banner', data.banner)
+    }
+    if (data.description) {
+      formData.append('description', data.description)
+    }
+    if (data.isPublic !== undefined) {
+      formData.append('isPublic', String(data.isPublic))
+    }
+    if (data.isNsfw !== undefined) {
+      formData.append('isNsfw', String(data.isNsfw))
+    }
+    if (data.type) {
+      formData.append('type', data.type)
     }
     const response = await apiClient.post<Server>(this.baseUrl, formData, {
       headers: {

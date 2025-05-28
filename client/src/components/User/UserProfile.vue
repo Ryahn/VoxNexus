@@ -42,7 +42,10 @@
         <SpeakerXMarkIcon v-else class="w-5 h-5" />
       </button>
       
-      <button class="p-1.5 rounded text-[#b9bbbe] hover:bg-[#36393f] hover:text-[#5865f2] transition-colors">
+      <button 
+        @click="openSettings"
+        class="p-1.5 rounded text-[#b9bbbe] hover:bg-[#36393f] hover:text-[#5865f2] transition-colors"
+      >
         <Cog6ToothIcon class="w-5 h-5" />
       </button>
     </div>
@@ -53,6 +56,10 @@
       :presence="presence"
       @close="modalOpen = false"
       @update:presence="setPresence"
+    />
+    <Settings
+      v-if="settingsOpen"
+      @close="settingsOpen = false"
     />
   </div>
 </template>
@@ -66,6 +73,7 @@ import {
   Cog6ToothIcon 
 } from '@heroicons/vue/24/solid'
 import UserProfileModal from './UserProfileModal.vue'
+import Settings from '../Settings.vue'
 
 type PresenceType = 'online' | 'idle' | 'dnd' | 'invisible'
 
@@ -75,6 +83,7 @@ const userId = ref<string>('1234567890')
 const isMicMuted = ref<boolean>(false)
 const isSpeakerMuted = ref<boolean>(false)
 const modalOpen = ref<boolean>(false)
+const settingsOpen = ref<boolean>(false)
 const presence = ref<PresenceType>('online')
 
 // Computed
@@ -99,6 +108,10 @@ const toggleSpeaker = (): void => {
 
 const openModal = (): void => {
   modalOpen.value = true
+}
+
+const openSettings = (): void => {
+  settingsOpen.value = true
 }
 
 const setPresence = (val: PresenceType): void => {

@@ -13,9 +13,13 @@ import {
     uploadBanner,
     getSessions,
     logoutSession,
-    getCsrfToken
+    getCsrfToken,
+    forgotPassword,
+    verifyPasswordResetToken,
+    resetPassword
 } from '../controllers/AuthController.js';
 import { authenticate } from '../middleware/auth.js';
+import { passwordResetLimiter } from '../src/middleware/rateLimiter.js';
 
 const router = express.Router();
 const upload = multer({
@@ -38,6 +42,11 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/refresh-token', refreshToken);
 router.get('/csrf-token', getCsrfToken);
+
+// Password reset routes with rate limiting
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/verify-password-reset-token', passwordResetLimiter, verifyPasswordResetToken);
+router.post('/reset-password', passwordResetLimiter, resetPassword);
 
 // Protected routes
 router.use(authenticate);

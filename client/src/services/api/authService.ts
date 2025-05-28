@@ -24,7 +24,11 @@ export const authService = {
   },
 
   async refreshToken(): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/refresh')
+    const refreshToken = localStorage.getItem('refreshToken')
+    if (!refreshToken) {
+      throw new Error('No refresh token available')
+    }
+    const response = await apiClient.post<AuthResponse>('/auth/refresh', { refreshToken })
     return response.data
   },
 
@@ -70,5 +74,17 @@ export const authService = {
 
   async logoutAllSessions(): Promise<void> {
     await apiClient.delete('/auth/sessions')
+  },
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await apiClient.post('/auth/forgot-password', { email })
+  },
+
+  async verifyPasswordResetToken(token: string): Promise<void> {
+    await apiClient.get(`/auth/verify-reset-token/${token}`)
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await apiClient.post('/auth/reset-password', { token, newPassword })
   }
 } 

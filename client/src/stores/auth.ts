@@ -7,25 +7,31 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
     token: localStorage.getItem('token'),
+    refreshToken: localStorage.getItem('refreshToken'),
+    tokenExpiry: localStorage.getItem('tokenExpiry') ? new Date(localStorage.getItem('tokenExpiry')!) : null,
     isAuthenticated: false
   }),
 
   getters: {
     currentUser: (state) => state.user,
-    isLoggedIn: (state) => state.isAuthenticated
+    isLoggedIn: (state) => state.isAuthenticated,
+    isTokenExpired: (state) => {
+      if (!state.tokenExpiry) return true
+      return new Date() >= state.tokenExpiry
+    }
   },
 
   actions: {
     async login(email: string, password: string): Promise<void> {
-      const { user, token } = await authService.login(email, password)
-      this.setAuth(user, token)
+      const { user, token, refreshToken, expiresIn } = await authService.login(email, password)
+      this.setAuth(user, token, refreshToken, expiresIn)
       websocketService.connect(token)
     },
 
     async register(username: string, email: string, password: string, confirmPassword: string): Promise<void> {
       try {
-        const { user, token } = await authService.register(username, email, password, confirmPassword)
-        this.setAuth(user, token)
+        const { user, token, refreshToken, expiresIn } = await authService.register(username, email, password, confirmPassword)
+        this.setAuth(user, token, refreshToken, expiresIn)
         websocketService.connect(token)
       } catch (err: any) {
         // Propagate backend error message
@@ -39,24 +45,49 @@ export const useAuthStore = defineStore('auth', {
       websocketService.disconnect()
     },
 
+    async refreshTokens(): Promise<void> {
+      if (!this.refreshToken) {
+        throw new Error('No refresh token available')
+      }
+
+      const { token, refreshToken, expiresIn } = await authService.refreshToken()
+      this.setTokens(token, refreshToken, expiresIn)
+      websocketService.connect(token)
+    },
+
     async fetchCurrentUser(): Promise<void> {
       const user = await authService.getCurrentUser()
       this.user = user
       this.isAuthenticated = true
     },
 
-    setAuth(user: User, token: string): void {
+    setAuth(user: User, token: string, refreshToken: string, expiresIn: number): void {
       this.user = user
-      this.token = token
+      this.setTokens(token, refreshToken, expiresIn)
       this.isAuthenticated = true
+    },
+
+    setTokens(token: string, refreshToken: string, expiresIn: number): void {
+      this.token = token
+      this.refreshToken = refreshToken
+      const expiryDate = new Date()
+      expiryDate.setSeconds(expiryDate.getSeconds() + expiresIn)
+      this.tokenExpiry = expiryDate
+
       localStorage.setItem('token', token)
+      localStorage.setItem('refreshToken', refreshToken)
+      localStorage.setItem('tokenExpiry', expiryDate.toISOString())
     },
 
     clearAuth(): void {
       this.user = null
       this.token = null
+      this.refreshToken = null
+      this.tokenExpiry = null
       this.isAuthenticated = false
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('tokenExpiry')
     },
 
     async getSessions(): Promise<Array<{ id: string; device: string; lastActive: Date }>> {
@@ -90,6 +121,18 @@ export const useAuthStore = defineStore('auth', {
       await authService.logoutAllSessions()
       this.clearAuth()
       websocketService.disconnect()
+    },
+
+    async requestPasswordReset(email: string): Promise<void> {
+      await authService.requestPasswordReset(email)
+    },
+
+    async verifyPasswordResetToken(token: string): Promise<void> {
+      await authService.verifyPasswordResetToken(token)
+    },
+
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+      await authService.resetPassword(token, newPassword)
     }
   }
 }) 
