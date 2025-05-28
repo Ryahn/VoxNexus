@@ -33,6 +33,14 @@
           <option value="private">Private</option>
           <option value="community">Community</option>
         </select>
+        <div class="flex flex-col gap-2">
+          <input type="file" @change="handleIconUpload" class="w-full mb-4 px-3 py-2 rounded bg-gray-700 text-white" />
+          <input type="file" @change="handleBannerUpload" class="w-full mb-4 px-3 py-2 rounded bg-gray-700 text-white" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <input type="checkbox" v-model="newServerIsPublic" class="w-full mb-4 px-3 py-2 rounded bg-gray-700 text-white" />
+          <input type="checkbox" v-model="newServerIsNsfw" class="w-full mb-4 px-3 py-2 rounded bg-gray-700 text-white" />
+        </div>
         <div class="flex justify-end gap-2">
           <button @click="showCreate = false" class="px-3 py-1 bg-gray-600 text-white rounded">Cancel</button>
           <button @click="createServer" class="px-3 py-1 bg-indigo-600 text-white rounded">Create</button>
@@ -65,7 +73,26 @@ const showCreate = ref(false)
 const showJoin = ref(false)
 const newServerName = ref('')
 const newServerDescription = ref('')
-const newServerType = ref('public')
+const newServerType = ref<'public' | 'private' | 'community'>('public')
+const newServerIsPublic = ref(false)
+const newServerIsNsfw = ref(false)
+const newServerIcon = ref<File | null>(null)
+const newServerBanner = ref<File | null>(null)
+
+const handleIconUpload = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    newServerIcon.value = file
+  }
+}
+
+const handleBannerUpload = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    newServerBanner.value = file
+  }
+}
+
 const joinCode = ref('')
 
 onMounted(() => {
@@ -74,7 +101,15 @@ onMounted(() => {
 
 const createServer = async () => {
   if (!newServerName.value.trim()) return
-  await serverStore.createServer(newServerName.value)
+  await serverStore.createServer({
+    name: newServerName.value,
+    icon: newServerIcon.value || undefined,
+    banner: newServerBanner.value || undefined,
+    description: newServerDescription.value,
+    isPublic: newServerIsPublic.value,
+    isNsfw: newServerIsNsfw.value,
+    type: newServerType.value
+  })
   showCreate.value = false
   newServerName.value = ''
 }

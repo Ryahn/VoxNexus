@@ -5,15 +5,20 @@
         <component :is="Component" />
       </transition>
     </router-view>
+    <notifications position="top right" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { websocketService } from '@/services/websocket/websocketService'
+import { Notifications } from '@kyvg/vue3-notification'
 
 export default defineComponent({
   name: 'App',
+  components: {
+    Notifications
+  },
   setup() {
     // Initialize WebSocket connection when app starts
     const token = localStorage.getItem('token')

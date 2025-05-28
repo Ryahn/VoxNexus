@@ -99,6 +99,8 @@ export interface PaginatedResponse<T> {
 export interface AuthState {
   user: User | null
   token: string | null
+  refreshToken: string | null
+  tokenExpiry: Date | null
   isAuthenticated: boolean
 }
 
@@ -129,4 +131,14 @@ export interface Session {
   device: string
   lastActive: Date
   current: boolean
+}
+
+export interface CreateServerRequest {
+  name: string
+  icon?: File
+  banner?: File
+  description?: string
+  isPublic?: boolean
+  isNsfw?: boolean
+  type?: 'public' | 'private' | 'community'
 } 

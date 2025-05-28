@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Server, ServerState } from '@/types'
+import type { Server, ServerState, CreateServerRequest } from '@/types'
 import { serverService } from '@/services/api/serverService'
 
 export const useServerStore = defineStore('server', {
@@ -45,11 +45,11 @@ export const useServerStore = defineStore('server', {
       }
     },
 
-    async createServer(name: string, icon?: File): Promise<void> {
+    async createServer(data: CreateServerRequest): Promise<void> {
       this.loading = true
       this.error = null
       try {
-        const server = await serverService.createServer(name, icon)
+        const server = await serverService.createServer(data)
         this.servers.push(server)
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to create server'

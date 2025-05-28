@@ -74,6 +74,24 @@ const auth = {
     }
 }
 
+const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const file = {
+    validateFile: (file) => {
+        if (!file || Object.keys(file).length === 0) {
+            return false;
+        }
+        if (file.size > MAX_FILE_SIZE || file.size < 1024) {
+            return false;
+        }
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+            return false;
+        }
+        return true;
+    }
+}
+
 export { utility, auth };
 
 // Add default export

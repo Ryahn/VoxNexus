@@ -7,6 +7,7 @@ import csrf from '@dr.pogodin/csurf';
 import cookieParser from 'cookie-parser';
 import authRoute from './routes/authRoute.js';
 import fileRoutes from './routes/fileRoute.js';
+import { apiLimiter, authLimiter, wsRateLimiter, cleanupRateLimiters } from './src/middleware/rateLimiter.js';
 dotenv.config();
 
 const app = express();
@@ -26,6 +27,10 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Apply rate limiters
+app.use(apiLimiter); // Apply to all routes
+app.use('/api/auth', authLimiter); // Stricter limits for auth routes
 
 // Log incoming requests
 app.use((req, res, next) => {
@@ -74,7 +79,11 @@ app.use((err, req, res, next) => {
 app.use('/api/auth', authRoute);
 app.use('/api/files', fileRoutes);
 
-// Socket.io connection
+// Socket.io connection with rate limiting
+io.use((socket, next) => {
+  wsRateLimiter(socket.request, socket.request.res, next);
+});
+
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
   
@@ -99,3 +108,13 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Cleanup on server shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Cleaning up...');
+  cleanupRateLimiters();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
