@@ -20,3 +20,4 @@ avscanner/uploads/
 avscanner/uploads/*
 avscanner/.env
 .cursorrules
+.env
