@@ -237,24 +237,32 @@ const handleSubmit = async (): Promise<void> => {
     loading.value = true
     error.value = ''
 
+    console.log('[AUTH] Starting form submission', { isLogin: isLogin.value, form: form.value })
+
     if (!isLogin.value && !isPasswordValid.value) {
+      console.log('[AUTH] Password validation failed')
       throw new Error('Password does not meet requirements')
     }
 
     if (isLogin.value) {
+      console.log('[AUTH] Attempting login')
       await authStore.login(form.value.email, form.value.password)
     } else {
+      console.log('[AUTH] Attempting registration')
       await authStore.register(
         form.value.username,
         form.value.email,
         form.value.password,
         form.value.confirmPassword
       )
+      console.log('[AUTH] Registration successful')
     }
 
     const redirectPath = route.query.redirect as string || '/'
+    console.log('[AUTH] Redirecting to:', redirectPath)
     router.push(redirectPath)
   } catch (err: any) {
+    console.error('[AUTH] Error occurred:', err)
     error.value = err?.message || (isLogin.value ? 'Login failed' : 'Registration failed')
   } finally {
     loading.value = false

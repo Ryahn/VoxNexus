@@ -2,13 +2,14 @@ version: '3.8'
 
 services:
   client:
+    container_name: voxnexus-client
     build:
       context: .
       dockerfile: Dockerfile.client
     ports:
       - "8080:80"  # Nginx serving the web app
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - VUE_APP_API_URL=/api
       - VUE_APP_WS_URL=/ws
       - VUE_APP_TURN_SERVER=turn:3478
@@ -23,11 +24,12 @@ services:
       - /app/node_modules
 
   server:
+    container_name: voxnexus-server
     build:
       context: .
       dockerfile: Dockerfile.server
     ports:
-      - "3000:3000"  # API port (external access)
+      - "3555:3000"  # API port (external access)
       - "3001:3001"  # WebRTC signaling server (external access)
     depends_on:
       - mongo
@@ -35,7 +37,7 @@ services:
       - zincsearch
       - redis
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MONGODB_URI=mongodb://mongo:27017/discord-clone
       - API_PORT=3000
       - SITE_DOMAIN=voxnexus.test
@@ -47,6 +49,16 @@ services:
       - TURN_SERVER=turn:3478
       - TURN_USERNAME=${TURN_USERNAME}
       - TURN_PASSWORD=${TURN_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - MAILPACE_API_KEY=${MAILPACE_API_KEY}
+      - MAIL_TYPE=${MAIL_TYPE}
+      - STORAGE=${STORAGE}
+      - STMP_USER=${STMP_USER}
+      - STMP_PASSWORD=${STMP_PASSWORD}
+      - STMP_HOST=${STMP_HOST}
+      - STMP_PORT=${STMP_PORT}
+      - STMP_SECURE=${STMP_SECURE}
       - WEBRTC_ICE_SERVERS=[{"urls":["stun:turn:3478","turn:turn:3478"],"username":"${TURN_USERNAME}","credential":"${TURN_PASSWORD}"}]
     networks:
       - voxnexus-network
@@ -55,6 +67,7 @@ services:
       - /app/node_modules
 
   turn:
+    container_name: voxnexus-turn
     image: coturn/coturn:latest
     ports:
       - "3478:3478"  # STUN/TURN (external access)
@@ -68,6 +81,7 @@ services:
       - voxnexus-network
 
   mongo:
+    container_name: voxnexus-mongo
     image: mongo:latest
     ports:
       - "27017:27017"
@@ -77,7 +91,7 @@ services:
       - voxnexus-network
 
   zincsearch:
-    container_name: zincsearch
+    container_name: voxnexus-zincsearch
     image: public.ecr.aws/zinclabs/zincsearch:latest
     environment:
         - ZINC_DATA_PATH=/data
@@ -92,6 +106,7 @@ services:
       - voxnexus-network
   
   redis:
+    container_name: voxnexus-redis
     image: redis:latest
     ports:
       - "6379:6379"

@@ -26,6 +26,7 @@ COPY client/babel.config.js ./
 
 # Install dependencies
 RUN yarn install
+RUN yarn add @kyvg/vue3-notification
 
 # Copy source code
 COPY client/src ./src

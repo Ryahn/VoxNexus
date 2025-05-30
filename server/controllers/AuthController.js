@@ -3,8 +3,8 @@ import { auth } from '../libs/utils.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import AttachmentService from '../services/AttachmentService.js';
-import mailer from '../libs/mailer.js';
+import AttachmentService from '../services/attachment/AttachmentService.js';
+import MailerService from '../services/mailer/MailerService.js';
 
 // Helper function to generate tokens
 const generateTokens = async (user, deviceInfo = 'Unknown') => {
@@ -58,33 +58,43 @@ const sanitizeUser = (user) => {
 };
 
 export const register = async (req, res) => {
+    console.log('[REGISTER] Entry');
+    console.log('[REGISTER] Request body:', req.body);
     try {
         const { username, email, password, confirmPassword } = req.body;
 
         // Validation
         if (!username || !email || !password) {
+            console.log('[REGISTER] Missing fields');
             return res.status(400).json({ error: 'All fields are required' });
         }
 
         if (password !== confirmPassword) {
+            console.log('[REGISTER] Passwords do not match');
             return res.status(400).json({ error: 'Passwords do not match' });
         }
 
         // Check if user already exists
+        console.log('[REGISTER] Checking for existing user');
         const existingUser = await models.User.findOne({ 
             $or: [{ email }, { username }] 
         });
 
         if (existingUser) {
+            console.log('[REGISTER] User already exists');
             return res.status(400).json({ 
                 error: 'User with this email or username already exists' 
             });
         }
 
+        console.log('[REGISTER] Hashing password');
         const hashedPassword = await auth.hashPassword(password);
+        
+        console.log('[REGISTER] Generating verification token');
         const verificationToken = crypto.randomBytes(32).toString('hex');
         const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+        console.log('[REGISTER] Creating user');
         const user = await models.User.create({ 
             username, 
             email, 
@@ -93,19 +103,52 @@ export const register = async (req, res) => {
             verificationTokenExpiry
         });
 
+        console.log('[REGISTER] User created successfully, generating tokens');
         const deviceInfo = req.headers['user-agent'] || 'Unknown';
         const tokens = await generateTokens(user, deviceInfo);
         const sanitizedUser = sanitizeUser(user);
-        await mailer.sendVerificationEmail(email, verificationToken);
+        
+        // Only send verification email in production
+        if (process.env.NODE_ENV === 'production') {
+            console.log('[REGISTER] Sending verification email');
+            await MailerService.sendVerificationEmail(email, verificationToken, username);
+        } else {
+            console.log('[REGISTER] Skipping email in development mode. Verification token:', verificationToken);
+        }
 
+        console.log('[REGISTER] Success:', sanitizedUser);
         return res.status(201).json({ 
             message: 'User created successfully', 
             user: sanitizedUser,
-            ...tokens
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresIn: 15 * 60 // 15 minutes in seconds
         });
     } catch (error) {
-        console.error('Registration error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        console.error('[REGISTER] Error:', error);
+        console.error('[REGISTER] Error stack:', error.stack);
+        
+        // Handle specific MongoDB errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(400).json({ 
+                error: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists` 
+            });
+        }
+        
+        // Handle validation errors
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ 
+                error: 'Validation failed',
+                errors: errors
+            });
+        }
+        
+        return res.status(500).json({ 
+            error: 'Internal server error',
+            message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred'
+        });
     }
 };
 
@@ -153,7 +196,13 @@ export const resendVerificationEmail = async (req, res) => {
         user.verificationTokenExpiry = verificationTokenExpiry;
         await user.save();
         
-        await mailer.sendVerificationEmail(email, verificationToken);
+        // Only send verification email in production
+        if (process.env.NODE_ENV === 'production') {
+            await MailerService.sendVerificationEmail(email, verificationToken, user.username);
+        } else {
+            console.log('[RESEND_VERIFICATION] Skipping email in development mode. Verification token:', verificationToken);
+        }
+        
         return res.status(200).json({ message: 'Verification email sent successfully' });
     } catch (error) {
         console.error('Resend verification email error:', error);
@@ -177,7 +226,13 @@ export const forgotPassword = async (req, res) => {
         user.passwordResetTokenExpiry = passwordResetTokenExpiry;
         await user.save();
         
-        await mailer.sendPasswordResetEmail(email, passwordResetToken);
+        // Only send password reset email in production
+        if (process.env.NODE_ENV === 'production') {
+            await MailerService.sendPasswordResetEmail(email, passwordResetToken);
+        } else {
+            console.log('[FORGOT_PASSWORD] Skipping email in development mode. Reset token:', passwordResetToken);
+        }
+        
         return res.status(200).json({ message: 'Password reset email sent successfully' });
     } catch (error) {
         console.error('Forgot password error:', error);

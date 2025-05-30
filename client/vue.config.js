@@ -5,7 +5,8 @@ module.exports = defineConfig({
   // Set the entry point to main.ts
   pages: {
     index: {
-      entry: 'src/main.ts'
+      entry: 'src/main.ts',
+      title: 'VoxNexus'
     }
   },
   // Add performance optimization settings

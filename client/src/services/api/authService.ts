@@ -9,8 +9,11 @@ export const authService = {
   },
 
   async register(username: string, email: string, password: string, confirmPassword: string): Promise<AuthResponse> {
+    console.log('[AUTH_SERVICE] Starting registration API call', { username, email })
     const registerData: RegisterRequest = { username, email, password, confirmPassword }
+    console.log('[AUTH_SERVICE] Making POST request to /auth/register')
     const response = await apiClient.post<AuthResponse>('/auth/register', registerData)
+    console.log('[AUTH_SERVICE] Registration API response received', { status: response.status })
     return response.data
   },
 
