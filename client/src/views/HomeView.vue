@@ -63,41 +63,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useServerStore } from '@/stores/server'
+import { updateTitle, resetTitle } from '@/utils/title'
+import type { Server } from '@/types'
 
 const serverStore = useServerStore()
-const servers = serverStore.servers
-
+const servers = ref<Server[]>([])
 const showCreate = ref(false)
 const showJoin = ref(false)
 const newServerName = ref('')
-const newServerDescription = ref('')
-const newServerType = ref<'public' | 'private' | 'community'>('public')
-const newServerIsPublic = ref(false)
-const newServerIsNsfw = ref(false)
 const newServerIcon = ref<File | null>(null)
 const newServerBanner = ref<File | null>(null)
+const newServerDescription = ref('')
+const newServerIsPublic = ref(false)
+const newServerIsNsfw = ref(false)
+const newServerType = ref<'public' | 'private' | 'community'>('public')
+const joinCode = ref('')
+
+onMounted(async () => {
+  await serverStore.fetchServers()
+  servers.value = serverStore.servers
+  resetTitle()
+})
+
+// Watch for server changes and update title
+watch(() => serverStore.currentServer, (newServer) => {
+  if (newServer) {
+    updateTitle(newServer.name)
+  } else {
+    resetTitle()
+  }
+})
 
 const handleIconUpload = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) {
-    newServerIcon.value = file
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    newServerIcon.value = target.files[0]
   }
 }
 
 const handleBannerUpload = (e: Event) => {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (file) {
-    newServerBanner.value = file
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    newServerBanner.value = target.files[0]
   }
 }
-
-const joinCode = ref('')
-
-onMounted(() => {
-  serverStore.fetchServers()
-})
 
 const createServer = async () => {
   if (!newServerName.value.trim()) return

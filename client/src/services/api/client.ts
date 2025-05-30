@@ -8,8 +8,8 @@ class ApiClient {
   private csrfToken: string | null = null
   private initializationPromise: Promise<void> | null = null
   private refreshPromise: Promise<void> | null = null
-  private requestCount: number = 0
-  private lastRequestTime: number = 0
+  private requestCount = 0
+  private lastRequestTime = 0
   private readonly RATE_LIMIT = 100 // requests per minute
   private readonly RATE_LIMIT_WINDOW = 60000 // 1 minute in milliseconds
 
@@ -36,6 +36,11 @@ class ApiClient {
     this.client.interceptors.request.use(async (config) => {
       // Rate limiting check
       await this.checkRateLimit()
+
+      // Skip CSRF token requirement for the csrf-token endpoint itself
+      if (config.url?.includes('/auth/csrf-token')) {
+        return config
+      }
 
       // Wait for CSRF token initialization
       if (this.initializationPromise) {
@@ -107,7 +112,7 @@ class ApiClient {
 
         const apiError: ApiError = {
           status: error.response?.status || 500,
-          message: error.response?.data?.message || 'An unexpected error occurred',
+          message: error.response?.data?.error || error.response?.data?.message || 'An unexpected error occurred',
           errors: error.response?.data?.errors,
         }
         return Promise.reject(apiError)
@@ -118,7 +123,10 @@ class ApiClient {
   private async initializeCsrfToken() {
     try {
       console.log('Initializing CSRF token...')
-      const response = await this.client.get('/auth/csrf-token')
+      // Use axios directly to avoid the request interceptor that requires CSRF token
+      const response = await axios.get(`${this.baseURL}/auth/csrf-token`, {
+        withCredentials: true
+      })
       this.csrfToken = response.data.csrfToken
       console.log('CSRF token initialized:', this.csrfToken)
     } catch (error) {

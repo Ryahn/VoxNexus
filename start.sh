@@ -11,22 +11,28 @@ if ! command_exists npm; then
     exit 1
 fi
 
+# Check if yarn is installed
+if ! command_exists yarn; then
+    echo "Error: yarn is not installed"
+    exit 1
+fi
+
 # Install dependencies if node_modules doesn't exist
 if [ ! -d "node_modules" ]; then
     echo "Installing root dependencies..."
-    npm install
+    yarn install
 fi
 
 if [ ! -d "client/node_modules" ]; then
     echo "Installing client dependencies..."
-    cd client && npm install && cd ..
+    cd client && yarn install && cd ..
 fi
 
 if [ ! -d "server/node_modules" ]; then
     echo "Installing server dependencies..."
-    cd server && npm install && cd ..
+    cd server && yarn install && cd ..
 fi
 
-# Start both client and server
-echo "Starting application..."
-npm start 
+docker compose down
+docker compose build --no-cache
+docker compose up -d

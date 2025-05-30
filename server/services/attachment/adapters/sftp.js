@@ -1,46 +1,49 @@
-import { Client } from 'basic-ftp';
+import Client from 'ssh2-sftp-client';
 import path from 'path';
 import BaseAdapter from './base.js';
-import { utility } from '../../libs/utils.js';
+import { utility } from '../../../libs/utils.js';
 
 /**
- * FTP storage adapter
- * Stores files on a remote FTP server
+ * SFTP storage adapter
+ * Stores files on a remote SFTP server
  */
-class FTPAdapter extends BaseAdapter {
+class SFTPAdapter extends BaseAdapter {
   constructor() {
     super();
     this.client = new Client();
-    this.host = process.env.FTP_HOST;
-    this.user = process.env.FTP_USER;
-    this.password = process.env.FTP_PASSWORD;
-    this.port = process.env.FTP_PORT || 21;
+    this.host = process.env.SFTP_HOST;
+    this.user = process.env.SFTP_USER;
+    this.password = process.env.SFTP_PASSWORD;
+    this.port = process.env.SFTP_PORT || 22;
 
     // Validate required environment variables
-    if (!process.env.FTP_HOST || !process.env.FTP_ROOT_PATH) {
-      throw new Error('FTP host and root path are required');
+    if (!process.env.SFTP_HOST || !process.env.SFTP_ROOT_PATH) {
+      throw new Error('SFTP host and root path are required');
     }
 
-    if (!process.env.FTP_USER || !process.env.FTP_PASSWORD) {
-      throw new Error('FTP authentication credentials are required');
+    if (!process.env.SFTP_USER || (!process.env.SFTP_PASSWORD && !process.env.SFTP_PRIVATE_KEY)) {
+      throw new Error('SFTP authentication credentials are required (password or private key)');
     }
 
     // Initialize connection pool
     this.pool = [];
-    this.poolSize = parseInt(process.env.FTP_POOL_SIZE) || 5;
-    this.maxRetries = parseInt(process.env.FTP_MAX_RETRIES) || 3;
-    this.retryDelay = parseInt(process.env.FTP_RETRY_DELAY) || 1000;
-    this.connectionTimeout = parseInt(process.env.FTP_CONNECTION_TIMEOUT) || 30000;
-    this.maxFileSize = parseInt(process.env.FTP_MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB default
+    this.poolSize = parseInt(process.env.SFTP_POOL_SIZE) || 5;
+    this.maxRetries = parseInt(process.env.SFTP_MAX_RETRIES) || 3;
+    this.retryDelay = parseInt(process.env.SFTP_RETRY_DELAY) || 1000;
+    this.connectionTimeout = parseInt(process.env.SFTP_CONNECTION_TIMEOUT) || 30000;
+    this.maxFileSize = parseInt(process.env.SFTP_MAX_FILE_SIZE) || 10 * 1024 * 1024; // 10MB default
 
     this.config = {
-      host: process.env.FTP_HOST,
-      port: process.env.FTP_PORT || 21,
-      user: process.env.FTP_USER,
-      password: process.env.FTP_PASSWORD,
-      rootPath: process.env.FTP_ROOT_PATH,
-      secure: process.env.FTP_SECURE === 'true',
-      timeout: this.connectionTimeout
+      host: process.env.SFTP_HOST,
+      port: process.env.SFTP_PORT || 22,
+      username: process.env.SFTP_USER,
+      password: process.env.SFTP_PASSWORD,
+      privateKey: process.env.SFTP_PRIVATE_KEY,
+      rootPath: process.env.SFTP_ROOT_PATH,
+      readyTimeout: this.connectionTimeout,
+      retries: this.maxRetries,
+      retry_factor: 2,
+      retry_minTimeout: this.retryDelay
     };
 
     // Initialize the connection pool
@@ -88,7 +91,7 @@ class FTPAdapter extends BaseAdapter {
     clientInfo.lastUsed = Date.now();
 
     // Ensure the client is connected
-    if (!clientInfo.client.closed) {
+    if (!clientInfo.client.isConnected()) {
       await this.connectWithRetry(clientInfo.client);
     }
 
@@ -102,22 +105,16 @@ class FTPAdapter extends BaseAdapter {
   }
 
   /**
-   * Connect to FTP with retry mechanism
+   * Connect to SFTP with retry mechanism
    * @private
-   * @param {Client} client - The FTP client
+   * @param {Client} client - The SFTP client
    * @returns {Promise<void>}
    */
   async connectWithRetry(client) {
     let lastError;
     for (let i = 0; i < this.maxRetries; i++) {
       try {
-        await client.access({
-          host: this.config.host,
-          port: this.config.port,
-          user: this.config.user,
-          password: this.config.password,
-          secure: this.config.secure
-        });
+        await client.connect(this.config);
         return;
       } catch (error) {
         lastError = error;
@@ -126,7 +123,7 @@ class FTPAdapter extends BaseAdapter {
         }
       }
     }
-    throw new Error(`Failed to connect to FTP after ${this.maxRetries} attempts: ${lastError.message}`);
+    throw new Error(`Failed to connect to SFTP after ${this.maxRetries} attempts: ${lastError.message}`);
   }
 
   /**
@@ -189,20 +186,15 @@ class FTPAdapter extends BaseAdapter {
    */
   async ensureDirectory(dirPath) {
     await this.executeWithRetry(async (client) => {
-      try {
-        await client.cd(dirPath);
-      } catch (error) {
-        if (error.code === 550) { // Directory not found
-          await client.ensureDir(dirPath);
-        } else {
-          throw error;
-        }
+      const exists = await client.exists(dirPath);
+      if (!exists) {
+        await client.mkdir(dirPath, true);
       }
     });
   }
 
   /**
-   * Upload a file to FTP
+   * Upload a file to SFTP
    * @param {Buffer} fileBuffer - The file buffer to upload
    * @param {string} filename - The name of the file
    * @param {string} mimeType - The MIME type of the file
@@ -218,7 +210,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, uniqueFilename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `attachments/${uniqueFilename}`;
@@ -242,7 +234,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, filename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `user/${userId}/${filename}`;
@@ -266,7 +258,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, filename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `user/${userId}/${filename}`;
@@ -290,7 +282,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, filename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `server/${serverId}/${filename}`;
@@ -314,7 +306,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, filename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `server/${serverId}/${filename}`;
@@ -338,7 +330,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, filename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `channel/${channelId}/${filename}`;
@@ -363,7 +355,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, uniqueFilename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `channel/${channelId}/${uniqueFilename}`;
@@ -388,7 +380,7 @@ class FTPAdapter extends BaseAdapter {
     const fullPath = path.join(dirPath, uniqueFilename);
     
     await this.executeWithRetry(async (client) => {
-      await client.uploadFrom(fileBuffer, fullPath);
+      await client.put(fileBuffer, fullPath);
     });
 
     return `group/${groupId}/${uniqueFilename}`;
@@ -402,16 +394,13 @@ class FTPAdapter extends BaseAdapter {
   async getUserFiles(userId) {
     return this.executeWithRetry(async (client) => {
       const dirPath = path.join(this.config.rootPath, 'user', userId);
-      try {
-        await client.cd(dirPath);
-      } catch (error) {
-        if (error.code === 550) { // Directory not found
-          return {};
-        }
-        throw error;
+      const exists = await client.exists(dirPath);
+      
+      if (!exists) {
+        return {};
       }
 
-      const files = await client.list();
+      const files = await client.list(dirPath);
       const result = {};
 
       for (const file of files) {
@@ -434,16 +423,13 @@ class FTPAdapter extends BaseAdapter {
   async getServerFiles(serverId) {
     return this.executeWithRetry(async (client) => {
       const dirPath = path.join(this.config.rootPath, 'server', serverId);
-      try {
-        await client.cd(dirPath);
-      } catch (error) {
-        if (error.code === 550) { // Directory not found
-          return {};
-        }
-        throw error;
+      const exists = await client.exists(dirPath);
+      
+      if (!exists) {
+        return {};
       }
 
-      const files = await client.list();
+      const files = await client.list(dirPath);
       const result = {};
 
       for (const file of files) {
@@ -466,16 +452,13 @@ class FTPAdapter extends BaseAdapter {
   async getChannelFiles(channelId) {
     return this.executeWithRetry(async (client) => {
       const dirPath = path.join(this.config.rootPath, 'channel', channelId);
-      try {
-        await client.cd(dirPath);
-      } catch (error) {
-        if (error.code === 550) { // Directory not found
-          return { attachments: [] };
-        }
-        throw error;
+      const exists = await client.exists(dirPath);
+      
+      if (!exists) {
+        return { attachments: [] };
       }
 
-      const files = await client.list();
+      const files = await client.list(dirPath);
       const result = {
         attachments: []
       };
@@ -500,16 +483,13 @@ class FTPAdapter extends BaseAdapter {
   async getGroupChatFiles(groupId) {
     return this.executeWithRetry(async (client) => {
       const dirPath = path.join(this.config.rootPath, 'group', groupId);
-      try {
-        await client.cd(dirPath);
-      } catch (error) {
-        if (error.code === 550) { // Directory not found
-          return { attachments: [] };
-        }
-        throw error;
+      const exists = await client.exists(dirPath);
+      
+      if (!exists) {
+        return { attachments: [] };
       }
 
-      const files = await client.list();
+      const files = await client.list(dirPath);
       const result = {
         attachments: []
       };
@@ -525,7 +505,7 @@ class FTPAdapter extends BaseAdapter {
   }
 
   /**
-   * Delete a file from FTP
+   * Delete a file from SFTP
    * @param {string} filePath - The path of the file to delete
    * @returns {Promise<boolean>} Whether the deletion was successful
    */
@@ -533,28 +513,26 @@ class FTPAdapter extends BaseAdapter {
     try {
       await this.executeWithRetry(async (client) => {
         const fullPath = path.join(this.config.rootPath, filePath);
-        await client.remove(fullPath);
+        await client.delete(fullPath);
       });
       return true;
     } catch (error) {
-      console.error('Error deleting file from FTP:', error);
+      console.error('Error deleting file from SFTP:', error);
       return false;
     }
   }
 
   /**
-   * Get a file from FTP
+   * Get a file from SFTP
    * @param {string} filePath - The path of the file to retrieve
    * @returns {Promise<Buffer>} The file buffer
    */
   async get(filePath) {
     return this.executeWithRetry(async (client) => {
       const fullPath = path.join(this.config.rootPath, filePath);
-      const chunks = [];
-      await client.downloadTo(chunks, fullPath);
-      return Buffer.concat(chunks);
+      return client.get(fullPath);
     });
   }
 }
 
-export default FTPAdapter;
+export default SFTPAdapter;

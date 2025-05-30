@@ -16,3 +16,7 @@ client/dist/
 .cursor/rules/discordclone.mdc
 mongo_data/
 zincsearch_data/
+avscanner/uploads/
+avscanner/uploads/*
+avscanner/.env
+.cursorrules

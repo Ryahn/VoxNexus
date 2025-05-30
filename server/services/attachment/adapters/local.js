@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import BaseAdapter from './base.js';
-import { utility } from '../../libs/utils.js';
+import { utility } from '../../../libs/utils.js';
 
 /**
  * Local filesystem storage adapter

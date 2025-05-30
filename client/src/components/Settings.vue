@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, defineEmits } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { 
@@ -179,9 +179,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 // Define component emits
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+defineEmits(['close'])
 
 // Register Font Awesome icons
 library.add(faUser, faShieldAlt, faCog, faTimes)

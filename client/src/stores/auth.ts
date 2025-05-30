@@ -30,12 +30,17 @@ export const useAuthStore = defineStore('auth', {
 
     async register(username: string, email: string, password: string, confirmPassword: string): Promise<void> {
       try {
+        console.log('[AUTH_STORE] Starting registration', { username, email })
         const { user, token, refreshToken, expiresIn } = await authService.register(username, email, password, confirmPassword)
+        console.log('[AUTH_STORE] Registration API call successful', { user, token: token ? 'present' : 'missing' })
         this.setAuth(user, token, refreshToken, expiresIn)
         websocketService.connect(token)
+        console.log('[AUTH_STORE] Registration completed successfully')
       } catch (err: any) {
-        // Propagate backend error message
-        throw err?.response?.data?.error || err?.message || 'Registration failed'
+        console.error('[AUTH_STORE] Registration error:', err)
+        // Handle both ApiError (from our client) and axios errors
+        const errorMessage = err?.message || err?.response?.data?.error || 'Registration failed'
+        throw new Error(errorMessage)
       }
     },
 
