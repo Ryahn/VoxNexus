@@ -58,6 +58,7 @@
 				<button
 					@click=";[(muted = !muted), (deafen = false)]"
 					class="w-4/12 h-8 rounded-md hover:bg-gray-800 focus:outline-none"
+					tabindex="0" role="button" aria-label="Toggle mute" @keyup.enter="muted = !muted; deafen = false" @keyup.space="muted = !muted; deafen = false"
 				>
 					<div class="flex items-center justify-center w-8 h-8">
 						<svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24">
@@ -107,8 +108,9 @@
 					</div>
 				</button>
 				<button
-					@click=";[(deafen = !deafen), , (muted = true)]"
+					@click=";[(deafen = !deafen), (muted = true)]"
 					class="w-4/12 h-8 rounded-md hover:bg-gray-800 focus:outline-none"
+					tabindex="0" role="button" aria-label="Toggle deafen" @keyup.enter="deafen = !deafen; muted = true" @keyup.space="deafen = !deafen; muted = true"
 				>
 					<div class="flex items-center justify-center w-8 h-8">
 						<svg

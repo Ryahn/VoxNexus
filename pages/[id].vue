@@ -2,102 +2,49 @@
 	<div
 		class="relative flex w-screen h-screen overflow-hidden bg-black select-none"
 	>
-		<div class="flex">
-			<ServerSidebar>
-				<template v-slot:createServerButton>
-					<CreateServerButton @click="creatingServer = true" />
-				</template>
-
-				<template v-slot:exploreButton>
-					<ExploreButton />
-				</template>
-
-				<template v-slot:downloadButton>
-					<DownloadButton />
-				</template>
-			</ServerSidebar>
-
-			<!--Server channels-->
-			<div class="flex flex-col flex-1 w-60 bg-nightgray">
-				<div class="w-full h-12">
-					<ServerHeader
-						:server="currentServer"
-					/>
+		<!-- Hamburger for mobile -->
+		<button
+			class="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-900 text-white shadow-lg lg:hidden"
+			@click="sidebarOpen = true"
+			aria-label="Open sidebar"
+		>
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+			</svg>
+		</button>
+		<!-- Sidebar overlay for mobile -->
+		<transition name="fade">
+			<div
+				v-if="sidebarOpen"
+				class="fixed inset-0 z-40 bg-black bg-opacity-60 lg:hidden"
+				@click="sidebarOpen = false"
+				aria-label="Close sidebar overlay"
+			></div>
+		</transition>
+		<aside
+			:class="[
+				'fixed z-50 top-0 left-0 h-full w-64 bg-nightgray shadow-lg transform transition-transform duration-200 lg:static lg:translate-x-0',
+				sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+				'lg:relative lg:flex'
+			]"
+			tabindex="-1"
+			aria-label="Sidebar"
+		>
+			<div class="flex flex-col h-full">
+				<div class="flex items-center justify-between h-16 px-4 lg:hidden">
+					<span class="text-lg font-bold text-white">Channels</span>
+					<button @click="sidebarOpen = false" aria-label="Close sidebar" class="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
 				</div>
-
-				<div
-					class="flex flex-col flex-1 h-auto pb-6 overflow-y-auto smallScroleBar w-60 bg-nightgray"
-				>
-					<div class="pr-1">
-						<div class="h-4"></div>
-						<div class="flex flex-col w-full">
-							<div
-								v-for="channel in currentServer?.channels || []"
-								:key="channel.id"
-							>
-								<ChannelCard :channel="channel" @click="selectChannel(channel.id)" />
-							</div>
-						</div>
-
-						<div
-							draggable="true"
-							v-for="(category, i) in servers[parseInt(params.id as string)]
-								.categories"
-							:key="i"
-							class="flex flex-col w-full"
-						>
-							<div class="w-full pt-4">
-								<button
-									@mouseover="gategoryBtnHover = true"
-									@mouseleave="gategoryBtnHover = false"
-									class="flex items-center h-6 text-gray-600 rounded-lg btn w-58"
-								>
-									<div class="flex items-center justify-center w-4 h-4">
-										<svg
-											:class="{ '-rotate-90': gategoryBtnHover }"
-											class="w-2 h-2 duration-300 transform"
-											viewBox="0 0 24 24"
-											fill="none"
-											xmlns="http://www.w3.org/2000/svg"
-										>
-											<path
-												d="M19 9L12 16L5 9"
-												stroke="currentColor"
-												stroke-width="3"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											/>
-										</svg>
-									</div>
-									<div class="text-xs uppercase">{{ category.name }}</div>
-									<div class="w-6 h-6 ml-auto">
-										<svg class="" aria-hidden="false" width="18" height="18">
-											<path
-												fill="#a0aec0"
-												d="M15 10h-5v5H8v-5H3V8h5V3h2v5h5z"
-											/>
-										</svg>
-									</div>
-								</button>
-								<div class="flex flex-col w-full">
-									<div v-for="(channel, j) in category.channels" :key="j">
-										<ChannelCard :channel="channel" />
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- <div class="bottom-0 w-full h-13">
-					<ServerFooter :profile="users[0]" />
-				</div> -->
+				<ServerSidebar class="flex-1" />
 			</div>
-		</div>
-
-		<!--Main section-->
+		</aside>
+		<!-- Main content -->
 		<div
-			class="flex flex-col flex-1 min-w-0 overflow-hidden bg-green-400 mainsection"
+			class="flex flex-col flex-1 min-w-0 overflow-hidden bg-green-400 mainsection lg:ml-64"
 		>
 			<!--Main section nav, sidebar-->
 
@@ -271,7 +218,7 @@
 						class="relative flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden font-sans text-lg break-normal bg-nightgraylighter"
 					>
 						<div id="chatspace" class="flex-1 pb-5 overflow-auto">
-							<div class="flex flex-col flex-1">
+							<div class="flex flex-col flex-1 px-2 sm:px-4 md:px-8">
 								<div v-for="(msg, i) in chatMessages" :key="i" class="mb-2">
 									<div class="flex items-center space-x-2">
 										<span class="font-bold text-green-400">{{ msg.username }}</span>
@@ -300,6 +247,12 @@
 													@click="handleReact(msg, reaction.emoji)"
 													@mouseenter="(e) => showTooltip(e, reaction)"
 													@mouseleave="hideTooltip"
+													@keyup.enter="handleReact(msg, reaction.emoji)"
+													@keyup.space="handleReact(msg, reaction.emoji)"
+													tabindex="0"
+													role="button"
+													:aria-label="`React with ${reaction.emoji}, ${reaction.userIds.length} users`"
+													:aria-pressed="reaction.userIds.includes(userStore.user.id)"
 												>
 													{{ reaction.emoji }} {{ reaction.userIds.length }}
 												</span>
@@ -308,18 +261,27 @@
 													v-if="tooltipReaction && tooltipUsers.length && msg.reactions && msg.reactions.some(r => r.emoji === tooltipReaction)"
 													:style="{ position: 'fixed', left: tooltipX + 'px', top: (tooltipY + 20) + 'px', zIndex: 1000 }"
 													class="px-3 py-2 rounded bg-gray-900 text-gray-100 text-xs shadow-lg border border-gray-700 pointer-events-none animate-fade-in"
+													aria-live="polite"
 												>
 													<span v-for="(user, idx) in tooltipUsers" :key="user">
 														{{ user }}<span v-if="idx < tooltipUsers.length - 1">, </span>
 													</span>
 													<span v-if="tooltipUsers.length === 0">No reactions</span>
 												</div>
-												<button @click="showEmojiPicker = msg._id" class="ml-1 text-yellow-400 hover:text-yellow-300">😊</button>
-												<div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1">
-													<button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" class="text-lg">👍</button>
-													<button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" class="text-lg">😂</button>
-													<button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" class="text-lg">❤️</button>
-													<button @click="showEmojiPicker = null" class="ml-2 text-gray-400">×</button>
+												<button
+													@click="showEmojiPicker = msg._id"
+													@keyup.enter="showEmojiPicker = msg._id"
+													@keyup.space="showEmojiPicker = msg._id"
+													tabindex="0"
+													role="button"
+													aria-label="Add reaction"
+													class="ml-1 text-yellow-400 hover:text-yellow-300"
+												>😊</button>
+												<div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1" tabindex="0" @keydown.esc="showEmojiPicker = null">
+													<button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 👍" class="text-lg">👍</button>
+													<button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 😂" class="text-lg">😂</button>
+													<button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with ❤️" class="text-lg">❤️</button>
+													<button @click="showEmojiPicker = null" @keyup.enter="showEmojiPicker = null" @keyup.space="showEmojiPicker = null" tabindex="0" role="button" aria-label="Close emoji picker" class="ml-2 text-gray-400">×</button>
 												</div>
 											</div>
 										</div>
@@ -333,7 +295,7 @@
 						</div>
 
 						<!--Input form-->
-						<form @submit.prevent="handleSend" class="flex items-center p-4 bg-nightgraylighter">
+						<form @submit.prevent="handleSend" class="flex items-center p-2 sm:p-4 bg-nightgraylighter sticky bottom-0 z-20">
 							<input v-model="input" class="flex-1 p-2 rounded bg-gray-700 text-white mr-2" placeholder="Type a message..." />
 							<button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Send</button>
 						</form>
@@ -342,8 +304,7 @@
 
 				<!--show members section-->
 				<div
-					:class="{ 'w-60': showMembers, 'w-0': !showMembers }"
-					class="h-auto"
+					:class="[showMembers ? 'w-60' : 'w-0', 'h-auto hidden xl:block']"
 				>
 					<MembersBar :users="users" />
 				</div>
@@ -406,6 +367,8 @@ const tooltipUsers = ref<string[]>([])
 
 // Animation state for reactions
 const animatedReactions = ref<{ [key: string]: boolean }>({})
+
+const sidebarOpen = ref(false)
 
 const onClickOutsideServerComponent = () => {
 	creatingServer.value = false
@@ -524,5 +487,10 @@ watch(
 }
 .animate-fade-in {
 	animation: fade-in 0.2s ease;
+}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+@media (max-width: 1024px) {
+	.mainsection { margin-left: 0 !important; }
 }
 </style>

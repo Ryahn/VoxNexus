@@ -64,6 +64,11 @@
 					<button
 						@click="$emit('gif', true)"
 						class="flex items-center justify-center btn"
+						tabindex="0"
+						role="button"
+						aria-label="Open GIF picker"
+						@keyup.enter="$emit('gif', true)"
+						@keyup.space="$emit('gif', true)"
 					>
 						<svg width="24" height="24" class="icon-3D60ES" aria-hidden="false">
 							<path
@@ -74,10 +79,17 @@
 					</button>
 				</div>
 				<div class="flex items-center justify-center w-8 h-8">
-					<button class="flex items-center justify-center btn">
+					<button
+						@click="$emit('emoji', true)"
+						class="flex items-center justify-center btn"
+						tabindex="0"
+						role="button"
+						aria-label="Open emoji picker"
+						@keyup.enter="$emit('emoji', true)"
+						@keyup.space="$emit('emoji', true)"
+					>
 						<div>
 							<div
-								@click="$emit('emoji', true)"
 								class="transform scale-125 hover:scale-150"
 							>
 								{{ emoji }}

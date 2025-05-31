@@ -50,3 +50,34 @@
 	background: rgb(169, 159, 159);
 	border-radius: 10px;
 }
+
+:root {
+	--color-bg-main: #16161a;
+	--color-bg-secondary: #20232a;
+	--color-bg-tertiary: #262a32;
+	--color-bg-input: #23272f;
+	--color-bg-overlay: rgba(24,24,27,0.98);
+	--color-border: #36393f;
+	--color-text-main: #fafafa;
+	--color-text-secondary: #c7c7d1;
+	--color-text-muted: #7c7c8a;
+	--color-accent: #7289da;
+	--color-accent-hover: #5b6ee1;
+	--color-success: #43b581;
+	--color-danger: #ed4245;
+}
+[data-theme='dark'] {
+	--color-bg-main: #16161a;
+	--color-bg-secondary: #20232a;
+	--color-bg-tertiary: #262a32;
+	--color-bg-input: #23272f;
+	--color-bg-overlay: rgba(24,24,27,0.98);
+	--color-border: #36393f;
+	--color-text-main: #fafafa;
+	--color-text-secondary: #c7c7d1;
+	--color-text-muted: #7c7c8a;
+	--color-accent: #7289da;
+	--color-accent-hover: #5b6ee1;
+	--color-success: #43b581;
+	--color-danger: #ed4245;
+}

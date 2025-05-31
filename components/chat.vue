@@ -1,17 +1,17 @@
 <template>
-	<div class="relative flex flex-1 min-w-0 pr-12 mt-4 hover:bg-nightgray group">
+	<div class="relative flex flex-1 min-w-0 pr-2 sm:pr-12 mt-2 sm:mt-4 hover:bg-[var(--color-bg-secondary)] group py-2 sm:py-0">
 		<div
-			class="flex items-center justify-center flex-shrink-0 w-12 h-12 mx-3 select-none"
+			class="flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 mx-2 sm:mx-3 select-none"
 		>
-			<div class="w-10 h-10 overflow-hidden rounded-full">
+			<div class="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-full">
 				<img :src="chat.author.avatarUrl || 'https://ui-avatars.com/api/?name=' + chat.author.userName" alt="" srcset="" />
 			</div>
 		</div>
 		<div class="flex-shrink inline-block w-full h-auto min-w-0">
-			<div class="w-full h-8">
-				<span class="text-white">{{ chat.author.userName }}</span>
-				<span class="text-xs text-gray-600">{{ chat.date }}</span>
-				<span v-if="chat.edited" class="text-xs text-gray-400 ml-2">(edited)</span>
+			<div class="w-full h-8 flex items-center">
+				<span class="text-[var(--color-text-main)] text-sm sm:text-base">{{ chat.author.userName }}</span>
+				<span class="text-xs text-[var(--color-text-muted)] ml-2">{{ chat.date }}</span>
+				<span v-if="chat.edited" class="text-xs text-[var(--color-text-secondary)] ml-2">(edited)</span>
 			</div>
 			<div
 				:id="id"
@@ -19,10 +19,10 @@
 				@keydown.esc="onCancelEditing"
 				:contenteditable="editing"
 				:class="{
-					'bg-grayinput pr-4 pl-2 messageinput rounded-lg overflow-x-hidden overflow-y-auto':
+					'bg-[var(--color-bg-input)] pr-4 pl-2 messageinput rounded-lg overflow-x-hidden overflow-y-auto':
 						editing,
 				}"
-				class="text-base break-all outline-none text-chattext md:break-words"
+				class="text-base break-all outline-none text-[var(--color-text-main)] md:break-words"
 			>
 				<!--message-->
 				{{ compiledMarkdown }}
@@ -30,33 +30,48 @@
 
 			<!-- Attachments -->
 			<div v-if="chat.attachments && chat.attachments.length" class="mt-2 flex flex-wrap gap-2">
-				<div v-for="(file, idx) in chat.attachments" :key="idx" class="">
-					<img v-if="isImage(file)" :src="file" class="max-h-32 rounded-lg border border-gray-700" />
-					<a v-else :href="file" target="_blank" class="text-blue-400 underline">Attachment</a>
+				<div v-for="(file, idx) in chat.attachments" :key="idx" class="w-full sm:w-auto">
+					<img v-if="isImage(file)" :src="file" class="max-h-32 w-full sm:w-auto rounded-lg border border-[var(--color-border)] object-contain" />
+					<a v-else :href="file" target="_blank" class="text-[var(--color-accent)] underline break-all">Attachment</a>
 				</div>
 			</div>
 
 			<!-- Reactions Bar -->
-			<div v-if="chat.reactions && chat.reactions.length" class="flex gap-1 mt-2">
+			<div v-if="chat.reactions && chat.reactions.length" class="flex gap-1 mt-2 flex-wrap">
 				<button
 					v-for="reaction in chat.reactions"
 					:key="reaction.emoji"
 					@click="handleReaction(reaction.emoji)"
 					@mouseenter="(e) => showTooltip(e, reaction)"
 					@mouseleave="hideTooltip"
-					:class="{'bg-blue-600 text-white': hasReacted(reaction), 'scale-110 transition-transform duration-200': animatedReactions[reaction.emoji]}"
-					class="flex items-center px-2 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-sm relative"
+					@keyup.enter="handleReaction(reaction.emoji)"
+					@keyup.space="handleReaction(reaction.emoji)"
+					:tabindex="0"
+					role="button"
+					:aria-label="`React with ${reaction.emoji}, ${reaction.userIds.length} users`"
+					:aria-pressed="hasReacted(reaction)"
+					:class="{'bg-[var(--color-accent)] text-white': hasReacted(reaction), 'scale-110 transition-transform duration-200': animatedReactions[reaction.emoji]}"
+					class="flex items-center px-2 py-1 rounded-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-sm relative min-w-[40px] min-h-[32px] border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-accent)]"
 				>
-					<span>{{ reaction.emoji }}</span>
+					<span class="text-lg">{{ reaction.emoji }}</span>
 					<span class="ml-1">{{ reaction.userIds.length }}</span>
 				</button>
 				<!-- Add Reaction Button (UI only) -->
-				<button @click="showEmojiPicker = !showEmojiPicker" class="ml-1 px-2 py-1 rounded-full bg-gray-700 hover:bg-gray-600 text-sm">+</button>
+				<button
+					@click="showEmojiPicker = !showEmojiPicker"
+					@keyup.enter="showEmojiPicker = !showEmojiPicker"
+					@keyup.space="showEmojiPicker = !showEmojiPicker"
+					tabindex="0"
+					role="button"
+					aria-label="Add reaction"
+					class="ml-1 px-2 py-1 rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] text-sm min-w-[40px] min-h-[32px] border border-[var(--color-border)] focus:ring-2 focus:ring-[var(--color-accent)]"
+				>+</button>
 				<!-- Tooltip -->
 				<div
 					v-if="tooltipReaction && tooltipUsers.length"
 					:style="{ position: 'fixed', left: tooltipX + 'px', top: (tooltipY + 20) + 'px', zIndex: 1000 }"
-					class="px-3 py-2 rounded bg-gray-900 text-gray-100 text-xs shadow-lg border border-gray-700 pointer-events-none animate-fade-in"
+					class="px-3 py-2 rounded bg-[var(--color-bg-overlay)] text-[var(--color-text-main)] text-xs shadow-lg border border-[var(--color-border)] pointer-events-none animate-fade-in"
+					aria-live="polite"
 				>
 					<span v-for="(user, idx) in tooltipUsers" :key="user">
 						{{ user }}<span v-if="idx < tooltipUsers.length - 1">, </span>
@@ -65,37 +80,43 @@
 				</div>
 			</div>
 			<!-- Emoji Picker (placeholder) -->
-			<div v-if="showEmojiPicker" class="absolute z-10 mt-2 bg-gray-900 border border-gray-700 rounded shadow-lg p-2">
-				<div class="flex flex-wrap gap-1">
-					<button v-for="emoji in emojiList" :key="emoji" @click="addReaction(emoji)" class="text-xl hover:bg-gray-700 rounded p-1">{{ emoji }}</button>
-				</div>
+			<div v-if="showEmojiPicker" class="absolute z-10 mt-2 bg-[var(--color-bg-overlay)] border border-[var(--color-border)] rounded shadow-lg p-2 flex flex-wrap gap-1" tabindex="0" @keydown.esc="showEmojiPicker = false">
+				<button
+					v-for="emoji in emojiList"
+					:key="emoji"
+					@click="addReaction(emoji)"
+					@keyup.enter="addReaction(emoji)"
+					@keyup.space="addReaction(emoji)"
+					tabindex="0"
+					role="button"
+					:aria-label="`React with ${emoji}`"
+					class="text-xl hover:bg-[var(--color-bg-secondary)] rounded p-1 min-w-[40px] min-h-[40px] focus:ring-2 focus:ring-[var(--color-accent)]"
+				>{{ emoji }}</button>
 			</div>
 
-			<div v-if="editing" class="text-sm text-gray-600">
+			<div v-if="editing" class="text-sm text-[var(--color-text-muted)]">
 				escape to
-				<a @click="onCancelEditing" role="button" class="text-indigo-600"
-					>cancel</a
-				>
+				<a @click="onCancelEditing" role="button" class="text-[var(--color-accent)]">cancel</a>
 				• enter to
-				<a @click="onSubmit" role="button" class="text-indigo-600">save</a>
+				<a @click="onSubmit" role="button" class="text-[var(--color-accent)]">save</a>
 			</div>
 		</div>
 
 		<div class="absolute top-0 right-0 invisible group-hover:visible">
-			<div class="flex items-center text-gray-400 rounded-md bg-nightgray">
+			<div class="flex items-center text-[var(--color-text-secondary)] rounded-md bg-[var(--color-bg-secondary)] border border-[var(--color-border)]">
 				<!-- File upload button -->
-				<button @click="triggerFileInput" class="flex items-center justify-center w-8 h-8 btn hover:bg-nightgraylighter">
+				<button @click="triggerFileInput" class="flex items-center justify-center w-8 h-8 btn hover:bg-[var(--color-bg-tertiary)]">
 					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 				</button>
 				<input ref="fileInput" type="file" class="hidden" @change="onFileChange" />
 				<!-- Edit button -->
-				<button @click="onEditing" class="flex items-center justify-center w-8 h-8 btn hover:bg-nightgraylighter">
+				<button @click="onEditing" class="flex items-center justify-center w-8 h-8 btn hover:bg-[var(--color-bg-tertiary)]">
 					<svg class="" aria-hidden="false" width="24" height="24" viewBox="0 0 24 24">
 						<path fill-rule="evenodd" clip-rule="evenodd" d="M19.293 9.83l.648-.647a3.628 3.628 0 000-5.124 3.628 3.628 0 00-5.124 0l-.647.648 5.123 5.123zm-6.397-3.853L5.185 13.69l5.124 5.122 7.711-7.714-5.124-5.122zM4.12 20.97l4.64-1.159-4.572-4.572-1.16 4.64a.9.9 0 001.092 1.091z" fill="currentColor"/>
 					</svg>
 				</button>
 				<!-- Delete button -->
-				<button @click="onDelete" class="flex items-center justify-center w-8 h-8 btn hover:bg-red-700">
+				<button @click="onDelete" class="flex items-center justify-center w-8 h-8 btn hover:bg-[var(--color-danger)]">
 					<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
 				</button>
 			</div>
@@ -335,5 +356,10 @@ async function onDelete() {
 }
 .animate-fade-in {
 	animation: fade-in 0.2s ease;
+}
+@media (max-width: 640px) {
+	.rounded-lg { border-radius: 0 !important; }
+	.pr-12 { padding-right: 0 !important; }
+	.mt-4 { margin-top: 0.5rem !important; }
 }
 </style>

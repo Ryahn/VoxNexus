@@ -1,18 +1,18 @@
 <template>
-  <div class="flex flex-col items-center min-h-screen bg-nightgray p-8">
-    <div class="w-full max-w-xl bg-gray-800 rounded shadow-md flex flex-col h-[80vh]">
-      <div class="p-4 border-b border-gray-700 flex items-center">
+  <div class="flex flex-col items-center min-h-screen bg-[var(--color-bg-main)] p-2 sm:p-8">
+    <div class="w-full max-w-xl bg-[var(--color-bg-secondary)] rounded shadow-md flex flex-col h-[100dvh] sm:h-[80vh] border border-[var(--color-border)]">
+      <div class="p-4 border-b border-[var(--color-border)] flex items-center">
         <img :src="otherUser.avatarUrl || 'https://ui-avatars.com/api/?name=' + otherUser.username" class="w-10 h-10 rounded-full mr-3 object-cover" alt="Avatar" />
         <div>
-          <div class="text-white font-semibold">{{ otherUser.username }}</div>
-          <div class="text-xs text-gray-400">{{ otherUser.status }}</div>
+          <div class="text-[var(--color-text-main)] font-semibold text-base sm:text-lg">{{ otherUser.username }}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{{ otherUser.status }}</div>
         </div>
       </div>
-      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+      <div class="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
         <div v-for="(msg, i) in messages" :key="i" :class="msg.from === myId ? 'text-right' : 'text-left'">
-          <div class="inline-block max-w-[70%] p-2 rounded-lg" :class="msg.from === myId ? 'bg-green-600 text-white' : 'bg-gray-700 text-white'">
-            <div class="text-xs text-gray-300 mb-1">{{ msg.from === myId ? 'You' : otherUser.username }}</div>
-            <div>{{ msg.content }}</div>
+          <div class="inline-block max-w-full sm:max-w-[70%] p-2 rounded-lg" :class="msg.from === myId ? 'bg-[var(--color-success)] text-white' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] border border-[var(--color-border)]'">
+            <div class="text-xs text-[var(--color-text-secondary)] mb-1">{{ msg.from === myId ? 'You' : otherUser.username }}</div>
+            <div class="break-words">{{ msg.content }}</div>
             <div class="flex items-center space-x-1 mt-1">
               <span
                 v-for="reaction in msg.reactions || []"
@@ -41,14 +41,14 @@
                 <span v-if="tooltipUsers.length === 0">No reactions</span>
               </div>
             </div>
-            <div class="text-xs text-gray-400 mt-1">{{ msg.createdAt }}</div>
+            <div class="text-xs text-[var(--color-text-muted)] mt-1">{{ msg.createdAt }}</div>
           </div>
         </div>
-        <div v-if="isTyping" class="text-xs text-gray-400 mt-2">{{ otherUser.username }} is typing...</div>
+        <div v-if="isTyping" class="text-xs text-[var(--color-text-muted)] mt-2">{{ otherUser.username }} is typing...</div>
       </div>
-      <form @submit.prevent="handleSend" class="flex items-center p-4 border-t border-gray-700">
-        <input v-model="input" @input="handleTyping" @blur="stopTyping" class="flex-1 p-2 rounded bg-gray-700 text-white mr-2" placeholder="Type a message..." />
-        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Send</button>
+      <form @submit.prevent="handleSend" class="flex items-center p-2 sm:p-4 border-t border-[var(--color-border)] sticky bottom-0 bg-[var(--color-bg-secondary)] z-20">
+        <input v-model="input" @input="handleTyping" @blur="stopTyping" class="flex-1 p-3 rounded bg-[var(--color-bg-input)] text-[var(--color-text-main)] mr-2 text-base border border-[var(--color-border)]" placeholder="Type a message..." />
+        <button type="submit" class="px-4 py-2 bg-[var(--color-success)] text-white rounded hover:bg-green-700 text-base">Send</button>
       </form>
     </div>
   </div>
@@ -132,5 +132,8 @@ function handleTyping() {
 }
 .animate-fade-in {
   animation: fade-in 0.2s ease;
+}
+@media (max-width: 640px) {
+  .rounded { border-radius: 0 !important; }
 }
 </style> 

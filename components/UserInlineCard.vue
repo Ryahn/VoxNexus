@@ -1,5 +1,5 @@
 <template>
-	<button class="w-56 h-10 btn">
+	<button class="w-56 h-10 btn" tabindex="0" role="button" :aria-label="`View user ${profile.userName}`" @keyup.enter="$emit('click')" @keyup.space="$emit('click')">
 		<div
 			class="flex items-center w-56 h-10 px-2 py-1 rounded-md text-graydiscord hover:text-gray-200 hover:bg-gray-800"
 		>
