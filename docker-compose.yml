@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  server:
+    container_name: voxnexus-server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+      target: ${NODE_ENV:-development}  # Will be 'dev' or 'prod'
+    ports:
+      - "3555:3000"  # Expose Nuxt server on 3000
+    depends_on:
+      - mongo
+      - turn
+      - redis
+      - zincsearch
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/voxnexus}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+      - PORT=${PORT:-3000}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3555}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - MAILPACE_API_KEY=${MAILPACE_API_KEY}
+      - MAIL_TYPE=${MAIL_TYPE:-API}
+      - STMP_USER=${STMP_USER}
+      - STMP_PASSWORD=${STMP_PASSWORD}
+      - STMP_HOST=${STMP_HOST}
+      - STMP_PORT=${STMP_PORT}
+      - STMP_SECURE=${STMP_SECURE:-true}
+      - STORAGE=${STORAGE:-local}
+      - LOCAL_MAX_FILE_SIZE=${LOCAL_MAX_FILE_SIZE:-100000000}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - SFTP_HOST=${SFTP_HOST}
+      - SFTP_PORT=${SFTP_PORT:-22}
+      - SFTP_USER=${SFTP_USER}
+      - SFTP_PASSWORD=${SFTP_PASSWORD}
+      - SFTP_PRIVATE_KEY=${SFTP_PRIVATE_KEY}
+      - SFTP_ROOT_PATH=${SFTP_ROOT_PATH}
+      - SFTP_POOL_SIZE=${SFTP_POOL_SIZE:-5}
+      - SFTP_MAX_RETRIES=${SFTP_MAX_RETRIES:-3}
+      - SFTP_RETRY_DELAY=${SFTP_RETRY_DELAY:-1000}
+      - SFTP_CONNECTION_TIMEOUT=${SFTP_CONNECTION_TIMEOUT:-30000}
+      - SFTP_MAX_FILE_SIZE=${SFTP_MAX_FILE_SIZE:-10000000}
+      - FTP_HOST=${FTP_HOST}
+      - FTP_PORT=${FTP_PORT:-21}
+      - FTP_USER=${FTP_USER}
+      - FTP_PASSWORD=${FTP_PASSWORD}
+      - FTP_ROOT_PATH=${FTP_ROOT_PATH}
+      - FTP_SECURE=${FTP_SECURE:-false}
+      - FTP_POOL_SIZE=${FTP_POOL_SIZE:-5}
+      - FTP_MAX_RETRIES=${FTP_MAX_RETRIES:-3}
+      - FTP_RETRY_DELAY=${FTP_RETRY_DELAY:-1000}
+      - FTP_CONNECTION_TIMEOUT=${FTP_CONNECTION_TIMEOUT:-30000}
+      - FTP_MAX_FILE_SIZE=${FTP_MAX_FILE_SIZE:-10000000}
+      - SITE_DOMAIN=voxnexus.test
+      - API_HOST=0.0.0.0
+      - BOT_API_ENABLED=true
+      - ZINC_SEARCH_URL=http://zincsearch:4080
+      - WEBRTC_SIGNALING_PORT=3001
+      - TURN_SERVER=turn:3478
+      - WEBRTC_ICE_SERVERS=[{"urls":["stun:turn:3478","turn:turn:3478"],"username":"${TURN_USERNAME}","credential":"${TURN_PASSWORD}"}]
+    networks:
+      - voxnexus-network
+    volumes:
+      - ./server:/app  # Only for development, remove for prod if desired
+      - /app/node_modules
+
+  turn:
+    container_name: voxnexus-turn
+    image: coturn/coturn:latest
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "5349:5349"
+      - "5349:5349/udp"
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf
+    command: -c /etc/coturn/turnserver.conf
+    networks:
+      - voxnexus-network
+
+  mongo:
+    container_name: voxnexus-mongo
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
+    networks:
+      - voxnexus-network
+
+  zincsearch:
+    container_name: voxnexus-zincsearch
+    image: public.ecr.aws/zinclabs/zincsearch:latest
+    environment:
+        - ZINC_DATA_PATH=/data
+        - ZINC_FIRST_ADMIN_USER=${ZINC_FIRST_ADMIN_USER}
+        - ZINC_FIRST_ADMIN_PASSWORD=${ZINC_FIRST_ADMIN_PASSWORD}
+        - ZINC_PROMETHEUS_ENABLE=${ZINC_PROMETHEUS_ENABLE}
+    ports:
+        - 4080:4080
+    volumes:
+        - ./zincsearch_data:/data
+    networks:
+      - voxnexus-network
+  
+  redis:
+    container_name: voxnexus-redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - voxnexus-network
+
+networks:
+  voxnexus-network:
+    driver: bridge

@@ -1,0 +1,307 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# VoxNexus Discord Clone - Cursor Rules
+# Discord Clone built with Nuxt, Vue.js 3, Node.js, TypeScript, and MongoDB
+
+You are an expert in TypeScript, Node.js, Nuxt, Vue.js 3 Composition API, MongoDB, Express.js, Socket.io, and modern web development best practices.
+
+## Project Context
+This is a Discord clone called VoxNexus with real-time chat functionality, user authentication, and social features.
+
+- **Full-Stack Framework**: Nuxt 3 with Vue 3, Composition API, and TypeScript
+- **Database**: MongoDB with Mongoose ODM (or alternatively PostgreSQL with Prisma/Knex + Objection since you're familiar with that stack)
+- **Real-time**: Nuxt Socket.io module or native WebSocket support
+- **Authentication**: Nuxt Auth module with JWT or session-based auth
+- **Styling**: Tailwind CSS (built-in Nuxt module)
+- **API**: Nuxt server API routes (replaces Express.js backend)
+- **Package Manager**: pnpm
+
+## Project Structure
+```
+voxnexus/
+├── client/          # Vue.js 3 frontend
+├── server/          # Node.js backend
+├── package.json     # Root configuration
+└── start.sh        # Setup script
+```
+
+## Code Style and Structure
+
+### General Principles
+- Write concise, technical TypeScript code with accurate examples
+- Use functional and declarative programming patterns; avoid classes where possible
+- Prefer iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`, `shouldRetry`)
+- Structure files: exported component/function, subcomponents/helpers, types, constants
+- Always use TypeScript for type safety and better developer experience
+
+### Naming Conventions
+- Use lowercase with dashes for directories (e.g., `components/chat-window`, `utils/auth-helpers`)
+- Use PascalCase for Vue components and TypeScript interfaces
+- Use camelCase for variables, functions, and methods
+- Use SCREAMING_SNAKE_CASE for constants and environment variables
+- Prefix event handler functions with "handle" (e.g., `handleMessageSend`, `handleUserJoin`)
+- Prefix boolean variables with "is", "has", "should", "can" (e.g., `isConnected`, `hasPermission`)
+
+### TypeScript Usage
+- Use TypeScript for all code; prefer interfaces over types for object shapes
+- Avoid enums; use const objects or union types instead
+- Use functional programming patterns with proper type annotations
+- Implement strict type checking for database models and API responses
+- Define clear interfaces for Socket.io events and payloads
+- Use generic types for reusable components and utilities
+
+## Frontend (Vue.js 3) Guidelines
+
+### Vue 3 Composition API Best Practices
+- Always use `<script setup>` syntax for components
+- Use `ref()` for primitive reactive state
+- Use `reactive()` for complex objects (sparingly, prefer multiple refs)
+- Implement `computed()` properties for derived state
+- Use `watch()` and `watchEffect()` for side effects
+- Implement lifecycle hooks with `onMounted`, `onUnmounted`, etc.
+- Utilize `provide/inject` for dependency injection when needed
+
+### Component Structure
+```vue
+<script setup lang="ts">
+// Imports
+// Props & Emits interfaces
+// Reactive state
+// Computed properties
+// Methods/functions
+// Lifecycle hooks
+// Watchers
+</script>
+
+<template>
+  <!-- Template with clear, semantic HTML -->
+</template>
+
+<style scoped>
+  /* Component-specific styles using Tailwind utilities */
+</style>
+```
+
+### Vue Component Guidelines
+- Use composition functions (composables) for reusable logic
+- Implement proper props validation with TypeScript interfaces
+- Use emit events for parent-child communication
+- Prefer `v-model` for two-way data binding when appropriate
+- Use `Teleport` for modals and overlays
+- Implement proper error boundaries and loading states
+
+### Frontend Folder Structure
+```
+client/src/
+├── components/
+│   ├── ui/              # Reusable UI components
+│   ├── chat/            # Chat-specific components
+│   ├── auth/            # Authentication components
+│   └── layout/          # Layout components
+├── composables/         # Vue composables
+├── stores/              # Pinia stores
+├── views/               # Page components
+├── router/              # Vue Router configuration
+├── utils/               # Utility functions
+├── types/               # TypeScript type definitions
+├── assets/              # Static assets
+└── styles/              # Global styles
+```
+
+## Backend (Node.js) Guidelines
+
+### Express.js Best Practices
+- Use Express Router for organizing routes
+- Implement proper middleware for authentication, validation, and error handling
+- Use async/await consistently for asynchronous operations
+- Implement proper request validation using libraries like Joi or Zod
+- Follow RESTful API design principles
+- Use proper HTTP status codes and error responses
+
+### Database (MongoDB) Guidelines
+- Use Mongoose for schema definition and validation
+- Implement proper indexes for query optimization
+- Use aggregation pipelines for complex queries
+- Implement proper error handling for database operations
+- Use transactions for operations that affect multiple collections
+- Follow MongoDB naming conventions (camelCase for fields)
+
+### Backend Folder Structure
+```
+server/src/
+├── controllers/         # Route handlers
+├── middleware/          # Express middleware
+├── models/              # Mongoose models
+├── routes/              # Express routes
+├── services/            # Business logic
+├── utils/               # Utility functions
+├── types/               # TypeScript type definitions
+├── config/              # Configuration files
+└── socket/              # Socket.io handlers
+```
+
+### Authentication & Security
+- Use JWT tokens for authentication with proper expiration
+- Implement refresh token mechanism
+- Use bcrypt for password hashing
+- Validate and sanitize all user inputs
+- Implement rate limiting for API endpoints
+- Use CORS properly for cross-origin requests
+- Implement proper session management
+
+## Real-time Communication (Socket.io)
+
+### Socket.io Best Practices
+- Define clear event interfaces for type safety
+- Implement proper room management for channels/servers
+- Use middleware for socket authentication
+- Handle connection/disconnection events properly
+- Implement proper error handling for socket events
+- Use namespaces for organizing different features
+
+### Socket Event Naming
+- Use descriptive, hierarchical event names (e.g., `message:send`, `user:join`, `channel:create`)
+- Implement bidirectional events clearly (client → server, server → client)
+- Use TypeScript interfaces for event payloads
+
+## Styling Guidelines
+
+### Tailwind CSS Best Practices
+- Use Tailwind utility classes exclusively; avoid custom CSS unless absolutely necessary
+- Implement responsive design with Tailwind's responsive utilities
+- Use Tailwind's color palette and spacing system consistently
+- Create custom components for repeated patterns
+- Use CSS variables for theme customization
+- Implement dark mode support using Tailwind's dark mode utilities
+
+### UI/UX Guidelines
+- Follow Discord's design patterns for familiarity
+- Implement proper accessibility features (ARIA labels, keyboard navigation)
+- Use semantic HTML elements
+- Implement proper focus management
+- Ensure proper contrast ratios for text readability
+- Use consistent spacing and typography scales
+
+## Error Handling and Validation
+
+### Frontend Error Handling
+- Implement global error handling for API requests
+- Use toast notifications for user feedback
+- Implement proper loading states and skeleton screens
+- Handle offline scenarios gracefully
+- Validate user inputs on the client side
+
+### Backend Error Handling
+- Implement centralized error handling middleware
+- Use proper error codes and messages
+- Log errors appropriately for debugging
+- Return consistent error response formats
+- Handle database connection errors gracefully
+
+## Performance Optimization
+
+### Frontend Performance
+- Use lazy loading for routes and components
+- Implement virtual scrolling for long message lists
+- Optimize bundle size with proper code splitting
+- Use proper caching strategies for API responses
+- Implement efficient re-rendering with Vue's reactivity system
+
+### Backend Performance
+- Use database indexes for frequently queried fields
+- Implement proper caching strategies (Redis if needed)
+- Use compression middleware for API responses
+- Implement proper connection pooling for database connections
+- Use clustering for CPU-intensive operations
+
+## Testing Guidelines
+
+### Frontend Testing
+- Write unit tests for composables and utility functions
+- Test components with Vue Test Utils
+- Implement integration tests for critical user flows
+- Test Socket.io connections and events
+
+### Backend Testing
+- Write unit tests for services and utilities
+- Test API endpoints with proper mocking
+- Test database operations with test databases
+- Test Socket.io events and room management
+
+## Git Workflow and Commit Conventions
+
+### Conventional Commits
+Use the Conventional Commit format for all commit messages:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Commit Types
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools
+- `ci`: Changes to CI configuration files and scripts
+
+### Commit Examples
+```bash
+feat(chat): add real-time message notifications
+fix(auth): resolve JWT token expiration handling
+docs(api): update Socket.io event documentation
+refactor(components): extract reusable chat message component
+```
+
+### Branch Naming
+- Use descriptive branch names: `feature/chat-notifications`, `fix/auth-token-refresh`
+- Use lowercase with hyphens
+- Include the issue number if applicable: `feature/123-user-profiles`
+
+## Key Conventions
+
+### Development Workflow
+1. **Planning**: Start with pseudocode for complex features
+2. **Implementation**: Write type-safe, tested code
+3. **Review**: Ensure code follows these guidelines
+4. **Documentation**: Update relevant documentation
+
+### Code Quality
+- Run TypeScript compiler with strict mode
+- Use ESLint and Prettier for code formatting
+- Implement pre-commit hooks for code quality
+- Write self-documenting code with clear variable names
+- Add comments for complex business logic only
+
+### Environment Configuration
+- Use environment variables for configuration
+- Implement different configs for development, staging, and production
+- Keep sensitive data in environment variables, never in code
+- Use TypeScript for environment variable validation
+
+## Response Guidelines
+- Focus on Discord-like features: channels, servers, direct messages, user presence
+- Implement real-time functionality where appropriate
+- Ensure responsive design for mobile and desktop
+- Follow modern security practices
+- Prioritize user experience and performance
+- Maintain clean, readable, and maintainable code
+
+When asked to implement features, always:
+1. Consider the real-time nature of the application
+2. Implement proper error handling and loading states
+3. Use TypeScript for type safety
+4. Follow the established project structure
+5. Write code that integrates well with existing components
+6. Consider scalability and performance implications
