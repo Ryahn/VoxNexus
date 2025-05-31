@@ -12,8 +12,9 @@ export const apiLimiter = rateLimit({
     }),
     windowMs: 60 * 1000, // 1 minute
     max: 100, // 100 requests per minute
-    message: {
-        error: 'Too many requests, please try again later.'
+    message: (req, res) => {
+        console.warn(`[RATE LIMIT] API limiter triggered for IP: ${req.ip} at ${new Date().toISOString()}`);
+        return { error: 'Too many requests, please try again later.' };
     },
     standardHeaders: true,
     legacyHeaders: false
@@ -27,8 +28,9 @@ export const authLimiter = rateLimit({
     }),
     windowMs: 60 * 1000, // 1 minute
     max: 5, // 5 attempts per minute
-    message: {
-        error: 'Too many authentication attempts, please try again later.'
+    message: (req, res) => {
+        console.warn(`[RATE LIMIT] Auth limiter triggered for IP: ${req.ip} at ${new Date().toISOString()}`);
+        return { error: 'Too many authentication attempts, please try again later.' };
     },
     standardHeaders: true,
     legacyHeaders: false

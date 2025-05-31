@@ -32,11 +32,6 @@ RUN yarn add @kyvg/vue3-notification
 COPY client/src ./src
 COPY client/public ./public
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV VUE_APP_API_URL=/api
-ENV VUE_APP_WS_URL=/ws
-
 # Build the application
 RUN yarn build
 
@@ -48,7 +43,7 @@ WORKDIR /usr/share/nginx/html
 COPY --from=build-stage /app/dist .
 
 # Copy nginx configuration
-COPY client/nginx.conf /etc/nginx/conf.d/default.conf
+COPY webserver-configs/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80

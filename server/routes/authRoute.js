@@ -38,15 +38,15 @@ const upload = multer({
 });
 
 // Public routes
-router.post('/register', register);
-router.post('/login', login);
-router.post('/refresh-token', refreshToken);
-router.get('/csrf-token', getCsrfToken);
+router.post('/register', (req, res, next) => { console.log('[ROUTE] /api/auth/register hit'); next(); }, register);
+router.post('/login', (req, res, next) => { console.log('[ROUTE] /api/auth/login hit'); next(); }, login);
+router.post('/refresh-token', (req, res, next) => { console.log('[ROUTE] /api/auth/refresh-token hit'); next(); }, refreshToken);
+router.get('/csrf-token', (req, res, next) => { console.log('[ROUTE] /api/auth/csrf-token hit'); next(); }, getCsrfToken);
 
 // Password reset routes with rate limiting
-router.post('/forgot-password', passwordResetLimiter, forgotPassword);
-router.post('/verify-password-reset-token', passwordResetLimiter, verifyPasswordResetToken);
-router.post('/reset-password', passwordResetLimiter, resetPassword);
+router.post('/forgot-password', (req, res, next) => { console.log('[ROUTE] /api/auth/forgot-password hit'); next(); }, passwordResetLimiter, forgotPassword);
+router.post('/verify-password-reset-token', (req, res, next) => { console.log('[ROUTE] /api/auth/verify-password-reset-token hit'); next(); }, passwordResetLimiter, verifyPasswordResetToken);
+router.post('/reset-password', (req, res, next) => { console.log('[ROUTE] /api/auth/reset-password hit'); next(); }, passwordResetLimiter, resetPassword);
 
 // Protected routes
 router.use(authenticate);

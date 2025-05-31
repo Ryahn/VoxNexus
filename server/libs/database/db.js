@@ -91,9 +91,4 @@ const database = new Database({
 export { database };
 export const models = database.models;
 
-// Initialize database connection and load models
-database.connect()
-    .then(() => database.loadModels())
-    .catch(err => console.error('Failed to connect to database:', err));
-
 export default database;

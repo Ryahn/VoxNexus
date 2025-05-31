@@ -9,8 +9,22 @@ import authRoute from './routes/authRoute.js';
 import fileRoutes from './routes/fileRoute.js';
 import { apiLimiter, authLimiter, wsRateLimiter, cleanupRateLimiters } from './src/middleware/rateLimiter.js';
 import emailTemplateManager from './libs/templates/email/EmailTemplateManager.js';
+import { database } from './libs/database/db.js';
 dotenv.config();
+
 async function start() {
+  // Initialize database connection and load models first
+  try {
+    console.log('Connecting to database...');
+    await database.connect();
+    console.log('Loading database models...');
+    await database.loadModels();
+    console.log('Database initialization complete');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+
   const app = express();
   const server = http.createServer(app);
 
@@ -27,7 +41,9 @@ async function start() {
 
   // Basic middleware
   app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? 'https://voxnexus.test' : 'http://localhost:8080',
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://voxnexus.test', 'http://voxnexus.test'] 
+      : ['http://localhost:8080', 'https://voxnexus.test', 'http://voxnexus.test'],
     credentials: true
   }));
   app.use(express.json());
@@ -43,7 +59,8 @@ async function start() {
     next();
   });
 
-  // CSRF middleware configuration
+  // CSRF middleware configuration - TEMPORARILY DISABLED
+  /*
   app.use(csrf({
     cookie: {
       httpOnly: false, // Allow JavaScript to read the cookie
@@ -53,6 +70,7 @@ async function start() {
       path: '/'
     }
   }));
+  */
 
   await emailTemplateManager.loadTemplates();
   console.log('Email templates loaded successfully');
@@ -62,7 +80,8 @@ async function start() {
   app.use(apiLimiter); // Apply to all routes
   app.use('/api/auth', authLimiter); // Stricter limits for auth routes
 
-  // CSRF error handler
+  // CSRF error handler - TEMPORARILY DISABLED
+  /*
   app.use((err, req, res, next) => {
     if (err.code === 'EBADCSRFTOKEN') {
       console.error('CSRF Token Error:', {
@@ -80,6 +99,7 @@ async function start() {
       next(err);
     }
   });
+  */
 
   // Routes
   app.use('/api/auth', authRoute);

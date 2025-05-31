@@ -625,18 +625,25 @@ export const logoutSession = async (req, res) => {
 
 export const getCsrfToken = async (req, res) => {
     try {
-        const token = req.csrfToken();
-        console.log('Generating CSRF token:', {
-            token,
-            cookies: req.cookies,
-            headers: req.headers,
-            url: req.url,
-            method: req.method
-        });
-        res.json({ csrfToken: token });
+        // Check if CSRF middleware is enabled
+        if (typeof req.csrfToken === 'function') {
+            const token = req.csrfToken();
+            console.log('Generating CSRF token:', {
+                token,
+                cookies: req.cookies,
+                headers: req.headers,
+                url: req.url,
+                method: req.method
+            });
+            return res.json({ csrfToken: token });
+        } else {
+            // CSRF is disabled, return a dummy token
+            console.log('CSRF disabled, returning dummy token');
+            return res.json({ csrfToken: 'csrf-disabled' });
+        }
     } catch (error) {
         console.error('Error generating CSRF token:', error);
-        res.status(500).json({ error: 'Failed to generate CSRF token' });
+        return res.status(500).json({ error: 'Failed to generate CSRF token' });
     }
 };
 

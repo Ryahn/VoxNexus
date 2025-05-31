@@ -14,27 +14,31 @@ class ApiClient {
   private readonly RATE_LIMIT_WINDOW = 60000 // 1 minute in milliseconds
 
   constructor() {
-    this.baseURL = process.env.VUE_APP_API_URL || 'http://localhost:3000'
+    // Use the current domain for API requests if accessed via voxnexus.test
+    const currentHost = window.location.hostname
+    if (currentHost === 'voxnexus.test') {
+      // Use the same domain, let Caddy handle routing to the server
+      this.baseURL = `${window.location.protocol}//${window.location.host}/api`
+    } else {
+      this.baseURL = process.env.VUE_APP_API_URL || 'http://localhost:3555/api'
+    }
+    
+    console.log('API Client initialized with baseURL:', this.baseURL)
+    
     this.client = axios.create({
       baseURL: this.baseURL,
+      timeout: 30000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
       },
-      withCredentials: true // Enable sending cookies
     })
 
-    // Initialize CSRF token
-    this.initializationPromise = this.initializeCsrfToken()
+    // CSRF initialization completely removed for now
+    // this.initializationPromise = this.initializeCsrfToken()
 
-    // Add request interceptor for authentication, CSRF, and rate limiting
+    // Add request interceptor
     this.client.interceptors.request.use(async (config) => {
-      // Rate limiting check
       await this.checkRateLimit()
 
       // Skip CSRF token requirement for the csrf-token endpoint itself
@@ -42,16 +46,26 @@ class ApiClient {
         return config
       }
 
+      // TEMPORARILY BYPASS CSRF TOKEN INITIALIZATION
+      /*
       // Wait for CSRF token initialization
       if (this.initializationPromise) {
         try {
           await this.initializationPromise
         } catch (error) {
           console.error('Failed to initialize CSRF token:', error)
+          // Retry initialization once
           this.initializationPromise = this.initializeCsrfToken()
-          await this.initializationPromise
+          try {
+            await this.initializationPromise
+          } catch (retryError) {
+            console.error('Failed to initialize CSRF token on retry:', retryError)
+            // Don't throw error, let the request proceed without CSRF token
+            // The server will handle the missing token appropriately
+          }
         }
       }
+      */
 
       const authStore = useAuthStore()
       
@@ -66,13 +80,17 @@ class ApiClient {
         config.headers.Authorization = `Bearer ${token}`
       }
 
+      // TEMPORARILY BYPASS CSRF TOKEN ADDITION
+      /*
       // Add CSRF token if available
       if (this.csrfToken) {
         console.log('Adding CSRF token to request:', this.csrfToken)
         config.headers['X-CSRF-Token'] = this.csrfToken
       } else {
-        throw new Error('No CSRF token available')
+        console.warn('No CSRF token available for request')
+        // Don't throw error, let the server handle the missing token
       }
+      */
 
       console.log('Request headers:', config.headers)
       return config
@@ -125,12 +143,21 @@ class ApiClient {
       console.log('Initializing CSRF token...')
       // Use axios directly to avoid the request interceptor that requires CSRF token
       const response = await axios.get(`${this.baseURL}/auth/csrf-token`, {
-        withCredentials: true
+        withCredentials: true,
+        timeout: 10000 // 10 second timeout
       })
-      this.csrfToken = response.data.csrfToken
-      console.log('CSRF token initialized:', this.csrfToken)
+      
+      if (response.data && response.data.csrfToken) {
+        this.csrfToken = response.data.csrfToken
+        console.log('CSRF token initialized successfully:', this.csrfToken)
+      } else {
+        console.error('Invalid CSRF token response:', response.data)
+        throw new Error('Invalid CSRF token response')
+      }
     } catch (error) {
       console.error('Failed to initialize CSRF token:', error)
+      // Reset the token to null so we know it failed
+      this.csrfToken = null
       throw error
     }
   }
@@ -184,7 +211,12 @@ class ApiClient {
   }
 
   async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    console.log('[AUTH_ROUTE] Base URL:', this.baseURL)
+    console.log('[AUTH_ROUTE] POST request to', url)
+    console.log('[AUTH_ROUTE] Data:', data)
+    console.log('[AUTH_ROUTE] Config:', config)
     const response = await this.client.post<T>(url, data, config)
+    console.log('[AUTH_ROUTE] Response:', response)
     return {
       data: response.data,
       status: response.status,

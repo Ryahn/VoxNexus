@@ -1,0 +1,27 @@
+# Main Caddyfile for VoxNexus site
+# Proxy Server Port 3555 to /api/*
+# Proxy Client Port 8080 to everything else
+# api.voxnexus.tld is the external API endpoint
+{
+	email: ryancarr10@gmail.com
+}
+
+voxnexus.test {
+	# Route API requests to the server
+	reverse_proxy /api/* 127.0.0.1:3555
+
+	# Route everything else to the client
+	reverse_proxy 127.0.0.1:8080
+
+	request_body {
+		max_size 100MB
+	}
+}
+
+api.voxnexus.test {
+	reverse_proxy 127.0.0.1:3555
+
+	request_body {
+		max_size 100MB
+	}
+}

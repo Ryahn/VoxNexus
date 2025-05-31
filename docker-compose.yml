@@ -9,7 +9,7 @@ services:
     ports:
       - "8080:80"  # Nginx serving the web app
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - VUE_APP_API_URL=/api
       - VUE_APP_WS_URL=/ws
       - VUE_APP_TURN_SERVER=turn:3478
@@ -37,28 +37,64 @@ services:
       - zincsearch
       - redis
     environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongo:27017/discord-clone
-      - API_PORT=3000
+      - NODE_ENV=${NODE_ENV:-development}
+      # Core environment variables
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/voxnexus}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+      - PORT=${PORT:-3000}
+      - CLIENT_URL=${CLIENT_URL:-http://client:8080}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Mail configuration
+      - MAILPACE_API_KEY=${MAILPACE_API_KEY}
+      - MAIL_TYPE=${MAIL_TYPE:-API}
+      - STMP_USER=${STMP_USER}
+      - STMP_PASSWORD=${STMP_PASSWORD}
+      - STMP_HOST=${STMP_HOST}
+      - STMP_PORT=${STMP_PORT}
+      - STMP_SECURE=${STMP_SECURE:-true}
+      # Storage configuration
+      - STORAGE=${STORAGE:-local}
+      # Local storage
+      - LOCAL_MAX_FILE_SIZE=${LOCAL_MAX_FILE_SIZE:-100000000}
+      # S3 storage
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      # SFTP storage
+      - SFTP_HOST=${SFTP_HOST}
+      - SFTP_PORT=${SFTP_PORT:-22}
+      - SFTP_USER=${SFTP_USER}
+      - SFTP_PASSWORD=${SFTP_PASSWORD}
+      - SFTP_PRIVATE_KEY=${SFTP_PRIVATE_KEY}
+      - SFTP_ROOT_PATH=${SFTP_ROOT_PATH}
+      - SFTP_POOL_SIZE=${SFTP_POOL_SIZE:-5}
+      - SFTP_MAX_RETRIES=${SFTP_MAX_RETRIES:-3}
+      - SFTP_RETRY_DELAY=${SFTP_RETRY_DELAY:-1000}
+      - SFTP_CONNECTION_TIMEOUT=${SFTP_CONNECTION_TIMEOUT:-30000}
+      - SFTP_MAX_FILE_SIZE=${SFTP_MAX_FILE_SIZE:-10000000}
+      # FTP storage
+      - FTP_HOST=${FTP_HOST}
+      - FTP_PORT=${FTP_PORT:-21}
+      - FTP_USER=${FTP_USER}
+      - FTP_PASSWORD=${FTP_PASSWORD}
+      - FTP_ROOT_PATH=${FTP_ROOT_PATH}
+      - FTP_SECURE=${FTP_SECURE:-false}
+      - FTP_POOL_SIZE=${FTP_POOL_SIZE:-5}
+      - FTP_MAX_RETRIES=${FTP_MAX_RETRIES:-3}
+      - FTP_RETRY_DELAY=${FTP_RETRY_DELAY:-1000}
+      - FTP_CONNECTION_TIMEOUT=${FTP_CONNECTION_TIMEOUT:-30000}
+      - FTP_MAX_FILE_SIZE=${FTP_MAX_FILE_SIZE:-10000000}
+      # Application-specific variables
       - SITE_DOMAIN=voxnexus.test
-      - REDIS_URL=redis://redis:6379
       - API_HOST=0.0.0.0
       - BOT_API_ENABLED=true
       - ZINC_SEARCH_URL=http://zincsearch:4080
       - WEBRTC_SIGNALING_PORT=3001
       - TURN_SERVER=turn:3478
-      - TURN_USERNAME=${TURN_USERNAME}
-      - TURN_PASSWORD=${TURN_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - MAILPACE_API_KEY=${MAILPACE_API_KEY}
-      - MAIL_TYPE=${MAIL_TYPE}
-      - STORAGE=${STORAGE}
-      - STMP_USER=${STMP_USER}
-      - STMP_PASSWORD=${STMP_PASSWORD}
-      - STMP_HOST=${STMP_HOST}
-      - STMP_PORT=${STMP_PORT}
-      - STMP_SECURE=${STMP_SECURE}
       - WEBRTC_ICE_SERVERS=[{"urls":["stun:turn:3478","turn:turn:3478"],"username":"${TURN_USERNAME}","credential":"${TURN_PASSWORD}"}]
     networks:
       - voxnexus-network
