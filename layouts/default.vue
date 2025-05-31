@@ -200,11 +200,13 @@
 				</div>
 			</template>
 		</GroupDMSidebar>
+		<ToastContainer />
 	</div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import ToastContainer from '~/components/ToastContainer.vue'
 
 const creatingServer = ref(false)
 const isDark = ref(true)

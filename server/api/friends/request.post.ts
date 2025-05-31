@@ -3,6 +3,7 @@ import { connectToDatabase } from '../../utils/mongoose';
 import { getUserFromEvent } from '../../utils/auth';
 import User from '../../models/User';
 import FriendRequest from '../../models/FriendRequest';
+import { emitToUser } from '../../socket/index';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();
@@ -38,6 +39,9 @@ export default defineEventHandler(async (event) => {
     to: toUserId,
     status: 'pending',
   });
+
+  // Emit real-time event to recipient
+  emitToUser(toUserId, 'friend:request:sent', { from: userPayload.id, username: userPayload.username });
 
   return { status: 201, request };
 }); 

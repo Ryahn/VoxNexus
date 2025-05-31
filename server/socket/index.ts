@@ -136,4 +136,12 @@ export function setupSocketIO(nitroApp: Nitro) {
 
   (globalThis as any).io = io;
   return io;
+}
+
+// Helper: emit to a user by userId
+export function emitToUser(userId: string, event: string, payload: any) {
+  const io = (globalThis as any).io as IOServer | undefined
+  if (!io) return
+  const socketId = userSocketMap.get(userId)
+  if (socketId) io.to(socketId).emit(event, payload)
 } 

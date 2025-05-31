@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3';
 import { connectToDatabase } from '../../utils/mongoose';
 import { getUserFromEvent } from '../../utils/auth';
 import FriendRequest from '../../models/FriendRequest';
+import { emitToUser } from '../../socket/index';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();
@@ -31,6 +32,10 @@ export default defineEventHandler(async (event) => {
 
   request.status = 'accepted';
   await request.save();
+
+  // Emit real-time event to both users
+  emitToUser(request.from.toString(), 'friend:request:accepted', { from: userPayload.id, username: userPayload.username });
+  emitToUser(userPayload.id, 'friend:request:accepted', { from: request.from.toString() });
 
   return { status: 200, request };
 }); 

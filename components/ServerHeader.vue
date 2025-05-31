@@ -1,5 +1,5 @@
 <template>
-	<button class="h-12 border-b border-gray-900 btn w-60 bg-nightgray" tabindex="0" role="button" :aria-label="`View server ${server.name}`" @keyup.enter="$emit('click')" @keyup.space="$emit('click')">
+	<button class="h-12 border-b border-gray-900 btn w-60 bg-nightgray transition-all duration-150 focus:ring-2 focus:ring-accent focus:outline-none hover:scale-105 hover:shadow-lg" tabindex="0" role="button" :aria-label="`View server ${server.name}`" @keyup.enter="$emit('click')" @keyup.space="$emit('click')">
 		<div class="flex items-center w-full h-full px-4">
 			<!--If server if boosted-->
 			<div>

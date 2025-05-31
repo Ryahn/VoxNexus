@@ -277,12 +277,14 @@
 													aria-label="Add reaction"
 													class="ml-1 text-yellow-400 hover:text-yellow-300"
 												>😊</button>
-												<div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1" tabindex="0" @keydown.esc="showEmojiPicker = null">
-													<button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 👍" class="text-lg">👍</button>
-													<button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 😂" class="text-lg">😂</button>
-													<button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with ❤️" class="text-lg">❤️</button>
-													<button @click="showEmojiPicker = null" @keyup.enter="showEmojiPicker = null" @keyup.space="showEmojiPicker = null" tabindex="0" role="button" aria-label="Close emoji picker" class="ml-2 text-gray-400">×</button>
-												</div>
+												<transition name="emoji-fade-scale">
+													<div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1" tabindex="0" @keydown.esc="showEmojiPicker = null">
+														<button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 👍" class="text-lg">👍</button>
+														<button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with 😂" class="text-lg">😂</button>
+														<button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.enter="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" @keyup.space="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" tabindex="0" role="button" aria-label="React with ❤️" class="text-lg">❤️</button>
+														<button @click="showEmojiPicker = null" @keyup.enter="showEmojiPicker = null" @keyup.space="showEmojiPicker = null" tabindex="0" role="button" aria-label="Close emoji picker" class="ml-2 text-gray-400">×</button>
+													</div>
+												</transition>
 											</div>
 										</div>
 										<div v-if="msg.userId === userStore.user.id && editingMessageId !== msg._id" class="flex space-x-1 mt-1">
@@ -492,5 +494,16 @@ watch(
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 @media (max-width: 1024px) {
 	.mainsection { margin-left: 0 !important; }
+}
+.emoji-fade-scale-enter-active, .emoji-fade-scale-leave-active {
+	transition: opacity 0.18s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1);
+}
+.emoji-fade-scale-enter-from, .emoji-fade-scale-leave-to {
+	opacity: 0;
+	transform: scale(0.95);
+}
+.emoji-fade-scale-enter-to, .emoji-fade-scale-leave-from {
+	opacity: 1;
+	transform: scale(1);
 }
 </style>

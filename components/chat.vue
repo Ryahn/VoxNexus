@@ -1,10 +1,15 @@
 <template>
-	<div class="relative flex flex-1 min-w-0 pr-2 sm:pr-12 mt-2 sm:mt-4 hover:bg-[var(--color-bg-secondary)] group py-2 sm:py-0">
+	<div class="relative flex flex-1 min-w-0 pr-2 sm:pr-12 mt-2 sm:mt-4 group py-2 sm:py-0 bg-[var(--color-bg-secondary)] rounded-2xl shadow-md transition-all duration-150 hover:shadow-lg focus-within:ring-2 focus-within:ring-[var(--color-accent)]">
 		<div
 			class="flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 mx-2 sm:mx-3 select-none"
 		>
-			<div class="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-full">
-				<img :src="chat.author.avatarUrl || 'https://ui-avatars.com/api/?name=' + chat.author.userName" alt="" srcset="" />
+			<div class="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-full relative">
+				<img :src="chat.author.avatarUrl || 'https://ui-avatars.com/api/?name=' + chat.author.userName" alt="" srcset="" :class="[getStatusBorderClass(chat.author.status?.state)]" />
+				<span
+					v-if="chat.author.status && chat.author.status.state"
+					class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--color-bg-secondary)]"
+					:class="getStatusDotClass(chat.author.status.state)"
+				></span>
 			</div>
 		</div>
 		<div class="flex-shrink inline-block w-full h-auto min-w-0">
@@ -80,19 +85,21 @@
 				</div>
 			</div>
 			<!-- Emoji Picker (placeholder) -->
-			<div v-if="showEmojiPicker" class="absolute z-10 mt-2 bg-[var(--color-bg-overlay)] border border-[var(--color-border)] rounded shadow-lg p-2 flex flex-wrap gap-1" tabindex="0" @keydown.esc="showEmojiPicker = false">
-				<button
-					v-for="emoji in emojiList"
-					:key="emoji"
-					@click="addReaction(emoji)"
-					@keyup.enter="addReaction(emoji)"
-					@keyup.space="addReaction(emoji)"
-					tabindex="0"
-					role="button"
-					:aria-label="`React with ${emoji}`"
-					class="text-xl hover:bg-[var(--color-bg-secondary)] rounded p-1 min-w-[40px] min-h-[40px] focus:ring-2 focus:ring-[var(--color-accent)]"
-				>{{ emoji }}</button>
-			</div>
+			<transition name="emoji-fade-scale">
+				<div v-if="showEmojiPicker" class="absolute z-10 mt-2 bg-[var(--color-bg-overlay)] border border-[var(--color-border)] rounded shadow-lg p-2 flex flex-wrap gap-1" tabindex="0" @keydown.esc="showEmojiPicker = false">
+					<button
+						v-for="emoji in emojiList"
+						:key="emoji"
+						@click="addReaction(emoji)"
+						@keyup.enter="addReaction(emoji)"
+						@keyup.space="addReaction(emoji)"
+						tabindex="0"
+						role="button"
+						:aria-label="`React with ${emoji}`"
+						class="text-xl hover:bg-[var(--color-bg-secondary)] rounded p-1 min-w-[40px] min-h-[40px] focus:ring-2 focus:ring-[var(--color-accent)]"
+					>{{ emoji }}</button>
+				</div>
+			</transition>
 
 			<div v-if="editing" class="text-sm text-[var(--color-text-muted)]">
 				escape to
@@ -137,6 +144,9 @@ type Chat = {
 		avatarUrl?: string
 		avatar: string
 		avatarUrlImg: string
+		status?: {
+			state: string
+		}
 	}
 	date: string
 	value: string
@@ -347,6 +357,24 @@ async function onDelete() {
 		// error.value is set by composable
 	}
 }
+
+function getStatusBorderClass(state?: string) {
+	switch (state) {
+		case 'online': return 'ring-2 ring-green-500';
+		case 'idle': return 'ring-2 ring-yellow-400';
+		case 'dnd': return 'ring-2 ring-red-500';
+		default: return 'ring-2 ring-gray-500';
+	}
+}
+
+function getStatusDotClass(state?: string) {
+	switch (state) {
+		case 'online': return 'bg-green-500';
+		case 'idle': return 'bg-yellow-400';
+		case 'dnd': return 'bg-red-500';
+		default: return 'bg-gray-500';
+	}
+}
 </script>
 
 <style scoped>
@@ -361,5 +389,16 @@ async function onDelete() {
 	.rounded-lg { border-radius: 0 !important; }
 	.pr-12 { padding-right: 0 !important; }
 	.mt-4 { margin-top: 0.5rem !important; }
+}
+.emoji-fade-scale-enter-active, .emoji-fade-scale-leave-active {
+	transition: opacity 0.18s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1);
+}
+.emoji-fade-scale-enter-from, .emoji-fade-scale-leave-to {
+	opacity: 0;
+	transform: scale(0.95);
+}
+.emoji-fade-scale-enter-to, .emoji-fade-scale-leave-from {
+	opacity: 1;
+	transform: scale(1);
 }
 </style>

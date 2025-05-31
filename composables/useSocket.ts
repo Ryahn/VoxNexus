@@ -22,5 +22,27 @@ export function useSocket(token: string) {
     socket.value?.emit(event, ...args)
   }
 
-  return { socket, on, off, emit }
+  // Real-time friend/block events
+  function onFriendRemoved(callback: (payload: { friendId: string }) => void) {
+    on('friend:removed', callback)
+  }
+  function onUserBlocked(callback: (payload: { blockerId: string }) => void) {
+    on('user:blocked', callback)
+  }
+
+  // New real-time events
+  function onFriendRequestSent(callback: (payload: { from: string, username: string }) => void) {
+    on('friend:request:sent', callback)
+  }
+  function onFriendRequestAccepted(callback: (payload: { from: string, username?: string }) => void) {
+    on('friend:request:accepted', callback)
+  }
+  function onFriendRequestRejected(callback: (payload: { from: string, username?: string }) => void) {
+    on('friend:request:rejected', callback)
+  }
+  function onUserUnblocked(callback: (payload: { by: string }) => void) {
+    on('user:unblocked', callback)
+  }
+
+  return { socket, on, off, emit, onFriendRemoved, onUserBlocked, onFriendRequestSent, onFriendRequestAccepted, onFriendRequestRejected, onUserUnblocked }
 } 

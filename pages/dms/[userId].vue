@@ -2,7 +2,8 @@
   <div class="flex flex-col items-center min-h-screen bg-[var(--color-bg-main)] p-2 sm:p-8">
     <div class="w-full max-w-xl bg-[var(--color-bg-secondary)] rounded shadow-md flex flex-col h-[100dvh] sm:h-[80vh] border border-[var(--color-border)]">
       <div class="p-4 border-b border-[var(--color-border)] flex items-center">
-        <img :src="otherUser.avatarUrl || 'https://ui-avatars.com/api/?name=' + otherUser.username" class="w-10 h-10 rounded-full mr-3 object-cover" alt="Avatar" />
+        <img :src="otherUser.avatarUrl || 'https://ui-avatars.com/api/?name=' + otherUser.username" class="w-10 h-10 rounded-full mr-3 object-cover ring-2 relative" :class="getStatusBorderClass(otherUser.state?.statement)" alt="Avatar" />
+        <span v-if="otherUser.state && otherUser.state.statement" class="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-[var(--color-bg-secondary)]" :class="getStatusDotClass(otherUser.state.statement)"></span>
         <div>
           <div class="text-[var(--color-text-main)] font-semibold text-base sm:text-lg">{{ otherUser.username }}</div>
           <div class="text-xs text-[var(--color-text-muted)]">{{ otherUser.status }}</div>
@@ -10,7 +11,7 @@
       </div>
       <div class="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4">
         <div v-for="(msg, i) in messages" :key="i" :class="msg.from === myId ? 'text-right' : 'text-left'">
-          <div class="inline-block max-w-full sm:max-w-[70%] p-2 rounded-lg" :class="msg.from === myId ? 'bg-[var(--color-success)] text-white' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] border border-[var(--color-border)]'">
+          <div class="inline-block max-w-full sm:max-w-[70%] p-2 rounded-2xl shadow-md transition-all duration-150 hover:shadow-lg focus-within:ring-2 focus-within:ring-[var(--color-accent)]" :class="msg.from === myId ? 'bg-[var(--color-success)] text-white' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] border border-[var(--color-border)]'">
             <div class="text-xs text-[var(--color-text-secondary)] mb-1">{{ msg.from === myId ? 'You' : otherUser.username }}</div>
             <div class="break-words">{{ msg.content }}</div>
             <div class="flex items-center space-x-1 mt-1">
@@ -122,6 +123,23 @@ function handleTyping() {
   typingTimeout = setTimeout(() => {
     stopTyping()
   }, 2000)
+}
+
+function getStatusBorderClass(state?: string) {
+  switch (state) {
+    case 'online': return 'ring-green-500';
+    case 'idle': return 'ring-yellow-400';
+    case 'dnd': return 'ring-red-500';
+    default: return 'ring-gray-500';
+  }
+}
+function getStatusDotClass(state?: string) {
+  switch (state) {
+    case 'online': return 'bg-green-500';
+    case 'idle': return 'bg-yellow-400';
+    case 'dnd': return 'bg-red-500';
+    default: return 'bg-gray-500';
+  }
 }
 </script>
 

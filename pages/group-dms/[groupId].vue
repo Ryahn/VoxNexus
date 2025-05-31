@@ -172,6 +172,23 @@ watch(
   }
 );
 
+function getStatusBorderClass(state?: string) {
+  switch (state) {
+    case 'online': return 'ring-green-500';
+    case 'idle': return 'ring-yellow-400';
+    case 'dnd': return 'ring-red-500';
+    default: return 'ring-gray-500';
+  }
+}
+function getStatusDotClass(state?: string) {
+  switch (state) {
+    case 'online': return 'bg-green-500';
+    case 'idle': return 'bg-yellow-400';
+    case 'dnd': return 'bg-red-500';
+    default: return 'bg-gray-500';
+  }
+}
+
 onMounted(() => {
   fetchMessages();
   groupDMStore.markAsRead(groupId.value);
@@ -226,7 +243,8 @@ onMounted(() => {
   <div class="flex flex-col h-full w-full bg-[var(--color-bg-main)] p-2 sm:p-0">
     <div class="flex items-center justify-between px-2 sm:px-4 py-2 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
       <div class="flex items-center space-x-3">
-        <img v-if="group?.avatarUrl" :src="group.avatarUrl" class="w-10 h-10 rounded-full object-cover" />
+        <img v-if="group?.avatarUrl" :src="group.avatarUrl" class="w-10 h-10 rounded-full object-cover ring-2 relative" :class="getStatusBorderClass(group.state?.statement)" />
+        <span v-if="group?.state && group.state.statement" class="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-[var(--color-bg-secondary)]" :class="getStatusDotClass(group.state.statement)"></span>
         <div>
           <div class="text-base sm:text-lg font-bold text-[var(--color-text-main)]">{{ group?.name || 'Group DM' }}</div>
           <div class="text-xs text-[var(--color-text-secondary)] flex items-center space-x-1">
@@ -255,11 +273,12 @@ onMounted(() => {
         class="flex items-end space-x-2"
         :class="msg.authorId === userId ? 'justify-end' : 'justify-start'"
       >
-        <div v-if="msg.authorId !== userId" class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center">
-          <img v-if="getUser(msg.authorId)?.avatarUrl" :src="getUser(msg.authorId).avatarUrl" class="w-8 h-8 rounded-full object-cover" />
+        <div v-if="msg.authorId !== userId" class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center relative">
+          <img v-if="getUser(msg.authorId)?.avatarUrl" :src="getUser(msg.authorId).avatarUrl" class="w-8 h-8 rounded-full object-cover ring-2" :class="getStatusBorderClass(getUser(msg.authorId)?.state?.statement)" />
+          <span v-if="getUser(msg.authorId)?.state && getUser(msg.authorId).state.statement" class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--color-bg-tertiary)]" :class="getStatusDotClass(getUser(msg.authorId).state.statement)"></span>
           <span v-else class="text-[var(--color-text-main)] font-bold">{{ getUser(msg.authorId)?.username?.[0] || '?' }}</span>
         </div>
-        <div :class="['max-w-xs', msg.authorId === userId ? 'bg-[var(--color-accent)] text-white ml-auto' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] border border-[var(--color-border)]']" class="rounded-lg px-2 sm:px-3 py-2 relative">
+        <div :class="['max-w-xs rounded-2xl shadow-md transition-all duration-150 hover:shadow-lg focus-within:ring-2 focus-within:ring-[var(--color-accent)]', msg.authorId === userId ? 'bg-[var(--color-accent)] text-white ml-auto' : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] border border-[var(--color-border)]']" class="px-2 sm:px-3 py-2 relative">
           <div class="text-sm font-semibold text-[var(--color-text-secondary)]" v-if="msg.authorId !== userId">{{ getUser(msg.authorId)?.username || msg.authorId }}</div>
           <div v-if="editingMessageId === msg._id">
             <input v-model="editInput" class="rounded bg-[var(--color-bg-input)] text-[var(--color-text-main)] px-2 py-1 w-full border border-[var(--color-border)]" />
@@ -298,12 +317,14 @@ onMounted(() => {
                 <span v-if="tooltipUsers.length === 0">No reactions</span>
               </div>
               <button @click="showEmojiPicker = msg._id" class="ml-1 text-yellow-400 hover:text-yellow-300">😊</button>
-              <div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1">
-                <button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" class="text-lg">👍</button>
-                <button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" class="text-lg">😂</button>
-                <button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" class="text-lg">❤️</button>
-                <button @click="showEmojiPicker = null" class="ml-2 text-gray-400">×</button>
-              </div>
+              <transition name="emoji-fade-scale">
+                <div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1">
+                  <button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" class="text-lg">👍</button>
+                  <button @click="() => { handleReact(msg, '😂'); showEmojiPicker = null; }" class="text-lg">😂</button>
+                  <button @click="() => { handleReact(msg, '❤️'); showEmojiPicker = null; }" class="text-lg">❤️</button>
+                  <button @click="showEmojiPicker = null" class="ml-2 text-gray-400">×</button>
+                </div>
+              </transition>
             </div>
           </div>
           <div class="text-xs text-[var(--color-text-secondary)]">{{ new Date(msg.createdAt).toLocaleTimeString() }}</div>
@@ -312,8 +333,9 @@ onMounted(() => {
             <button @click="() => handleDelete(msg)" class="text-xs text-[var(--color-danger)] hover:text-red-500">Delete</button>
           </div>
         </div>
-        <div v-if="msg.authorId === userId" class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-accent)] flex items-center justify-center">
-          <img v-if="getUser(msg.authorId)?.avatarUrl" :src="getUser(msg.authorId).avatarUrl" class="w-8 h-8 rounded-full object-cover" />
+        <div v-if="msg.authorId === userId" class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--color-accent)] flex items-center justify-center relative">
+          <img v-if="getUser(msg.authorId)?.avatarUrl" :src="getUser(msg.authorId).avatarUrl" class="w-8 h-8 rounded-full object-cover ring-2" :class="getStatusBorderClass(getUser(msg.authorId)?.state?.statement)" />
+          <span v-if="getUser(msg.authorId)?.state && getUser(msg.authorId).state.statement" class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[var(--color-accent)]" :class="getStatusDotClass(getUser(msg.authorId).state.statement)"></span>
           <span v-else class="text-white font-bold">{{ getUser(msg.authorId)?.username?.[0] || '?' }}</span>
         </div>
       </div>
@@ -348,5 +370,16 @@ onMounted(() => {
 }
 @media (max-width: 640px) {
   .rounded { border-radius: 0 !important; }
+}
+.emoji-fade-scale-enter-active, .emoji-fade-scale-leave-active {
+  transition: opacity 0.18s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1);
+}
+.emoji-fade-scale-enter-from, .emoji-fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.emoji-fade-scale-enter-to, .emoji-fade-scale-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
 </style> 

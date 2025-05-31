@@ -51,7 +51,7 @@
 				</div>
 			</nuxt-link>
 
-			<button v-if="type === 'button'" class="w-12 h-12 btn" tabindex="0" role="button" :aria-label="button.name" @keyup.enter="$emit('click')" @keyup.space="$emit('click')">
+			<button v-if="type === 'button'" class="w-12 h-12 btn transition-all duration-150 focus:ring-2 focus:ring-green-500 focus:outline-none hover:scale-105 hover:shadow-lg" tabindex="0" role="button" :aria-label="button.name" @keyup.enter="$emit('click')" @keyup.space="$emit('click')">
 				<div
 					:class="{ 'bg-green-600 rounded-larger': isHover }"
 					class="flex items-center justify-center w-12 h-12 overflow-hidden bg-gray-800 rounded-full"
