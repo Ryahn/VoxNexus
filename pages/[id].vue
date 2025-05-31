@@ -291,15 +291,29 @@
 												<span
 													v-for="reaction in msg.reactions || []"
 													:key="reaction.emoji"
-													class="inline-flex items-center px-2 py-0.5 rounded-full text-xs cursor-pointer"
+													class="inline-flex items-center px-2 py-0.5 rounded-full text-xs cursor-pointer relative"
 													:class="[
 														'bg-gray-700',
-														reaction.userIds.includes(userStore.user.id) ? 'ring-2 ring-yellow-400 bg-yellow-100 text-yellow-900' : ''
+														reaction.userIds.includes(userStore.user.id) ? 'ring-2 ring-yellow-400 bg-yellow-100 text-yellow-900' : '',
+														animatedReactions[`${i}:${reaction.emoji}`] ? 'scale-110 transition-transform duration-200' : ''
 													]"
 													@click="handleReact(msg, reaction.emoji)"
+													@mouseenter="(e) => showTooltip(e, reaction)"
+													@mouseleave="hideTooltip"
 												>
 													{{ reaction.emoji }} {{ reaction.userIds.length }}
 												</span>
+												<!-- Tooltip -->
+												<div
+													v-if="tooltipReaction && tooltipUsers.length && msg.reactions && msg.reactions.some(r => r.emoji === tooltipReaction)"
+													:style="{ position: 'fixed', left: tooltipX + 'px', top: (tooltipY + 20) + 'px', zIndex: 1000 }"
+													class="px-3 py-2 rounded bg-gray-900 text-gray-100 text-xs shadow-lg border border-gray-700 pointer-events-none animate-fade-in"
+												>
+													<span v-for="(user, idx) in tooltipUsers" :key="user">
+														{{ user }}<span v-if="idx < tooltipUsers.length - 1">, </span>
+													</span>
+													<span v-if="tooltipUsers.length === 0">No reactions</span>
+												</div>
 												<button @click="showEmojiPicker = msg._id" class="ml-1 text-yellow-400 hover:text-yellow-300">😊</button>
 												<div v-if="showEmojiPicker === msg._id" class="absolute z-10 bg-gray-800 border border-gray-700 rounded p-2 mt-1">
 													<button @click="() => { handleReact(msg, '👍'); showEmojiPicker = null; }" class="text-lg">👍</button>
@@ -384,6 +398,15 @@ const editingMessageId = ref<string | null>(null)
 const editInput = ref('')
 const showEmojiPicker = ref<string | null>(null)
 
+// Tooltip state
+const tooltipReaction = ref<string | null>(null)
+const tooltipX = ref(0)
+const tooltipY = ref(0)
+const tooltipUsers = ref<string[]>([])
+
+// Animation state for reactions
+const animatedReactions = ref<{ [key: string]: boolean }>({})
+
 const onClickOutsideServerComponent = () => {
 	creatingServer.value = false
 }
@@ -462,4 +485,44 @@ function handleReact(msg: any, emoji: string) {
 	};
 	reactToMessage(payload);
 }
+
+function getUsernames(userIds: string[]): string[] {
+	return userIds
+		.map(id => userStore.allUsers.find(u => u.id === id)?.username || 'Unknown')
+		.filter(Boolean)
+}
+
+function showTooltip(event: MouseEvent, reaction: any) {
+	tooltipReaction.value = reaction.emoji
+	tooltipUsers.value = getUsernames(reaction.userIds)
+	tooltipX.value = event.clientX
+	tooltipY.value = event.clientY
+}
+
+function hideTooltip() {
+	tooltipReaction.value = null
+	tooltipUsers.value = []
+}
+
+watch(
+	() => chatMessages.value.map((m: any, i: number) => (m.reactions || []).map((r: any) => `${i}:${r.emoji}:${r.userIds.length}`).join(',')).join(','),
+	() => {
+		chatMessages.value.forEach((msg: any, i: number) => {
+			(msg.reactions || []).forEach((r: any) => {
+				animatedReactions.value[`${i}:${r.emoji}`] = true
+				setTimeout(() => (animatedReactions.value[`${i}:${r.emoji}`] = false), 300)
+			})
+		})
+	}
+)
 </script>
+
+<style scoped>
+@keyframes fade-in {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+	animation: fade-in 0.2s ease;
+}
+</style>
