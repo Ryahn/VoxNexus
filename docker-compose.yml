@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
-      target: ${NODE_ENV:-development}  # Will be 'dev' or 'prod'
+      target: ${DOCKER_BUILD_TARGET:-dev}  # Will be 'dev' or 'prod'
     ports:
       - "3555:3000"  # Expose Nuxt server on 3000
     depends_on:
@@ -68,9 +68,7 @@ services:
       - WEBRTC_ICE_SERVERS=[{"urls":["stun:turn:3478","turn:turn:3478"],"username":"${TURN_USERNAME}","credential":"${TURN_PASSWORD}"}]
     networks:
       - voxnexus-network
-    volumes:
-      - ./server:/app  # Only for development, remove for prod if desired
-      - /app/node_modules
+    # volumes:
 
   turn:
     container_name: voxnexus-turn
@@ -82,6 +80,7 @@ services:
       - "5349:5349/udp"
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf
+      - ./logs:/var/log
     command: -c /etc/coturn/turnserver.conf
     networks:
       - voxnexus-network

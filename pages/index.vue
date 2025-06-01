@@ -107,14 +107,17 @@
 				/>
 			</div>
 		</template>
+		<template #default>
+			<div class="flex flex-col items-center justify-center h-full w-full text-gray-400">
+				<h1 class="text-2xl font-bold mb-2">Welcome to VoxNexus!</h1>
+				<p class="mb-2">Select a DM, server, or start a new conversation to begin.</p>
+				<p class="text-sm">Use the sidebar to navigate your chats and servers.</p>
+			</div>
+		</template>
 	</NuxtLayout>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-	layout: false,
-})
-
 const findConversationOpen = ref(false)
 
 const onClickOutsideFindConversationModal = () => {

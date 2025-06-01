@@ -1,8 +1,9 @@
-import { defineEventHandler, readMultipartFormData } from 'h3';
-import { connectToDatabase } from '../../utils/mongoose';
-import { getUserFromEvent } from '../../utils/auth';
+// @ts-ignore
+import { defineEventHandler, readMultipartFormData, H3Event } from 'h3';
+import { connectToDatabase } from '../../../utils/mongoose';
+import { getUserFromEvent } from '../../../utils/auth';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event: H3Event) => {
   await connectToDatabase();
   let userPayload;
   try {
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
   if (!form || !form.length) {
     return { status: 400, error: 'No file uploaded.' };
   }
-  const file = form.find(f => f.name === 'attachment');
+  const file = form.find((f: any) => f.name === 'attachment');
   if (!file || !file.data) {
     return { status: 400, error: 'No attachment file provided.' };
   }

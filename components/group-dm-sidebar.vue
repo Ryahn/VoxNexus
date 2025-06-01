@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useGroupDMs } from '~/composables/useGroupDMs';
 import { useGroupDMStore } from '~/store/group-dm-store';
 import { useUserStore } from '~/store/user-store';
+import ServerFooter from '~/components/server/footer.vue';
 
 const router = useRouter();
 const { groups, fetchGroups, loading } = useGroupDMs();
@@ -25,10 +26,27 @@ function handleSelect(groupId: string) {
 function getUser(id: string) {
   return userStore.allUsers.find(u => u.id === id);
 }
+
+const profile = computed(() => {
+  const user = userStore.user;
+  return {
+    name: user?.username || 'User',
+    avatar: '',
+    avatarUrlImg: user?.avatarUrl || '',
+    userName: user?.username || 'User',
+    status: {
+      isOnline: true,
+      isTyping: false,
+      emoji: '💬',
+      statement: 'Online',
+    },
+    tag: user?.id || '',
+  };
+});
 </script>
 
 <template>
-  <aside class="w-64 bg-gray-800 h-full flex flex-col border-r border-gray-700">
+  <aside class="w-full md:w-64 bg-gray-800 h-full flex flex-col border-r border-gray-700">
     <div class="p-4 text-lg font-bold text-white border-b border-gray-700">Group DMs</div>
     <div class="flex-1 overflow-y-auto">
       <div v-if="loading" class="p-4 text-gray-400">Loading...</div>
@@ -68,7 +86,9 @@ function getUser(id: string) {
         </li>
       </ul>
     </div>
-    <slot name="footer"></slot>
+    <div class="mt-auto">
+      <ServerFooter :profile="profile" />
+    </div>
   </aside>
 </template>
 

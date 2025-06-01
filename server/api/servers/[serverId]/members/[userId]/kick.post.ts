@@ -1,9 +1,9 @@
 import { defineEventHandler } from 'h3';
-import { connectToDatabase } from '../../../utils/mongoose';
-import { getUserFromEvent } from '../../../utils/auth';
-import ServerMember from '../../../models/ServerMember';
-import { hasPermission } from '../../../services/permissionService';
-import { logAudit } from '../../../services/auditLogService';
+import { connectToDatabase } from '../../../../../utils/mongoose';
+import { getUserFromEvent } from '../../../../../utils/auth';
+import ServerMember from '../../../../../models/ServerMember';
+import { hasPermission } from '../../../../../services/permissionService';
+import { logAudit } from '../../../../../services/auditLogService';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();

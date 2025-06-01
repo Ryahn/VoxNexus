@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3';
-import { connectToDatabase } from '../../../../utils/mongoose';
-import { getUserFromEvent } from '../../../../utils/auth';
-import GroupDMMessage, { IGroupDMMessage } from '../../../../models/GroupDMMessage';
+import { connectToDatabase } from '../../../../../utils/mongoose';
+import { getUserFromEvent } from '../../../../../utils/auth';
+import GroupDMMessage, { IGroupDMMessage } from '../../../../../models/GroupDMMessage';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();

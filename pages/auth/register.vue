@@ -43,8 +43,8 @@ async function handleRegister() {
       method: 'POST',
       body: { username: username.value, email: email.value, password: password.value },
     })
-    if (res && res.token && res.user) {
-      userStore.setUser(res.user, res.token)
+    if (res && res.user) {
+      userStore.setUser(res.user)
       await userStore.fetchProfile()
       router.push('/')
     } else {

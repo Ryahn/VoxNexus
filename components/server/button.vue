@@ -23,7 +23,7 @@
 						v-else
 						class="flex items-center justify-center w-12 h-12 text-gray-400 bg-gray-800"
 					>
-						{{ server.name.substring(0, 4) }}
+						{{ server.name ? server.name.substring(0, 4) : '?' }}
 					</div>
 				</div>
 			</nuxt-link>
@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { Server } from '~/server/api/servers'
+import type { Server } from '~/types/Server'
 
 type Props = {
 	server: Server

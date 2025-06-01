@@ -4,34 +4,48 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 # Install pnpm globally
-RUN npm install -g pnpm
+# RUN npm install -g pnpm
 
 # Copy only package files first for caching
-COPY server/package.json server/pnpm-lock.yaml ./
-COPY server/tsconfig.json ./
-COPY server/nuxt.config.ts ./
+COPY package.json yarn.lock ./
+COPY tsconfig.json ./
+COPY nuxt.config.ts ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN yarn install
 
-# Copy the rest of the server source
-COPY server/ ./
+# Copy only necessary source files (respects .dockerignore)
+COPY assets ./assets
+COPY components ./components
+COPY composables ./composables
+COPY layouts ./layouts
+COPY middleware ./middleware
+COPY pages ./pages
+COPY plugins ./plugins
+COPY public ./public
+COPY server ./server
+COPY store ./store
+COPY types ./types
+COPY static ./static
+COPY tailwind.config.js ./
 
 # --- Production build stage ---
 FROM base AS build
-RUN pnpm build
+RUN yarn build
 
 # --- Production runtime stage ---
 FROM node:20-alpine AS prod
 WORKDIR /app
-RUN npm install -g pnpm
-COPY --from=build /app ./
+# RUN npm install -g pnpm
+COPY --from=build /app/package.json ./
+COPY --from=build /app/.output ./.output
+COPY --from=build /app/node_modules ./node_modules
 EXPOSE 3000
 ENV NODE_ENV=production
-CMD ["pnpm", "start"]
+CMD ["yarn", "start"]
 
 # --- Development runtime stage ---
 FROM base AS dev
 EXPOSE 3000
 ENV NODE_ENV=development
-CMD ["pnpm", "dev"] 
+CMD ["yarn", "dev"]

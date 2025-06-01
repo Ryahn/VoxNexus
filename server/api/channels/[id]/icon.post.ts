@@ -1,8 +1,8 @@
 import { defineEventHandler, readMultipartFormData } from 'h3';
-import { connectToDatabase } from '../../utils/mongoose';
-import { getUserFromEvent } from '../../utils/auth';
-import Channel from '../../models/Channel';
-import Server from '../../models/Server';
+import { connectToDatabase } from '../../../utils/mongoose';
+import { getUserFromEvent } from '../../../utils/auth';
+import Channel from '../../../models/Channel';
+import Server from '../../../models/Server';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();

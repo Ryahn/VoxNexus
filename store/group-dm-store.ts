@@ -23,8 +23,8 @@ export const useGroupDMStore = defineStore('group-dm', {
     async fetchGroups() {
       this.loading = true;
       try {
-        const { data } = await useFetch('/api/group-dms');
-        this.groups = data.value?.groups || [];
+        const data = await $fetch('/api/group-dms');
+        this.groups = data?.groups || [];
         // Optionally fetch last message for each group
         for (const group of this.groups) {
           if (group._id) {
@@ -41,8 +41,8 @@ export const useGroupDMStore = defineStore('group-dm', {
     async fetchMessages(groupId: string, opts: { limit?: number; after?: string } = {}) {
       this.loading = true;
       try {
-        const { data } = await useFetch(`/api/group-dms/${groupId}/messages`, { params: opts });
-        this.messages[groupId] = data.value?.messages || [];
+        const data = await $fetch(`/api/group-dms/${groupId}/messages`, { params: opts });
+        this.messages[groupId] = data?.messages || [];
         if (this.messages[groupId].length) {
           this.lastMessage[groupId] = this.messages[groupId][this.messages[groupId].length - 1];
         }
@@ -56,8 +56,8 @@ export const useGroupDMStore = defineStore('group-dm', {
     },
     async fetchLastMessage(groupId: string) {
       try {
-        const { data } = await useFetch(`/api/group-dms/${groupId}/messages`, { params: { limit: 1 } });
-        this.lastMessage[groupId] = data.value?.messages?.[0] || null;
+        const data = await $fetch(`/api/group-dms/${groupId}/messages`, { params: { limit: 1 } });
+        this.lastMessage[groupId] = data?.messages?.[0] || null;
       } catch {}
     },
     async sendMessage(groupId: string, content: string, attachments?: string[]) {

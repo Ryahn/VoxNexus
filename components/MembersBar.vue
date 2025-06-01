@@ -5,7 +5,7 @@
 		<div
 			class="flex items-end justify-center flex-shrink-0 w-full text-xs font-semibold text-gray-500 h-14"
 		>
-			<h1 class="w-full h-6 pl-4">ONLINE-{{ users.length }}</h1>
+			<h1 class="w-full h-6 pl-4">ONLINE-{{ users ? users.length : 0 }}</h1>
 		</div>
 		<div class="w-full h-10 pl-2" v-for="(user, i) in users" :key="i">
 			<div class="flex items-center">

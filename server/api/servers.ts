@@ -1,43 +1,5 @@
-import { User } from './users'
-
-export type ChannelType = 'text' | 'voice'
-
-export type Message = {
-	id: string
-	content: string
-	author: User['id']
-
-	created: string
-	updated: string
-}
-
-export type Category = {
-	id: string
-	name: string
-	order: number
-	unRead: number
-	channels: Channel['id'][]
-}
-
-export type Channel = {
-	id: string
-	name: string
-	type: ChannelType
-	order: number
-	unRead: number
-	categoryId: Category['id'] | null
-	messages: Message[]
-}
-
-export type Server = {
-	id: string
-	name: string
-	profileImage: string
-	order: number
-	unRead: number
-	channels: Channel[]
-	categories: Category[]
-}
+import type { Server } from '~/types/Server'
+import type { H3Event } from 'h3'
 
 const servers: Server[] = [
 	{
@@ -95,6 +57,6 @@ const servers: Server[] = [
 	},
 ]
 
-export default defineEventHandler((event) => {
+export default defineEventHandler((event: H3Event) => {
 	return servers
 })

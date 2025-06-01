@@ -10,23 +10,17 @@ interface UserProfile {
 export const useUserStore = defineStore('user-store', {
   state: () => ({
     user: null as UserProfile | null,
-    token: '' as string,
     allUsers: [] as any[],
   }),
   actions: {
-    setUser(user: UserProfile, token: string) {
+    setUser(user: UserProfile) {
       this.user = user
-      this.token = token
     },
     clearUser() {
       this.user = null
-      this.token = ''
     },
     async fetchProfile() {
-      if (!this.token) return
-      const res = await $fetch('/api/users/me', {
-        headers: { Authorization: `Bearer ${this.token}` },
-      })
+      const res = await $fetch('/api/users/me')
       if (res && res.user) this.user = res.user
     },
     logout() {
@@ -38,8 +32,8 @@ export const useUserStore = defineStore('user-store', {
     },
     async fetchAllUsers() {
       try {
-        const { data } = await useFetch('/api/users')
-        this.allUsers = data.value?.users || []
+        const data = await $fetch('/api/users')
+        this.allUsers = data?.users || []
       } catch {
         this.allUsers = []
       }

@@ -1,9 +1,10 @@
-import { defineEventHandler, readBody } from 'h3';
+import { defineEventHandler, readBody, setHeader } from 'h3';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { connectToDatabase } from '../../utils/mongoose';
 import User from '../../models/User';
 import { rateLimit } from '../../utils/rateLimiter';
+import { serialize } from 'cookie'
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -29,5 +30,13 @@ export default defineEventHandler(async (event) => {
 
   const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
 
-  return { status: 200, token, user: { id: user._id, username: user.username, email: user.email } };
+  setHeader(event, 'Set-Cookie', serialize('auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7 // 1 week
+  }))
+
+  return { status: 200, user: { id: user._id, username: user.username, email: user.email } };
 }); 

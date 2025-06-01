@@ -1,9 +1,9 @@
 <template>
-	<div class="w-60 h-13 bg-nightergray group">
+	<div ref="userBarRef" class="w-60 h-13 bg-nightergray group relative">
 		<div class="flex items-center justify-start px-2 w-w-60 h-13 pb-2px">
 			<!--icon avatar and status-->
 			<div class="w-8 h-8 mr-2">
-				<button class="relative w-8 h-8 focus:outline-none">
+				<button class="relative w-8 h-8 focus:outline-none" @click="toggleProfile">
 					<img
 						class="w-full h-full overflow-hidden rounded-full"
 						:src="profile.avatarUrlImg"
@@ -22,7 +22,7 @@
 
 			<!--handle, name, and tage-->
 			<div class="flex flex-col justify-center w-22 h-13">
-				<div class="h-4 cursor-pointer w-22">
+				<div class="h-4 cursor-pointer w-22" @click="toggleProfile">
 					<div
 						class="flex items-center justify-start h-4 text-sm font-semibold leading-tight text-gray-200 w-22"
 					>
@@ -165,34 +165,65 @@
 				</button>
 			</div>
 		</div>
-		<!-- Profile link -->
-		<div class="flex items-center justify-center mt-2">
-			<nuxt-link to="/profile" class="w-full">
-				<button class="w-full py-2 bg-gray-700 text-white rounded hover:bg-green-600">Profile</button>
-			</nuxt-link>
+		<!-- Profile Popover -->
+		<div v-if="isProfileOpen" class="absolute bottom-16 left-2 w-56 bg-gray-800 text-white rounded-lg shadow-lg p-4 z-50 border border-gray-700 animate-fade-in">
+			<button class="w-full py-2 bg-gray-700 text-white rounded hover:bg-green-600" @click="openProfileDrawer">Profile</button>
 		</div>
+		<!-- Profile Drawer -->
+		<ProfileDrawer :open="profileDrawerStore.isOpen" :user="profileDrawerStore.user" @close="closeProfileDrawer" />
 	</div>
 </template>
 
 <script setup lang="ts">
-type Props = {
-	profile: {
-		name: string
-		avatar: string
-		avatarUrlImg: string
-		userName: string
-		status: {
-			isOnline: boolean
-			isTyping: boolean
-			emoji: string
-			statement: string
-		}
-		tag: string
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import ProfileDrawer from '~/components/ProfileDrawer.vue'
+import { useUserStore } from '~/store/user-store'
+import { useProfileDrawerStore } from '~/store/profile-drawer-store'
+
+const props = defineProps<{ profile: any }>()
+const deafen = ref(false)
+const muted = ref(false)
+const isProfileOpen = ref(false)
+const userBarRef = ref<HTMLElement | null>(null)
+const router = useRouter()
+const userStore = useUserStore()
+const profileDrawerStore = useProfileDrawerStore()
+
+function toggleProfile() {
+	isProfileOpen.value = !isProfileOpen.value
+}
+
+function openProfileDrawer() {
+	profileDrawerStore.openDrawer(userStore.user)
+	isProfileOpen.value = false
+}
+
+function closeProfileDrawer() {
+	profileDrawerStore.closeDrawer()
+}
+
+function handleClickOutside(event: MouseEvent) {
+	if (!userBarRef.value) return
+	if (!userBarRef.value.contains(event.target as Node)) {
+		isProfileOpen.value = false
 	}
 }
 
-defineProps<Props>()
-
-const deafen = ref(false)
-const muted = ref(false)
+onMounted(() => {
+	document.addEventListener('mousedown', handleClickOutside)
+})
+onBeforeUnmount(() => {
+	document.removeEventListener('mousedown', handleClickOutside)
+})
 </script>
+
+<style scoped>
+.animate-fade-in {
+	animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+</style>

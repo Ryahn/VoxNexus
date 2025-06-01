@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import FriendCard from './friend-card.vue'
-import { useToast } from '../composables/useToast'
 import { useSocket } from '../composables/useSocket'
 import { useUserStore } from '~/store/user-store'
 
 const userStore = useUserStore()
-const token = userStore.token
+const isLoading = ref(true)
+const hasError = ref(false)
+const errorMessage = ref('')
+const actionLoading = ref<string | null>(null)
+const toast = useToast()
+const {
+  onFriendRemoved,
+  onUserBlocked,
+  onFriendRequestSent,
+  onFriendRequestAccepted,
+  onFriendRequestRejected,
+  onUserUnblocked
+} = useSocket(userStore.token)
 
 interface FriendCardUser {
   id: string
@@ -27,31 +38,18 @@ interface MutualServer {
 
 const friends = ref<FriendCardUser[]>([])
 const mutualServersMap = ref<Record<string, MutualServer[]>>({})
-const isLoading = ref(true)
-const hasError = ref(false)
-const errorMessage = ref('')
-const actionLoading = ref<string | null>(null)
-const { showToast } = useToast()
-const {
-  onFriendRemoved,
-  onUserBlocked,
-  onFriendRequestSent,
-  onFriendRequestAccepted,
-  onFriendRequestRejected,
-  onUserUnblocked
-} = useSocket(token)
 
 async function fetchFriends() {
   isLoading.value = true
   hasError.value = false
   try {
-    const { data } = await useFetch('/api/friends')
-    if (data.value && data.value.friends) {
-      friends.value = data.value.friends
+    const data = await $fetch('/api/friends')
+    if (data && data.friends) {
+      friends.value = data.friends
       // Fetch mutual servers for each friend
       for (const friend of friends.value) {
-        const { data: mutualData } = await useFetch(`/api/friends/${friend.id}/mutual-servers`)
-        mutualServersMap.value[friend.id] = mutualData.value?.mutualServers || []
+        const mutualData = await $fetch(`/api/friends/${friend.id}/mutual-servers`)
+        mutualServersMap.value[friend.id] = mutualData?.mutualServers || []
       }
     }
   } catch (err: any) {
@@ -65,7 +63,12 @@ async function fetchFriends() {
 function handleMessage(user: FriendCardUser) {
   // Navigate to DM or open chat
   // Example: useRouter().push(`/dms/${user.id}`)
-  showToast(`Opening chat with ${user.username}`, 'info')
+  toast.add({
+    title: `Opening chat with ${user.username}`,
+    description: 'This will open a new chat window with the user.',
+    color: 'primary',
+    icon: 'i-heroicons-chat-bubble-left-right'
+  })
 }
 
 async function handleRemove(user: FriendCardUser) {
@@ -73,10 +76,18 @@ async function handleRemove(user: FriendCardUser) {
   actionLoading.value = user.id
   try {
     await $fetch(`/api/friends/${user.id}/remove`, { method: 'POST' })
-    showToast(`Removed ${user.username} from friends.`, 'success')
+    toast.add({
+      title: `Removed ${user.username} from friends.`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
     await fetchFriends()
   } catch (err: any) {
-    showToast(err.data?.error || 'Failed to remove friend.', 'error')
+    toast.add({
+      title: err.data?.error || 'Failed to remove friend.',
+      color: 'error',
+      icon: 'i-heroicons-x-circle'
+    })
   } finally {
     actionLoading.value = null
   }
@@ -87,35 +98,67 @@ async function handleBlock(user: FriendCardUser) {
   actionLoading.value = user.id
   try {
     await $fetch(`/api/friends/${user.id}/block`, { method: 'POST' })
-    showToast(`Blocked ${user.username}.`, 'success')
+    toast.add({
+      title: `Blocked ${user.username}.`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle'
+    })
     await fetchFriends()
   } catch (err: any) {
-    showToast(err.data?.error || 'Failed to block user.', 'error')
+    toast.add({
+      title: err.data?.error || 'Failed to block user.',
+      color: 'error',
+      icon: 'i-heroicons-x-circle'
+    })
   } finally {
     actionLoading.value = null
   }
 }
 
 function handleFriendRemoved({ friendId }: { friendId: string }) {
-  showToast('A friend was removed.', 'info')
+  toast.add({
+    title: 'A friend was removed.',
+    color: 'info',
+    icon: 'i-heroicons-information-circle'
+  })
   fetchFriends()
 }
 function handleUserBlocked({ blockerId }: { blockerId: string }) {
-  showToast('You were blocked by a user.', 'info')
+  toast.add({
+    title: 'You were blocked by a user.',
+    color: 'info',
+    icon: 'i-heroicons-information-circle'
+  })
   fetchFriends()
 }
 function handleFriendRequestSent({ from, username }: { from: string, username: string }) {
-  showToast(`${username} sent you a friend request!`, 'info')
+  toast.add({
+    title: `${username} sent you a friend request!`,
+    color: 'info',
+    icon: 'i-heroicons-information-circle'
+  })
 }
 function handleFriendRequestAccepted({ from, username }: { from: string, username?: string }) {
-  showToast(`${username || 'A user'} accepted your friend request!`, 'success')
+  toast.add({
+    title: `${username || 'A user'} accepted your friend request!`,
+    color: 'success',
+    icon: 'i-heroicons-check-circle'
+  })
   fetchFriends()
 }
 function handleFriendRequestRejected({ from, username }: { from: string, username?: string }) {
-  showToast(`${username || 'A user'} rejected your friend request.`, 'error')
+  toast.add({
+    title: `${username || 'A user'} rejected your friend request.`,
+    color: 'error',
+    icon: 'i-heroicons-x-circle'
+  })
 }
 function handleUserUnblocked({ by }: { by: string }) {
-  showToast('You were unblocked!', 'info')
+  toast.add({
+    title: 'You were unblocked!',
+    color: 'info',
+    icon: 'i-heroicons-information-circle'
+  })
   fetchFriends()
 }
 

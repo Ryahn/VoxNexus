@@ -1,0 +1,48 @@
+# Version control
+.git
+.gitignore
+
+# Environment files (security)
+.env
+.env.*
+
+# Dependencies (large directories)
+node_modules/
+.pnpm-store/
+
+# Build artifacts
+.nuxt/
+.output/
+dist/
+coverage/
+
+# Data directories (large and not needed in container)
+mongo_data/
+zincsearch_data/
+logs/
+
+# Development files
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker and deployment files
+docker-compose.yml
+Dockerfile.server
+setup.sh
+start.sh
+
+# Documentation
+README.md
+LICENSE
+
+# Config files not needed in container
+.prettierrc.json
+.npmrc
+turnserver.conf

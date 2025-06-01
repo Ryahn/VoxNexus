@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3';
-import { connectToDatabase } from '../../../../utils/mongoose';
-import { getUserFromEvent } from '../../../../utils/auth';
-import DirectMessage, { IDirectMessage } from '../../../../models/DirectMessage';
+import { connectToDatabase } from '../../../../../utils/mongoose';
+import { getUserFromEvent } from '../../../../../utils/auth';
+import DirectMessage, { IDirectMessage } from '../../../../../models/DirectMessage';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();

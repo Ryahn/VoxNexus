@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3';
-import { connectToDatabase } from '../../../../utils/mongoose';
-import { getUserFromEvent } from '../../../../utils/auth';
-import ChannelMessage, { IChannelMessage } from '../../../../models/ChannelMessage';
+import { connectToDatabase } from '../../../../../utils/mongoose';
+import { getUserFromEvent } from '../../../../../utils/auth';
+import ChannelMessage, { IChannelMessage } from '../../../../../models/ChannelMessage';
 
 export default defineEventHandler(async (event) => {
   await connectToDatabase();
