@@ -4,28 +4,48 @@ globs:
 alwaysApply: true
 ---
 # VoxNexus Discord Clone - Cursor Rules
-# Discord Clone built with Nuxt, Vue.js 3, Node.js, TypeScript, and MongoDB
+# Discord Clone built with Vue.js 3, Node.js Express, TypeScript, and your preferred database
 
-You are an expert in TypeScript, Node.js, Nuxt, Vue.js 3 Composition API, MongoDB, Express.js, Socket.io, and modern web development best practices.
+You are an expert in TypeScript, Node.js, Express.js, Vue.js 3 Composition API, Knex.js, Objection.js, Socket.io, and modern web development best practices.
 
 ## Project Context
 This is a Discord clone called VoxNexus with real-time chat functionality, user authentication, and social features.
 
-- **Full-Stack Framework**: Nuxt 3 with Vue 3, Composition API, and TypeScript
-- **Database**: MongoDB with Mongoose ODM (or alternatively PostgreSQL with Prisma/Knex + Objection since you're familiar with that stack)
-- **Real-time**: Nuxt Socket.io module or native WebSocket support
-- **Authentication**: Nuxt Auth module with JWT or session-based auth
-- **Styling**: Tailwind CSS (built-in Nuxt module)
-- **API**: Nuxt server API routes (replaces Express.js backend)
-- **Package Manager**: pnpm
+- **Frontend**: Vue.js 3 with Composition API and TypeScript
+- **Backend**: Node.js with Express.js
+- **Database**: Your choice of PostgreSQL with Knex + Objection (familiar stack) or MongoDB with Mongoose
+- **Real-time**: Socket.io for chat functionality
+- **Authentication**: JWT-based authentication
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite (for frontend)
+- **Package Manager**: npm or pnpm
+
+## Development Philosophy
+**CRITICAL**: Focus on building ONE feature at a time. Do not suggest new features until the current feature is:
+1. Fully implemented
+2. Tested and working
+3. Integrated with existing codebase
+4. User confirms it's complete
+
+When a feature is requested:
+- Break it down into the smallest possible implementation
+- Focus only on that specific functionality
+- Ensure it works completely before moving on
+- Ask for confirmation before suggesting enhancements or new features
 
 ## Project Structure
 ```
 voxnexus/
-├── client/          # Vue.js 3 frontend
-├── server/          # Node.js backend
-├── package.json     # Root configuration
-└── start.sh        # Setup script
+├── frontend/           # Vue.js 3 application
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+├── backend/            # Express.js server
+│   ├── src/
+│   ├── package.json
+│   └── knexfile.js (if using Knex)
+├── shared/             # Shared types/utilities
+└── README.md
 ```
 
 ## Code Style and Structure
@@ -37,6 +57,7 @@ voxnexus/
 - Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`, `shouldRetry`)
 - Structure files: exported component/function, subcomponents/helpers, types, constants
 - Always use TypeScript for type safety and better developer experience
+- Use ES modules (`import`/`export`) throughout the project
 
 ### Naming Conventions
 - Use lowercase with dashes for directories (e.g., `components/chat-window`, `utils/auth-helpers`)
@@ -96,23 +117,24 @@ voxnexus/
 
 ### Frontend Folder Structure
 ```
-client/src/
+frontend/src/
 ├── components/
 │   ├── ui/              # Reusable UI components
 │   ├── chat/            # Chat-specific components
 │   ├── auth/            # Authentication components
 │   └── layout/          # Layout components
 ├── composables/         # Vue composables
-├── stores/              # Pinia stores
+├── stores/              # Pinia stores (for state management)
 ├── views/               # Page components
 ├── router/              # Vue Router configuration
 ├── utils/               # Utility functions
 ├── types/               # TypeScript type definitions
 ├── assets/              # Static assets
-└── styles/              # Global styles
+├── styles/              # Global styles
+└── main.ts              # Application entry point
 ```
 
-## Backend (Node.js) Guidelines
+## Backend (Node.js Express) Guidelines
 
 ### Express.js Best Practices
 - Use Express Router for organizing routes
@@ -121,27 +143,92 @@ client/src/
 - Implement proper request validation using libraries like Joi or Zod
 - Follow RESTful API design principles
 - Use proper HTTP status codes and error responses
+- Use ES modules (`import`/`export`) instead of CommonJS
 
-### Database (MongoDB) Guidelines
-- Use Mongoose for schema definition and validation
+### Database Guidelines
+**Using PostgreSQL with Knex + Objection:**
+- Use Knex for migrations and query building
+- Use Objection.js for model definition and relationships
 - Implement proper indexes for query optimization
-- Use aggregation pipelines for complex queries
-- Implement proper error handling for database operations
-- Use transactions for operations that affect multiple collections
-- Follow MongoDB naming conventions (camelCase for fields)
+- Use transactions for operations that affect multiple tables
+- Follow PostgreSQL naming conventions (snake_case for columns)
+
+### Database Connection and Model Management
+- Create a central `db.ts` file that handles connection setup, testing, and model exports
+- Test database connectivity on application startup and fail fast if unable to connect
+- Export all models from a single location: `import { models } from './database/db'`
+- Use a global Knex connection instance that all models share
+- Optimize for minimal queries through proper eager loading and relationship management
+
+**Database File Structure:**
+```typescript
+// database/db.ts
+import Knex from 'knex'
+import { Model } from 'objection'
+import knexConfig from '../knexfile'
+import { User } from './models/User'
+import { Server } from './models/Server'
+import { Channel } from './models/Channel'
+import { Message } from './models/Message'
+// ... other models
+
+// Create and configure Knex instance
+export const knex = Knex(knexConfig[process.env.NODE_ENV || 'development'])
+
+// Bind all models to the knex instance
+Model.knex(knex)
+
+// Test database connection
+export async function testConnection(): Promise<void> {
+  try {
+    await knex.raw('SELECT 1')
+    console.log('Database connection established successfully')
+  } catch (error) {
+    console.error('Failed to connect to database:', error)
+    process.exit(1)
+  }
+}
+
+// Export all models from single location
+export const models = {
+  User,
+  Server,
+  Channel,
+  Message,
+  // ... other models
+}
+
+// Initialize database (call this on app startup)
+export async function initializeDatabase(): Promise<void> {
+  await testConnection()
+  // Run any additional setup here
+}
+```
+
+**Query Optimization Principles:**
+- Use eager loading (`withGraphFetched`) to reduce N+1 query problems
+- Implement strategic database indexes for frequently queried fields
+- Use `select()` to limit returned columns when full objects aren't needed
+- Leverage Objection's relationship features for efficient joins
+- Use database-level pagination rather than fetching large datasets
+- Implement query result caching for frequently accessed, rarely changed data
+- Use database transactions for multi-step operations to ensure consistency
+- Profile and monitor slow queries in development and production
 
 ### Backend Folder Structure
 ```
-server/src/
+backend/src/
 ├── controllers/         # Route handlers
 ├── middleware/          # Express middleware
-├── models/              # Mongoose models
+├── models/              # Database models (Objection/Mongoose)
 ├── routes/              # Express routes
 ├── services/            # Business logic
 ├── utils/               # Utility functions
 ├── types/               # TypeScript type definitions
 ├── config/              # Configuration files
-└── socket/              # Socket.io handlers
+├── socket/              # Socket.io handlers
+├── migrations/          # Database migrations (if using Knex)
+└── app.ts               # Express app setup
 ```
 
 ### Authentication & Security
@@ -276,6 +363,7 @@ refactor(components): extract reusable chat message component
 2. **Implementation**: Write type-safe, tested code
 3. **Review**: Ensure code follows these guidelines
 4. **Documentation**: Update relevant documentation
+5. **Confirmation**: Wait for user confirmation before suggesting new features
 
 ### Code Quality
 - Run TypeScript compiler with strict mode
@@ -298,10 +386,26 @@ refactor(components): extract reusable chat message component
 - Prioritize user experience and performance
 - Maintain clean, readable, and maintainable code
 
-When asked to implement features, always:
-1. Consider the real-time nature of the application
-2. Implement proper error handling and loading states
-3. Use TypeScript for type safety
-4. Follow the established project structure
-5. Write code that integrates well with existing components
-6. Consider scalability and performance implications
+### Feature Development Rules
+**MOST IMPORTANT**: When asked to implement features, always:
+1. Focus on ONE specific feature at a time
+2. Implement the minimal viable version first
+3. Ensure it's completely working before moving forward
+4. Consider the real-time nature of the application
+5. Implement proper error handling and loading states
+6. Use TypeScript for type safety
+7. Follow the established project structure
+8. Write code that integrates well with existing components
+9. Consider scalability and performance implications
+10. **DO NOT suggest additional features or enhancements until current feature is confirmed working**
+
+### Feature Completion Checklist
+Before considering a feature complete:
+- [ ] Code is written and tested
+- [ ] TypeScript types are properly defined
+- [ ] Error handling is implemented
+- [ ] Loading states are handled
+- [ ] Feature integrates with existing codebase
+- [ ] User has confirmed it works as expected
+
+Only after user confirmation should you offer suggestions for improvements or related features.

@@ -3,9 +3,6 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
-# Install pnpm globally
-# RUN npm install -g pnpm
-
 # Copy only package files first for caching
 COPY package.json yarn.lock ./
 COPY tsconfig.json ./
@@ -13,6 +10,7 @@ COPY nuxt.config.ts ./
 
 # Install dependencies
 RUN yarn install
+RUN yarn add vue @types/vue
 
 # Copy only necessary source files (respects .dockerignore)
 COPY assets ./assets
@@ -36,7 +34,6 @@ RUN yarn build
 # --- Production runtime stage ---
 FROM node:20-alpine AS prod
 WORKDIR /app
-# RUN npm install -g pnpm
 COPY --from=build /app/package.json ./
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/node_modules ./node_modules

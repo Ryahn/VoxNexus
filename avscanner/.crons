@@ -1,1 +1,0 @@
-0 0 * * * /usr/local/bin/node /app/src/cleanup_old_files.js >> /var/log/avscanner-cleanup.log 2>&1 
