@@ -55,6 +55,7 @@ const ENV_KEYS: &[&str] = &[
     "LISTEN_ADDR",
     "METRICS_ENABLED",
     "GATEWAY_ALLOW_UNAUTH",
+    "REGISTRATION_OPEN",
     "WEB_DIST",
     "LIVEKIT_URL",
     "LIVEKIT_API_KEY",
@@ -68,6 +69,7 @@ const ENV_KEYS: &[&str] = &[
 
 /// Runtime configuration. Secrets are redacted in [`Debug`].
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Config {
     pub database_url: Url,
     pub redis_url: Url,
@@ -85,6 +87,8 @@ pub struct Config {
     pub metrics_enabled: bool,
     /// When true, `/api/v1/gateway` accepts unauthenticated sessions (dev-only ping). Default false until F013.
     pub gateway_allow_unauth: bool,
+    /// When true, `POST /api/v1/auth/register` is allowed. Default true until F017 instance settings.
+    pub registration_open: bool,
     /// Directory of built SPA assets (`apps/web/dist`). When set, Axum serves them in production.
     pub web_dist: Option<PathBuf>,
     pub livekit_url: Option<Url>,
@@ -148,6 +152,8 @@ struct RawConfig {
     metrics_enabled: Option<FlexString>,
     #[serde(rename = "GATEWAY_ALLOW_UNAUTH")]
     gateway_allow_unauth: Option<FlexString>,
+    #[serde(rename = "REGISTRATION_OPEN")]
+    registration_open: Option<FlexString>,
     #[serde(rename = "WEB_DIST")]
     web_dist: Option<String>,
     #[serde(rename = "LIVEKIT_URL")]
@@ -241,6 +247,11 @@ impl Config {
                 "GATEWAY_ALLOW_UNAUTH",
                 raw.gateway_allow_unauth.map(FlexString::into_string),
                 false,
+            )?,
+            registration_open: parse_bool(
+                "REGISTRATION_OPEN",
+                raw.registration_open.map(FlexString::into_string),
+                true,
             )?,
             web_dist: optional_path(raw.web_dist),
             livekit_url: optional_url("LIVEKIT_URL", raw.livekit_url)?,

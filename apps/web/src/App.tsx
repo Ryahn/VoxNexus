@@ -1,134 +1,215 @@
-import { getMeta, type MetaResponse } from '@voxnexus/api-client';
-import { createGatewayClient } from '@voxnexus/protocol';
-import { HelloPanel } from '@voxnexus/ui';
+import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
+import { getMe, login, logout, register, type AuthSessionResponse } from '@voxnexus/api-client';
+import { HelloPanel } from '@voxnexus/ui';
 
-type CarrierState =
-  | { status: 'loading' }
-  | { status: 'live'; meta: MetaResponse }
-  | { status: 'down'; detail: string };
+type AuthView = 'home' | 'login' | 'register';
 
-function railMarkClass(status: CarrierState['status']): string {
-  if (status === 'live') {
-    return 'vn-rail-mark vn-rail-mark-live';
+function pathToView(pathname: string): AuthView {
+  if (pathname === '/login') {
+    return 'login';
   }
-  if (status === 'down') {
-    return 'vn-rail-mark vn-rail-mark-down';
+  if (pathname === '/register') {
+    return 'register';
   }
-  return 'vn-rail-mark';
+  return 'home';
 }
 
-function railLabel(status: CarrierState['status']): string {
-  if (status === 'live') {
-    return 'carrier live';
-  }
-  if (status === 'down') {
-    return 'carrier down';
-  }
-  return 'carrier idle';
+function navigate(path: string) {
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-function instanceValue(carrier: CarrierState): string {
-  if (carrier.status === 'live') {
-    return carrier.meta.name;
-  }
-  if (carrier.status === 'down') {
-    return 'unreachable';
-  }
-  return 'calling /api/v1/meta';
-}
-
-const gatewayDebug = import.meta.env.VITE_GATEWAY_DEBUG === 'true';
+const credentials = { credentials: 'include' as const };
 
 export function App() {
-  const [carrier, setCarrier] = useState<CarrierState>({ status: 'loading' });
-  const [gatewaySession, setGatewaySession] = useState<string | null>(null);
+  const [view, setView] = useState<AuthView>(() => pathToView(window.location.pathname));
+  const [session, setSession] = useState<AuthSessionResponse | null>(null);
+  const [sessionKnown, setSessionKnown] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const onPop = () => setView(pathToView(window.location.pathname));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-
-    getMeta()
+    getMe(credentials)
       .then((result) => {
         if (cancelled) {
           return;
         }
         if (result.data) {
-          setCarrier({ status: 'live', meta: result.data });
-          return;
+          setSession(result.data);
+        } else {
+          setSession(null);
         }
-        setCarrier({
-          status: 'down',
-          detail: 'The API answered without instance identity.',
-        });
+        setSessionKnown(true);
       })
       .catch(() => {
         if (!cancelled) {
-          setCarrier({
-            status: 'down',
-            detail: 'Start `cargo run -p voxnexus` on :8080, then reload.',
-          });
+          setSession(null);
+          setSessionKnown(true);
         }
       });
-
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
-    if (!gatewayDebug) {
-      return;
+  async function onSubmit(event: FormEvent, mode: 'login' | 'register') {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const result =
+        mode === 'register'
+          ? await register({ body: { email, password }, ...credentials })
+          : await login({ body: { email, password }, ...credentials });
+      if (result.data) {
+        setSession(result.data);
+        setPassword('');
+        navigate('/');
+        return;
+      }
+      const message =
+        result.error && typeof result.error === 'object' && 'message' in result.error
+          ? String((result.error as { message: string }).message)
+          : 'Request failed.';
+      setError(message);
+    } catch {
+      setError('Could not reach the API. Is the server running?');
+    } finally {
+      setBusy(false);
     }
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const client = createGatewayClient({
-      url: `${protocol}://${window.location.host}/api/v1/gateway`,
-      onHello: (hello) => {
-        setGatewaySession(hello.session_id);
-      },
-      onClose: () => {
-        setGatewaySession(null);
-      },
-    });
-    client.connect();
-    return () => {
-      client.disconnect();
-    };
-  }, []);
+  }
+
+  async function onLogout() {
+    setBusy(true);
+    setError(null);
+    try {
+      await logout(credentials);
+      setSession(null);
+      navigate('/');
+    } catch {
+      setError('Logout failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="vn-shell">
-      <aside className="vn-rail" aria-label="Instance status">
-        <span className={railMarkClass(carrier.status)} aria-hidden="true" />
-        <span className="vn-rail-label">{railLabel(carrier.status)}</span>
+      <aside className="vn-rail" aria-label="Account">
+        <span
+          className={session ? 'vn-rail-mark vn-rail-mark-live' : 'vn-rail-mark'}
+          aria-hidden="true"
+        />
+        <span className="vn-rail-label">{session ? 'signed in' : 'signed out'}</span>
       </aside>
       <main className="vn-main">
-        <HelloPanel title="VoxNexus" kicker="Self-hostable community OS">
-          <p>
-            Discord-class chat and voice, Guilded-class Spaces, and a first-class app platform — on
-            a server you run.
-          </p>
-          <dl className="vn-meta">
-            <div>
-              <dt>Instance</dt>
-              <dd>{instanceValue(carrier)}</dd>
-            </div>
-            <div>
-              <dt>Version</dt>
-              <dd>{carrier.status === 'live' ? carrier.meta.version : '—'}</dd>
-            </div>
-            <div>
-              <dt>License</dt>
-              <dd>Source-available · not OSI</dd>
-            </div>
-          </dl>
-          {carrier.status === 'down' ? <p className="vn-meta-note">{carrier.detail}</p> : null}
-          {gatewayDebug ? (
-            <p className="vn-meta-note">
-              Gateway debug:{' '}
-              {gatewaySession ? `HELLO session ${gatewaySession}` : 'connecting or down'}
+        {view === 'home' ? (
+          <HelloPanel title="VoxNexus" kicker="Self-hostable community OS">
+            <p>
+              Discord-class chat and voice, Guilded-class Spaces, and a first-class app platform —
+              on a server you run.
             </p>
-          ) : null}
-        </HelloPanel>
+            <dl className="vn-meta">
+              <div>
+                <dt>Session</dt>
+                <dd>
+                  {!sessionKnown
+                    ? 'checking…'
+                    : session?.account.email
+                      ? session.account.email
+                      : 'guest'}
+                </dd>
+              </div>
+              <div>
+                <dt>Account</dt>
+                <dd className="vn-auth-actions">
+                  {session ? (
+                    <button type="button" className="vn-linkish" disabled={busy} onClick={onLogout}>
+                      Log out
+                    </button>
+                  ) : (
+                    <>
+                      <a href="/login" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>
+                        Log in
+                      </a>
+                      <a
+                        href="/register"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/register');
+                        }}
+                      >
+                        Register
+                      </a>
+                    </>
+                  )}
+                </dd>
+              </div>
+            </dl>
+            {error ? <p className="vn-meta-note">{error}</p> : null}
+          </HelloPanel>
+        ) : null}
+
+        {view === 'login' || view === 'register' ? (
+          <HelloPanel
+            title={view === 'login' ? 'Log in' : 'Register'}
+            kicker="Local email and password"
+          >
+            <form
+              className="vn-auth-form"
+              onSubmit={(event) => onSubmit(event, view === 'login' ? 'login' : 'register')}
+            >
+              <label className="vn-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+              <label className="vn-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete={view === 'login' ? 'current-password' : 'new-password'}
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </label>
+              {error ? <p className="vn-meta-note">{error}</p> : null}
+              <div className="vn-auth-actions">
+                <button type="submit" disabled={busy}>
+                  {view === 'login' ? 'Log in' : 'Create account'}
+                </button>
+                <a
+                  href="/"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate('/');
+                  }}
+                >
+                  Back
+                </a>
+              </div>
+            </form>
+          </HelloPanel>
+        ) : null}
       </main>
     </div>
   );

@@ -18,11 +18,11 @@ fn sample_env() -> Vec<(&'static str, String)> {
     let s3_access = std::env::var("S3_ACCESS_KEY_TEST")
         .ok()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "any".to_owned());
+        .unwrap_or_else(|| "voxnexus".to_owned());
     let s3_secret = std::env::var("S3_SECRET_KEY_TEST")
         .ok()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "minioadmin".to_owned());
+        .unwrap_or_else(|| "voxnexus-s3-dev-secret".to_owned());
     let typesense_url = std::env::var("TYPESENSE_URL_TEST")
         .ok()
         .filter(|value| !value.trim().is_empty())
@@ -30,7 +30,7 @@ fn sample_env() -> Vec<(&'static str, String)> {
     let typesense_key = std::env::var("TYPESENSE_API_KEY_TEST")
         .ok()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "ts".to_owned());
+        .unwrap_or_else(|| "voxnexus-typesense-dev".to_owned());
 
     REQUIRED_KEYS
         .iter()

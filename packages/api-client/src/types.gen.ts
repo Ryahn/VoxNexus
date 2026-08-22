@@ -5,6 +5,23 @@ export type ClientOptions = {
 };
 
 /**
+ * Public account fields (never includes password hash).
+ */
+export type AccountResponse = {
+    email?: string | null;
+    id: string;
+    is_bot: boolean;
+    is_instance_admin: boolean;
+};
+
+/**
+ * Authenticated session payload.
+ */
+export type AuthSessionResponse = {
+    account: AccountResponse;
+};
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -17,12 +34,131 @@ export type ErrorBody = {
 };
 
 /**
+ * Login with email and password.
+ */
+export type LoginRequest = {
+    email: string;
+    password: string;
+};
+
+/**
  * Build and version of this instance.
  */
 export type MetaResponse = {
     name: string;
     version: string;
 };
+
+/**
+ * Register with email and password.
+ */
+export type RegisterRequest = {
+    email: string;
+    password: string;
+};
+
+export type LoginData = {
+    body: LoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login';
+};
+
+export type LoginErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Invalid credentials
+     */
+    401: ErrorBody;
+};
+
+export type LoginError = LoginErrors[keyof LoginErrors];
+
+export type LoginResponses = {
+    /**
+     * Logged in
+     */
+    200: AuthSessionResponse;
+};
+
+export type LoginResponse = LoginResponses[keyof LoginResponses];
+
+export type LogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/logout';
+};
+
+export type LogoutResponses = {
+    /**
+     * Logged out
+     */
+    204: void;
+};
+
+export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
+
+export type GetMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me';
+};
+
+export type GetMeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type GetMeError = GetMeErrors[keyof GetMeErrors];
+
+export type GetMeResponses = {
+    /**
+     * Current account
+     */
+    200: AuthSessionResponse;
+};
+
+export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
+
+export type RegisterData = {
+    body: RegisterRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/register';
+};
+
+export type RegisterErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Registration closed or CSRF
+     */
+    403: ErrorBody;
+    /**
+     * Email taken
+     */
+    409: ErrorBody;
+};
+
+export type RegisterError = RegisterErrors[keyof RegisterErrors];
+
+export type RegisterResponses = {
+    /**
+     * Account created
+     */
+    201: AuthSessionResponse;
+};
+
+export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
 
 export type GetMetaData = {
     body?: never;

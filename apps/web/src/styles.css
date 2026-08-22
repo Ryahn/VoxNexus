@@ -151,3 +151,77 @@ body {
   font-size: 0.8rem;
   color: #c4a196;
 }
+
+.vn-auth-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 22rem;
+  margin-top: 0.5rem;
+}
+
+.vn-field {
+  display: grid;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tungsten);
+}
+
+.vn-field input {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: rgb(0 0 0 / 25%);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.vn-field input:focus {
+  outline: 1px solid var(--tungsten);
+  outline-offset: 2px;
+}
+
+.vn-auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.vn-auth-actions a,
+.vn-linkish {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.vn-auth-actions button[type='submit'] {
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--tungsten);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.vn-auth-actions button[type='submit']:disabled,
+.vn-linkish:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

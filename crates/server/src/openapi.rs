@@ -1,8 +1,11 @@
 //! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
 
 use utoipa::OpenApi;
-use voxnexus_protocol::{ErrorBody, MetaResponse};
+use voxnexus_protocol::{
+    AccountResponse, AuthSessionResponse, ErrorBody, LoginRequest, MetaResponse, RegisterRequest,
+};
 
+use crate::auth;
 use crate::http;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
@@ -12,9 +15,25 @@ use crate::http;
         title = "VoxNexus HTTP API",
         description = "Versioned HTTP API for a VoxNexus instance. Probe routes `/health`, `/ready`, and `/metrics` are not part of this document."
     ),
-    paths(http::meta),
-    components(schemas(MetaResponse, ErrorBody)),
-    tags((name = "meta", description = "Unauthenticated instance identity"))
+    paths(
+        http::meta,
+        auth::register,
+        auth::login,
+        auth::logout,
+        auth::me
+    ),
+    components(schemas(
+        MetaResponse,
+        ErrorBody,
+        RegisterRequest,
+        LoginRequest,
+        AccountResponse,
+        AuthSessionResponse
+    )),
+    tags(
+        (name = "meta", description = "Unauthenticated instance identity"),
+        (name = "auth", description = "Registration, login, logout, and session")
+    )
 )]
 pub struct ApiDoc;
 

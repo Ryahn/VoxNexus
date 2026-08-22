@@ -1,5 +1,6 @@
 //! VoxNexus composition root: HTTP API, tracing, and process lifecycle.
 
+pub mod auth;
 pub mod csrf;
 pub mod error;
 pub mod extract;

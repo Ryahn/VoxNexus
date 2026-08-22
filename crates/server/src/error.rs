@@ -78,6 +78,28 @@ impl ApiError {
     }
 
     #[must_use]
+    pub fn unauthenticated(request_id: impl Into<String>) -> Self {
+        Self::new(
+            StatusCode::UNAUTHORIZED,
+            error_codes::UNAUTHENTICATED,
+            "Authentication required.",
+            None,
+            request_id,
+        )
+    }
+
+    #[must_use]
+    pub fn conflict(request_id: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(
+            StatusCode::CONFLICT,
+            error_codes::CONFLICT,
+            message,
+            None,
+            request_id,
+        )
+    }
+
+    #[must_use]
     pub fn body(&self) -> &ErrorBody {
         &self.body
     }

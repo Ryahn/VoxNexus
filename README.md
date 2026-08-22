@@ -17,20 +17,20 @@ Rust binary `voxnexus` plus a Vite/React SPA:
 | `GET /health` | Liveness |
 | `GET /ready` | Postgres + Redis + SeaweedFS + Typesense |
 | `GET /api/v1/meta` | Instance name + version |
+| `POST /api/v1/auth/register` · `login` · `logout` · `GET …/me` | Local email/password sessions (cookie) |
 | `GET /api/v1/gateway` | WebSocket gateway (Hello / heartbeat / DevPing); gated by `GATEWAY_ALLOW_UNAUTH` |
 | `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
-| Web app | Loads meta via the generated API client; optional gateway debug UI |
+| SPA | Register / login / logout + meta; optional gateway debug UI. Served by Axum when `WEB_DIST` is set (Compose), or via Vite in dev |
 | Object storage | S3 client to SeaweedFS; bucket created on startup if missing |
 | Jobs | Apalis workers on Redis; sample `HealthPing` job |
 | Search | Typesense client; `messages` / `users` / `channels` collections ensured |
 
-There is a Docker Compose stack under [`deploy/docker`](deploy/docker) ([docs/compose.md](docs/compose.md)).
-
-Operator docs: [config](docs/config.md), [database](docs/database.md), [storage](docs/storage.md), [jobs](docs/jobs.md), [search](docs/search.md), [compose](docs/compose.md), [CI](docs/ci.md), [API](docs/api.md), [gateway](docs/gateway.md), [observability](docs/observability.md), [codegen](docs/codegen.md).
+Docker Compose stack: [`deploy/docker`](deploy/docker). Config keys and options: [`config.README.md`](config.README.md).
 
 ## Stack
 
 - **Server:** Rust (stable via `rust-toolchain.toml`), Axum, Tokio, SQLx + PostgreSQL 16
+- **Deps:** Redis (jobs), SeaweedFS S3 (media), Typesense (search)
 - **Web:** React 19, Vite, TypeScript, pnpm workspace
 - **Contracts:** OpenAPI → `@voxnexus/api-client`; gateway JSON Schema → `@voxnexus/protocol`
 
@@ -38,22 +38,22 @@ Operator docs: [config](docs/config.md), [database](docs/database.md), [storage]
 
 ```text
 apps/web             Vite + React SPA
-crates/server        voxnexus binary (HTTP + gateway composition root)
+crates/server        voxnexus binary (HTTP + gateway + workers)
 crates/config        file + env configuration
 crates/db            PostgreSQL pool and migrations
+crates/auth          sessions + password auth
 crates/protocol      shared HTTP/gateway types (Rust)
 crates/realtime      WebSocket session loop
 crates/storage       S3 / SeaweedFS object store
 crates/jobs          Apalis workers + Redis queue
-crates/search        Typesense search trait + client
-crates/*             domain crates (auth, permissions, media, …)
+crates/search        Typesense client
+crates/*             other domain crates (permissions, media, …)
 packages/api-client  generated OpenAPI TypeScript client
 packages/protocol    generated gateway types + WS client
 packages/ui          shared presentational components
 tools/codegen        export OpenAPI + gateway JSON Schema
 migrations/          SQLx migration files
 deploy/docker/       Compose stack + app Dockerfile
-docs/                operator and planning docs
 ```
 
 ## Prerequisites
@@ -64,9 +64,9 @@ docs/                operator and planning docs
 
 ## Configure
 
-Copy [`config.example.toml`](config.example.toml) to `config.toml` (Unix: `chmod 600`) or set the same keys as environment variables. Env overrides the file. Missing or invalid required keys fail startup with the key name.
+Copy [`config.example.toml`](config.example.toml) → `config.toml` (Unix: `chmod 600`), or set the same keys as environment variables. Env overrides the file. Missing/invalid required keys fail startup with the key name.
 
-Defaults: listen `127.0.0.1:8080`, CORS origin from `PUBLIC_URL`. Useful toggles: `GATEWAY_ALLOW_UNAUTH`, `METRICS_ENABLED`, `LOG_LEVEL`, `LOG_FORMAT`, `WEB_DIST` (SPA directory for Axum).
+Full key-by-key reference (defaults and allowed values such as `LOG_FORMAT = auto|pretty|json`): **[`config.README.md`](config.README.md)**.
 
 ## Docker Compose
 
@@ -76,9 +76,10 @@ copy .env.example .env
 docker compose -f docker-compose.yml up -d --build
 curl.exe http://127.0.0.1:8080/health
 curl.exe http://127.0.0.1:8080/ready
+curl.exe http://127.0.0.1:8080/api/v1/meta
 ```
 
-See [docs/compose.md](docs/compose.md). CI: [docs/ci.md](docs/ci.md) (GitHub Actions on every PR).
+Brings up Postgres, Redis, SeaweedFS, Typesense, and the app (API + built SPA on `:8080`).
 
 ## Build and check
 
@@ -91,11 +92,12 @@ pnpm check-codegen
 pnpm build
 pnpm lint
 ```
-Database integration tests need `DATABASE_URL_TEST` ([docs/database.md](docs/database.md)). Live S3 tests need `S3_ENDPOINT_TEST` ([docs/storage.md](docs/storage.md)).
+
+Live integration tests need env such as `DATABASE_URL_TEST` / `REDIS_URL_TEST` (and optional `S3_*_TEST` / `TYPESENSE_*_TEST`). CI runs the same gate on every PR (`.github/workflows/ci.yml`).
 
 ## Run (without Compose)
 
-Terminal 1 — API (migrations run on startup):
+Point `config.toml` at local Postgres/Redis/S3/Typesense, then:
 
 ```powershell
 cargo run -p voxnexus
@@ -107,7 +109,7 @@ curl.exe http://127.0.0.1:8080/ready
 curl.exe http://127.0.0.1:8080/api/v1/meta
 ```
 
-Terminal 2 — SPA (Vite proxies `/api` and WebSockets to `:8080`):
+SPA with Vite proxy to `:8080`:
 
 ```powershell
 pnpm dev

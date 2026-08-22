@@ -8,3 +8,8 @@ description = "VoxNexus shared domain types with no I/O"
 
 [lints]
 workspace = true
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+uuid = { version = "1", features = ["serde", "v7"] }

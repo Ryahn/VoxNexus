@@ -71,6 +71,8 @@ async fn run() -> Result<(), i32> {
         pool,
         metrics_enabled: config.metrics_enabled,
         public_url: config.public_url.clone(),
+        cookie_secure: config.cookie_secure,
+        registration_open: config.registration_open,
         gateway_allow_unauth: config.gateway_allow_unauth,
         gateway_heartbeat_interval: std::time::Duration::from_millis(
             voxnexus_protocol::DEFAULT_HEARTBEAT_INTERVAL_MS,

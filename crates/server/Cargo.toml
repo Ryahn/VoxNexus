@@ -26,12 +26,15 @@ tower-http = { version = "0.6", features = [
 ] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter"] }
-utoipa = { version = "5", features = ["macros", "axum_extras"] }
+url = "2"
+utoipa = { version = "5", features = ["macros", "axum_extras", "uuid"] }
 utoipa-axum = "0.2"
 uuid = { version = "1", features = ["v7"] }
 validator = { version = "0.20", features = ["derive"] }
+voxnexus-auth = { path = "../auth" }
 voxnexus-config = { path = "../config" }
 voxnexus-db = { path = "../db" }
+voxnexus-domain = { path = "../domain" }
 voxnexus-protocol = { path = "../protocol" }
 voxnexus-realtime = { path = "../realtime" }
 voxnexus-jobs = { path = "../jobs" }
@@ -41,6 +44,11 @@ voxnexus-storage = { path = "../storage" }
 [dev-dependencies]
 futures-util = { version = "0.3", features = ["sink"] }
 http-body-util = "0.1"
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls-ring",
+    "postgres",
+] }
 tempfile = "3"
 tokio-tungstenite = "0.26"
-url = "2"
+uuid = { version = "1", features = ["v7"] }

@@ -31,7 +31,7 @@ use voxnexus_protocol::MetaResponse;
 use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
 
-use crate::csrf::csrf_hook;
+use crate::csrf::{csrf_hook, CsrfState};
 use crate::error::ApiError;
 
 /// Header used for request correlation (`x-request-id`).
@@ -52,10 +52,13 @@ impl MakeRequestId for RequestIdV7 {
 
 /// Shared application state for Axum handlers.
 #[derive(Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct AppState {
     pub pool: PgPool,
     pub metrics_enabled: bool,
     pub public_url: Url,
+    pub cookie_secure: bool,
+    pub registration_open: bool,
     pub gateway_allow_unauth: bool,
     pub gateway_heartbeat_interval: Duration,
     pub storage: Arc<dyn ObjectStore>,
@@ -99,6 +102,7 @@ pub fn app(state: AppState) -> Router {
     if metrics_enabled {
         router = router.route("/metrics", get(metrics));
     }
+    let cookie_secure = state.cookie_secure;
     let router = match web_dist {
         Some(dir) if dir.is_dir() => {
             let index = dir.join("index.html");
@@ -116,27 +120,38 @@ pub fn app(state: AppState) -> Router {
         }
         None => router.fallback(not_found),
     };
-    with_middleware(router.with_state(state), &public_url)
+    with_middleware(router.with_state(state), &public_url, cookie_secure)
 }
 
 fn api_v1() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new().routes(routes!(meta))
+    OpenApiRouter::new()
+        .routes(routes!(meta))
+        .routes(routes!(crate::auth::register))
+        .routes(routes!(crate::auth::login))
+        .routes(routes!(crate::auth::logout))
+        .routes(routes!(crate::auth::me))
 }
 
-/// Request-id, body limit, compression, CORS, and CSRF hook.
-pub fn with_middleware<S>(router: Router<S>, public_url: &Url) -> Router<S>
+/// Request-id, body limit, compression, CORS, and CSRF Origin check.
+pub fn with_middleware<S>(router: Router<S>, public_url: &Url, cookie_secure: bool) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
 {
-    router.layer(middleware::from_fn(csrf_hook)).layer(
-        ServiceBuilder::new()
-            .layer(SetRequestIdLayer::x_request_id(RequestIdV7))
-            .layer(PropagateRequestIdLayer::x_request_id())
-            .layer(TraceLayer::new_for_http().make_span_with(make_span))
-            .layer(RequestBodyLimitLayer::new(MAX_JSON_BODY_BYTES))
-            .layer(CompressionLayer::new())
-            .layer(cors_layer(public_url)),
-    )
+    let csrf = CsrfState {
+        public_url: public_url.clone(),
+        cookie_secure,
+    };
+    router
+        .layer(middleware::from_fn_with_state(csrf, csrf_hook))
+        .layer(
+            ServiceBuilder::new()
+                .layer(SetRequestIdLayer::x_request_id(RequestIdV7))
+                .layer(PropagateRequestIdLayer::x_request_id())
+                .layer(TraceLayer::new_for_http().make_span_with(make_span))
+                .layer(RequestBodyLimitLayer::new(MAX_JSON_BODY_BYTES))
+                .layer(CompressionLayer::new())
+                .layer(cors_layer(public_url)),
+        )
 }
 
 fn with_observe<S>(router: Router<S>) -> Router<S>

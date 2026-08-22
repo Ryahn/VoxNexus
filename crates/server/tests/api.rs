@@ -30,6 +30,7 @@ fn api_test_router() -> Router {
             .route("/api/v1/validate", post(accept_name))
             .fallback(not_found),
         &public_url,
+        false,
     )
 }
 
@@ -88,6 +89,7 @@ async fn validation_error_matches_error_schema() {
                 .method("POST")
                 .uri("/api/v1/validate")
                 .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(r#"{"name":""}"#))
                 .expect("request"),
         )
@@ -113,6 +115,7 @@ async fn invalid_json_matches_error_schema() {
                 .method("POST")
                 .uri("/api/v1/validate")
                 .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from("{not-json"))
                 .expect("request"),
         )

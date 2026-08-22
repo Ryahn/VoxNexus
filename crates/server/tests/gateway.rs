@@ -30,6 +30,8 @@ fn state(pool: PgPool, redis: RedisConn, allow_unauth: bool, heartbeat: Duration
         pool,
         metrics_enabled: false,
         public_url: "http://127.0.0.1:8080".parse().expect("url"),
+        cookie_secure: false,
+        registration_open: true,
         gateway_allow_unauth: allow_unauth,
         gateway_heartbeat_interval: heartbeat,
         storage: Arc::new(MemoryObjectStore::new_ready()) as Arc<dyn ObjectStore>,
