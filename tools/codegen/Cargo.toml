@@ -1,0 +1,17 @@
+[package]
+name = "voxnexus-codegen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Export OpenAPI JSON from the voxnexus HTTP handlers"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "export-openapi"
+path = "src/main.rs"
+
+[dependencies]
+voxnexus = { path = "../../crates/server" }

@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus Typesense search trait and indexer jobs"
+
+[lints]
+workspace = true

@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus shared domain types with no I/O"
+
+[lints]
+workspace = true

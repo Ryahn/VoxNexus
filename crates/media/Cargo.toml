@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-media"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus LiveKit control-plane client"
+
+[lints]
+workspace = true

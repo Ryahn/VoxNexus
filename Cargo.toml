@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/server",
+    "crates/config",
+    "crates/db",
+    "crates/domain",
+    "crates/protocol",
+    "crates/auth",
+    "crates/permissions",
+    "crates/realtime",
+    "crates/storage",
+    "crates/jobs",
+    "crates/media",
+    "crates/search",
+    "tools/codegen",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "LicenseRef-VoxNexus-Source-Available"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+doc_markdown = "allow"
+module_name_repetitions = "allow"

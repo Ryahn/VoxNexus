@@ -1,0 +1,38 @@
+[package]
+name = "voxnexus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus composition root (HTTP, gateway, jobs)"
+
+[lints]
+workspace = true
+
+[dependencies]
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = [
+    "trace",
+    "request-id",
+    "util",
+    "compression-gzip",
+    "limit",
+    "cors",
+] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter"] }
+utoipa = { version = "5", features = ["macros", "axum_extras"] }
+utoipa-axum = "0.2"
+uuid = { version = "1", features = ["v7"] }
+validator = { version = "0.20", features = ["derive"] }
+voxnexus-config = { path = "../config" }
+voxnexus-db = { path = "../db" }
+voxnexus-protocol = { path = "../protocol" }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tempfile = "3"

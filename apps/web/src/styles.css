@@ -1,0 +1,153 @@
+:root {
+  color-scheme: dark;
+  --ink: #14110e;
+  --paper: #1c1814;
+  --line: #3a342e;
+  --text: #f3ece3;
+  --muted: #9a9084;
+  --tungsten: #e08a3c;
+  --tungsten-dim: #8a5424;
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 12% -10%, rgb(224 138 60 / 8%), transparent 55%), var(--ink);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+.vn-shell {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.vn-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 0;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.vn-rail-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--tungsten-dim);
+  box-shadow: 0 0 0 4px rgb(224 138 60 / 12%);
+}
+
+.vn-rail-mark-live {
+  background: var(--tungsten);
+  box-shadow: 0 0 0 4px rgb(224 138 60 / 22%);
+}
+
+.vn-rail-mark-down {
+  background: #a35a48;
+  box-shadow: 0 0 0 4px rgb(163 90 72 / 20%);
+}
+
+.vn-rail-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vn-main {
+  display: flex;
+  align-items: center;
+  padding: clamp(2rem, 6vw, 5rem);
+}
+
+.vn-hello-panel {
+  max-width: 40rem;
+}
+
+.vn-hello-kicker {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tungsten);
+}
+
+.vn-hello-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 8vw, 6rem);
+  font-weight: 620;
+  font-optical-sizing: auto;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+.vn-hello-body {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.vn-hello-body p {
+  margin: 0 0 1.75rem;
+  max-width: 36rem;
+}
+
+.vn-meta {
+  display: grid;
+  gap: 1rem 2rem;
+  margin: 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 640px) {
+  .vn-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.vn-meta dt {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tungsten);
+}
+
+.vn-meta dd {
+  margin: 0.35rem 0 0;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.vn-meta-note {
+  margin: 1.25rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #c4a196;
+}

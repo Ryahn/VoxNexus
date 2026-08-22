@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-realtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus gateway, subscriptions, fanout, and resume"
+
+[lints]
+workspace = true

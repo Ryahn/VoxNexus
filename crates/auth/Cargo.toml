@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-auth"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus passwords, sessions, OIDC relying party, and bot tokens"
+
+[lints]
+workspace = true

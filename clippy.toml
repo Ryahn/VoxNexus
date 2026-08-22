@@ -1,0 +1,3 @@
+# Workspace Clippy policy lives in Cargo.toml [workspace.lints.clippy].
+# This file is present so `cargo clippy` has an explicit project config.
+msrv = "1.85.0"

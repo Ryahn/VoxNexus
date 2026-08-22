@@ -1,0 +1,74 @@
+//! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
+
+use utoipa::OpenApi;
+use voxnexus_protocol::{ErrorBody, MetaResponse};
+
+use crate::http;
+
+/// Generated OpenAPI 3 document for `/api/v1`.
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "VoxNexus HTTP API",
+        description = "Versioned HTTP API for a VoxNexus instance. Probe routes `/health`, `/ready`, and `/metrics` are not part of this document."
+    ),
+    paths(http::meta),
+    components(schemas(MetaResponse, ErrorBody)),
+    tags((name = "meta", description = "Unauthenticated instance identity"))
+)]
+pub struct ApiDoc;
+
+/// OpenAPI document matching the running handlers.
+#[must_use]
+pub fn spec() -> utoipa::openapi::OpenApi {
+    let mut spec = ApiDoc::openapi();
+    env!("CARGO_PKG_VERSION").clone_into(&mut spec.info.version);
+    spec
+}
+
+/// Pretty JSON for `packages/api-client/openapi.json`.
+///
+/// # Panics
+///
+/// Panics if the in-memory OpenAPI document cannot be serialized, which indicates a bug in utoipa.
+#[must_use]
+pub fn spec_json() -> String {
+    let mut json = serde_json::to_string_pretty(&spec()).expect("openapi serializes");
+    if !json.ends_with('\n') {
+        json.push('\n');
+    }
+    json
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{spec, spec_json};
+    use std::path::PathBuf;
+
+    #[test]
+    fn spec_is_deterministic() {
+        let first = serde_json::to_value(spec()).expect("spec");
+        let second = serde_json::to_value(spec()).expect("spec");
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn committed_openapi_matches_handlers() {
+        let committed_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../packages/api-client/openapi.json");
+        let committed = std::fs::read_to_string(&committed_path).unwrap_or_else(|error| {
+            panic!(
+                "missing committed OpenAPI at {}: {error}; run `pnpm codegen`",
+                committed_path.display()
+            )
+        });
+        let committed: serde_json::Value =
+            serde_json::from_str(&committed).expect("committed openapi.json");
+        let generated: serde_json::Value =
+            serde_json::from_str(&spec_json()).expect("generated openapi");
+        assert_eq!(
+            generated, committed,
+            "packages/api-client/openapi.json is stale; run `pnpm codegen`"
+        );
+    }
+}

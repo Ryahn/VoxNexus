@@ -1,0 +1,56 @@
+VoxNexus Source-Available Personal Use License v1
+
+Copyright (c) 2026 Ryahn. All rights reserved.
+
+This software is source-available. It is not open source as defined by the
+Open Source Initiative. You must agree to these terms to receive any license.
+
+0. Definitions
+   "Software" means this repository and its contents.
+   "You" means the individual or legal entity exercising rights.
+   "Public Instance" means making the Software available so that people beyond
+   a private personal group can create accounts, join, or discover the service
+   (including a public registration page or advertised community).
+   "Use the code" means copying, forking, or incorporating any substantial
+   portion of the Software into other software or services.
+
+1. Limited grant
+   Provided you comply with these terms, the copyright holder grants you a
+   non-exclusive, non-transferable, non-sublicensable copyright license to:
+   (a) view and study the Software;
+   (b) compile and run one private instance for personal, non-commercial use
+       that is not a Public Instance (invite-only household/friends use is
+       allowed; advertised or general-public use is not);
+   (c) make private modifications solely to run that instance.
+   A limited patent license is granted only for the same permitted purposes
+   and only for claims the copyright holder can license that you would
+   infringe by exercising this grant.
+
+2. Prohibited without a separate written license from the copyright holder
+   (a) any commercial use, including use by or for a for-profit organization
+       (internal company chat included);
+   (b) operating a Public Instance;
+   (c) using the code in other projects, including hobby projects;
+   (d) distributing the Software or modifications except as a contribution
+       to the copyright holder’s official repository under the CLA;
+   (e) offering the Software as hosted/SaaS, or selling a product whose value
+       derives substantially from the Software;
+   (f) relicensing.
+
+3. Contributions
+   Contributions are accepted only under the Contributor License Agreement,
+   granting the copyright holder rights to use and dual-license the
+   contribution.
+
+4. No sublicense or transfer of this license.
+
+5. Termination
+   Any breach terminates this license automatically. On termination you must
+   stop using the Software (except copies retained as legally required).
+
+6. Disclaimer
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO
+   EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+   OTHER LIABILITY ARISING FROM THE SOFTWARE.
+
+7. Surviving sections: 5–6 and any accrued claims.

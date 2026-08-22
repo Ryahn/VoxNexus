@@ -1,0 +1,16 @@
+{
+  "name": "voxnexus",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "build": "pnpm --filter @voxnexus/web build",
+    "dev": "pnpm --filter @voxnexus/web dev",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "codegen": "cargo run -p voxnexus-codegen && pnpm --filter @voxnexus/api-client generate",
+    "check-codegen": "pnpm codegen && git diff --exit-code -- packages/api-client"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.9"
+  }
+}

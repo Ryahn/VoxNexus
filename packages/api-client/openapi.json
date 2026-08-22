@@ -1,0 +1,87 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VoxNexus HTTP API",
+    "description": "Versioned HTTP API for a VoxNexus instance. Probe routes `/health`, `/ready`, and `/metrics` are not part of this document.",
+    "license": {
+      "name": "LicenseRef-VoxNexus-Source-Available",
+      "identifier": "LicenseRef-VoxNexus-Source-Available"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Instance name and crate version.",
+        "operationId": "getMeta",
+        "responses": {
+          "200": {
+            "description": "Instance name and version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorBody": {
+        "type": "object",
+        "description": "JSON error envelope for `/api/v1` and unknown routes.",
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          }
+        }
+      },
+      "MetaResponse": {
+        "type": "object",
+        "description": "Build and version of this instance.",
+        "required": [
+          "name",
+          "version"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "meta",
+      "description": "Unauthenticated instance identity"
+    }
+  ]
+}

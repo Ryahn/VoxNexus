@@ -1,0 +1,19 @@
+[package]
+name = "voxnexus-config"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus configuration loading and validation"
+
+[lints]
+workspace = true
+
+[dependencies]
+figment = { version = "0.10", features = ["toml", "yaml"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"

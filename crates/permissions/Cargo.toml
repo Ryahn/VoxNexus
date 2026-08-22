@@ -1,0 +1,10 @@
+[package]
+name = "voxnexus-permissions"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "VoxNexus permission evaluation, Explain Access, and View As"
+
+[lints]
+workspace = true
