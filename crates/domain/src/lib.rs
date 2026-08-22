@@ -52,3 +52,25 @@ pub struct Session {
     pub created_at: DateTime<Utc>,
     pub last_seen_at: DateTime<Utc>,
 }
+
+/// Per-account profile (display fields + optional image object ids).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Profile {
+    pub account_id: Uuid,
+    pub display_name: String,
+    pub bio: String,
+    pub avatar_object_id: Option<Uuid>,
+    pub banner_object_id: Option<Uuid>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Metadata for a byte object in SeaweedFS / S3.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObjectMeta {
+    pub id: Uuid,
+    pub storage_key: String,
+    pub mime: String,
+    pub byte_size: i64,
+    pub created_by: Uuid,
+    pub created_at: DateTime<Utc>,
+}

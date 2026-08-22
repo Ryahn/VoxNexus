@@ -11,14 +11,18 @@
   "dependencies": {
     "@voxnexus/api-client": "workspace:*",
     "@voxnexus/protocol": "workspace:*",
-    "@voxnexus/ui": "workspace:*",
+    "lucide-react": "^0.454.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
     "typescript": "^5.9.2",
     "vite": "^7.1.0"
   }

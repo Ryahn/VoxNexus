@@ -1,0 +1,58 @@
+import type { AppNotification } from '../types';
+
+export const notifications: AppNotification[] = [
+  {
+    id: 'n1',
+    kind: 'mention',
+    actorId: 'aya',
+    title: 'Aya mentioned you',
+    body: 'Heads up @ryanc — the composer placeholder string isn’t in the locale bundle yet…',
+    ts: '9m',
+    communityTag: 'NX',
+    unread: true,
+  },
+  {
+    id: 'n2',
+    kind: 'reply',
+    actorId: 'ren',
+    title: 'Ren replied to you',
+    body: 'That’s the subscription model. I can move it to a lazy per-viewport subscribe.',
+    ts: '31m',
+    communityTag: 'NX',
+    unread: true,
+  },
+  {
+    id: 'n3',
+    kind: 'reaction',
+    actorId: 'nova',
+    title: 'Nova reacted 💜',
+    body: 'Composer strings extracted + wired to the loader.',
+    ts: '44m',
+    communityTag: 'NX',
+    unread: true,
+  },
+  {
+    id: 'n4',
+    kind: 'announcement',
+    actorId: 'nova',
+    title: 'Announcement in Project Nexus',
+    body: 'v0.7.0-rc.1 is live for internal testing. Release tag Friday.',
+    ts: '2h',
+    communityTag: 'NX',
+  },
+  {
+    id: 'n5',
+    kind: 'friend',
+    actorId: 'lux',
+    title: 'Lux sent a friend request',
+    body: 'Wants to connect · 2 mutual communities',
+    ts: '5h',
+  },
+  {
+    id: 'n6',
+    kind: 'system',
+    title: 'Security',
+    body: 'New login from Aurora desktop client · Reykjavík',
+    ts: '1d',
+  },
+];

@@ -2,11 +2,13 @@
 
 use utoipa::OpenApi;
 use voxnexus_protocol::{
-    AccountResponse, AuthSessionResponse, ErrorBody, LoginRequest, MetaResponse, RegisterRequest,
+    AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, ErrorBody,
+    LoginRequest, MetaResponse, ProfileResponse, RegisterRequest, UpdateProfileRequest,
 };
 
 use crate::auth;
 use crate::http;
+use crate::profile;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
 #[derive(OpenApi)]
@@ -20,19 +22,33 @@ use crate::http;
         auth::register,
         auth::login,
         auth::logout,
-        auth::me
+        auth::me,
+        auth::change_my_password,
+        auth::change_my_email,
+        profile::get_my_profile,
+        profile::update_my_profile,
+        profile::upload_my_avatar,
+        profile::upload_my_banner,
+        profile::get_profile_by_id,
+        profile::get_profile_avatar,
+        profile::get_profile_banner
     ),
     components(schemas(
         MetaResponse,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
+        ChangePasswordRequest,
+        ChangeEmailRequest,
         AccountResponse,
-        AuthSessionResponse
+        AuthSessionResponse,
+        ProfileResponse,
+        UpdateProfileRequest
     )),
     tags(
         (name = "meta", description = "Unauthenticated instance identity"),
-        (name = "auth", description = "Registration, login, logout, and session")
+        (name = "auth", description = "Registration, login, logout, and session"),
+        (name = "profiles", description = "Account profiles, avatars, and banners")
     )
 )]
 pub struct ApiDoc;

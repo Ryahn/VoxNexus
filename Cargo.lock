@@ -3737,10 +3737,12 @@ name = "voxnexus"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "bytes",
  "futures-util",
  "http-body-util",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "sqlx",
  "tempfile",
  "tokio",
@@ -3759,6 +3761,7 @@ dependencies = [
  "voxnexus-db",
  "voxnexus-domain",
  "voxnexus-jobs",
+ "voxnexus-media",
  "voxnexus-protocol",
  "voxnexus-realtime",
  "voxnexus-search",

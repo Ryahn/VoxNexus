@@ -19,6 +19,7 @@ use tower_http::request_id::{
     MakeRequestId, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
 };
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::trace::TraceLayer;
 use tracing::Span;
 use utoipa_axum::router::OpenApiRouter;
@@ -39,8 +40,8 @@ use crate::error::ApiError;
 /// Header used for request correlation (`x-request-id`).
 pub const REQUEST_ID_HEADER: &str = "x-request-id";
 
-/// Maximum JSON (and other) request body size for the HTTP API.
-pub const MAX_JSON_BODY_BYTES: usize = 1024 * 1024;
+/// Maximum JSON (and other) request body size for the HTTP API (covers 5 MiB banners).
+pub const MAX_JSON_BODY_BYTES: usize = 6 * 1024 * 1024;
 
 #[derive(Clone, Default)]
 struct RequestIdV7;
@@ -114,6 +115,13 @@ pub fn app(state: AppState) -> Router {
             let spa = ServeDir::new(dir)
                 .append_index_html_on_directories(true)
                 .not_found_service(ServeFile::new(index));
+            // Avoid stale cached index.html pointing at removed hashed bundles (white screen).
+            let spa = ServiceBuilder::new()
+                .layer(SetResponseHeaderLayer::if_not_present(
+                    header::CACHE_CONTROL,
+                    HeaderValue::from_static("no-cache"),
+                ))
+                .service(spa);
             router.fallback_service(spa)
         }
         Some(dir) => {
@@ -141,6 +149,15 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::auth::login))
         .routes(routes!(crate::auth::logout))
         .routes(routes!(crate::auth::me))
+        .routes(routes!(crate::auth::change_my_password))
+        .routes(routes!(crate::auth::change_my_email))
+        .routes(routes!(crate::profile::get_my_profile))
+        .routes(routes!(crate::profile::update_my_profile))
+        .routes(routes!(crate::profile::upload_my_avatar))
+        .routes(routes!(crate::profile::upload_my_banner))
+        .routes(routes!(crate::profile::get_profile_by_id))
+        .routes(routes!(crate::profile::get_profile_avatar))
+        .routes(routes!(crate::profile::get_profile_banner))
 }
 
 /// Request-id, body limit, compression, CORS, and CSRF Origin check.

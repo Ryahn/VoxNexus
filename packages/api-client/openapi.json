@@ -106,6 +106,111 @@
         }
       }
     },
+    "/api/v1/auth/me/email": {
+      "patch": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change email (re-auth; applied immediately until F117 adds confirmation mail).",
+        "operationId": "changeMyEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Email updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong current password or not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me/password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change password (re-auth with current password).",
+        "operationId": "changeMyPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Password updated"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong current password or not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "tags": [
@@ -167,6 +272,178 @@
         }
       }
     },
+    "/api/v1/me/profile": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Current user's profile.",
+        "operationId": "getMyProfile",
+        "responses": {
+          "200": {
+            "description": "Own profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Update display name and/or bio.",
+        "operationId": "updateMyProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/profile/avatar": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Upload avatar image (raw body; Content-Type ignored in favor of magic bytes).",
+        "operationId": "uploadMyAvatar",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or oversized image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/profile/banner": {
+      "post": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Upload banner image.",
+        "operationId": "uploadMyBanner",
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or oversized image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/meta": {
       "get": {
         "tags": [
@@ -181,6 +458,151 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MetaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profiles/{account_id}": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Read another account's profile (authenticated).",
+        "operationId": "getProfile",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "description": "Account id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profiles/{account_id}/avatar": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Stream an account's avatar (authenticated).",
+        "operationId": "getProfileAvatar",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "description": "Account id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image bytes"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profiles/{account_id}/banner": {
+      "get": {
+        "tags": [
+          "profiles"
+        ],
+        "summary": "Stream an account's banner (authenticated).",
+        "operationId": "getProfileBanner",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "description": "Account id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image bytes"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -227,6 +649,45 @@
         "properties": {
           "account": {
             "$ref": "#/components/schemas/AccountResponse"
+          }
+        }
+      },
+      "ChangeEmailRequest": {
+        "type": "object",
+        "description": "Change email (requires current password; applied immediately until F117 adds confirmation mail).",
+        "required": [
+          "email",
+          "current_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangePasswordRequest": {
+        "type": "object",
+        "description": "Change password (requires current password).",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "properties": {
+          "current_password": {
+            "type": "string"
+          },
+          "new_password": {
+            "type": "string"
+          },
+          "revoke_other_sessions": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "When true, delete all other sessions for this account (current session stays)."
           }
         }
       },
@@ -288,6 +749,47 @@
           }
         }
       },
+      "ProfileResponse": {
+        "type": "object",
+        "description": "Public profile fields.",
+        "required": [
+          "account_id",
+          "display_name",
+          "bio",
+          "has_avatar",
+          "has_banner"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "avatar_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "banner_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bio": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "has_avatar": {
+            "type": "boolean"
+          },
+          "has_banner": {
+            "type": "boolean"
+          }
+        }
+      },
       "RegisterRequest": {
         "type": "object",
         "description": "Register with email and password.",
@@ -303,6 +805,24 @@
             "type": "string"
           }
         }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "description": "Patch display name and/or bio.",
+        "properties": {
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     }
   },
@@ -314,6 +834,10 @@
     {
       "name": "auth",
       "description": "Registration, login, logout, and session"
+    },
+    {
+      "name": "profiles",
+      "description": "Account profiles, avatars, and banners"
     }
   ]
 }

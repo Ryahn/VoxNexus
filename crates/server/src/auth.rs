@@ -1,16 +1,20 @@
 //! Local registration, login, logout, and session cookie handlers (F011–F012).
 
+#![allow(clippy::missing_errors_doc)]
+
 use axum::extract::State;
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use voxnexus_auth::{
-    authenticate_local, clear_session_cookie, create_local_account, create_session, revoke_session,
-    session_cookie, session_cookie_name, AuthError, SessionCookieOptions,
+    authenticate_local, change_email, change_password, clear_session_cookie, create_local_account,
+    create_session, revoke_other_sessions, revoke_session, session_cookie, session_cookie_name,
+    AuthError, SessionCookieOptions,
 };
 use voxnexus_domain::Account;
 use voxnexus_protocol::{
-    error_codes, AccountResponse, AuthSessionResponse, LoginRequest, RegisterRequest,
+    error_codes, AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
+    LoginRequest, RegisterRequest,
 };
 
 use crate::error::ApiError;
@@ -123,6 +127,87 @@ pub async fn me(user: crate::extract_auth::AuthUser) -> Json<AuthSessionResponse
     })
 }
 
+/// Change password (re-auth with current password).
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/me/password",
+    operation_id = "changeMyPassword",
+    tag = "auth",
+    request_body = ChangePasswordRequest,
+    responses(
+        (status = 204, description = "Password updated"),
+        (status = 400, description = "Validation error", body = voxnexus_protocol::ErrorBody),
+        (status = 401, description = "Wrong current password or not authenticated", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn change_my_password(
+    State(state): State<AppState>,
+    user: crate::extract_auth::AuthUser,
+    headers: HeaderMap,
+    ValidatedJson(body): ValidatedJson<ChangePasswordRequest>,
+) -> Result<StatusCode, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    match change_password(
+        &state.pool,
+        user.account_id,
+        &body.current_password,
+        &body.new_password,
+    )
+    .await
+    {
+        Ok(()) => {}
+        Err(AuthError::InvalidCredentials) => {
+            return Err(wrong_current_password(request_id));
+        }
+        Err(error) => return Err(map_auth_error(&error, request_id)),
+    }
+    if body.revoke_other_sessions.unwrap_or(false) {
+        if let Err(error) =
+            revoke_other_sessions(&state.pool, user.account_id, user.session_id).await
+        {
+            return Err(map_auth_error(&error, request_id));
+        }
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Change email (re-auth; applied immediately until F117 adds confirmation mail).
+#[utoipa::path(
+    patch,
+    path = "/api/v1/auth/me/email",
+    operation_id = "changeMyEmail",
+    tag = "auth",
+    request_body = ChangeEmailRequest,
+    responses(
+        (status = 200, description = "Email updated", body = AuthSessionResponse),
+        (status = 400, description = "Validation error", body = voxnexus_protocol::ErrorBody),
+        (status = 401, description = "Wrong current password or not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 409, description = "Email taken", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn change_my_email(
+    State(state): State<AppState>,
+    user: crate::extract_auth::AuthUser,
+    headers: HeaderMap,
+    ValidatedJson(body): ValidatedJson<ChangeEmailRequest>,
+) -> Result<Json<AuthSessionResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let account = match change_email(
+        &state.pool,
+        user.account_id,
+        &body.email,
+        &body.current_password,
+    )
+    .await
+    {
+        Ok(account) => account,
+        Err(error) => return Err(map_auth_error(&error, request_id)),
+    };
+    Ok(Json(AuthSessionResponse {
+        account: account_response(&account),
+    }))
+}
+
 async fn issue_session(
     state: AppState,
     headers: HeaderMap,
@@ -172,6 +257,16 @@ fn read_session_cookie(headers: &HeaderMap, secure: bool) -> Option<String> {
         }
     }
     None
+}
+
+fn wrong_current_password(request_id: String) -> ApiError {
+    ApiError::new(
+        StatusCode::UNAUTHORIZED,
+        error_codes::UNAUTHENTICATED,
+        "Current password is incorrect.",
+        None,
+        request_id,
+    )
 }
 
 fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {

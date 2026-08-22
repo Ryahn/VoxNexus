@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RegisterData, RegisterErrors, RegisterResponses } from './types.gen';
+import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RegisterData, RegisterErrors, RegisterResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -41,6 +41,30 @@ export const logout = <ThrowOnError extends boolean = false>(options?: Options<L
 export const getMe = <ThrowOnError extends boolean = false>(options?: Options<GetMeData, ThrowOnError>): RequestResult<GetMeResponses, GetMeErrors, ThrowOnError> => (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError>({ url: '/api/v1/auth/me', ...options });
 
 /**
+ * Change email (re-auth; applied immediately until F117 adds confirmation mail).
+ */
+export const changeMyEmail = <ThrowOnError extends boolean = false>(options: Options<ChangeMyEmailData, ThrowOnError>): RequestResult<ChangeMyEmailResponses, ChangeMyEmailErrors, ThrowOnError> => (options.client ?? client).patch<ChangeMyEmailResponses, ChangeMyEmailErrors, ThrowOnError>({
+    url: '/api/v1/auth/me/email',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Change password (re-auth with current password).
+ */
+export const changeMyPassword = <ThrowOnError extends boolean = false>(options: Options<ChangeMyPasswordData, ThrowOnError>): RequestResult<ChangeMyPasswordResponses, ChangeMyPasswordErrors, ThrowOnError> => (options.client ?? client).post<ChangeMyPasswordResponses, ChangeMyPasswordErrors, ThrowOnError>({
+    url: '/api/v1/auth/me/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Register a local account and set the session cookie.
  */
 export const register = <ThrowOnError extends boolean = false>(options: Options<RegisterData, ThrowOnError>): RequestResult<RegisterResponses, RegisterErrors, ThrowOnError> => (options.client ?? client).post<RegisterResponses, RegisterErrors, ThrowOnError>({
@@ -53,6 +77,64 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 });
 
 /**
+ * Current user's profile.
+ */
+export const getMyProfile = <ThrowOnError extends boolean = false>(options?: Options<GetMyProfileData, ThrowOnError>): RequestResult<GetMyProfileResponses, GetMyProfileErrors, ThrowOnError> => (options?.client ?? client).get<GetMyProfileResponses, GetMyProfileErrors, ThrowOnError>({ url: '/api/v1/me/profile', ...options });
+
+/**
+ * Update display name and/or bio.
+ */
+export const updateMyProfile = <ThrowOnError extends boolean = false>(options: Options<UpdateMyProfileData, ThrowOnError>): RequestResult<UpdateMyProfileResponses, UpdateMyProfileErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMyProfileResponses, UpdateMyProfileErrors, ThrowOnError>({
+    url: '/api/v1/me/profile',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Upload avatar image (raw body; Content-Type ignored in favor of magic bytes).
+ */
+export const uploadMyAvatar = <ThrowOnError extends boolean = false>(options?: Options<UploadMyAvatarData, ThrowOnError>): RequestResult<UploadMyAvatarResponses, UploadMyAvatarErrors, ThrowOnError> => (options?.client ?? client).post<UploadMyAvatarResponses, UploadMyAvatarErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/me/profile/avatar',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options?.headers
+    }
+});
+
+/**
+ * Upload banner image.
+ */
+export const uploadMyBanner = <ThrowOnError extends boolean = false>(options?: Options<UploadMyBannerData, ThrowOnError>): RequestResult<UploadMyBannerResponses, UploadMyBannerErrors, ThrowOnError> => (options?.client ?? client).post<UploadMyBannerResponses, UploadMyBannerErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/me/profile/banner',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options?.headers
+    }
+});
+
+/**
  * Instance name and crate version.
  */
 export const getMeta = <ThrowOnError extends boolean = false>(options?: Options<GetMetaData, ThrowOnError>): RequestResult<GetMetaResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMetaResponses, unknown, ThrowOnError>({ url: '/api/v1/meta', ...options });
+
+/**
+ * Read another account's profile (authenticated).
+ */
+export const getProfile = <ThrowOnError extends boolean = false>(options: Options<GetProfileData, ThrowOnError>): RequestResult<GetProfileResponses, GetProfileErrors, ThrowOnError> => (options.client ?? client).get<GetProfileResponses, GetProfileErrors, ThrowOnError>({ url: '/api/v1/profiles/{account_id}', ...options });
+
+/**
+ * Stream an account's avatar (authenticated).
+ */
+export const getProfileAvatar = <ThrowOnError extends boolean = false>(options: Options<GetProfileAvatarData, ThrowOnError>): RequestResult<GetProfileAvatarResponses, GetProfileAvatarErrors, ThrowOnError> => (options.client ?? client).get<GetProfileAvatarResponses, GetProfileAvatarErrors, ThrowOnError>({ url: '/api/v1/profiles/{account_id}/avatar', ...options });
+
+/**
+ * Stream an account's banner (authenticated).
+ */
+export const getProfileBanner = <ThrowOnError extends boolean = false>(options: Options<GetProfileBannerData, ThrowOnError>): RequestResult<GetProfileBannerResponses, GetProfileBannerErrors, ThrowOnError> => (options.client ?? client).get<GetProfileBannerResponses, GetProfileBannerErrors, ThrowOnError>({ url: '/api/v1/profiles/{account_id}/banner', ...options });

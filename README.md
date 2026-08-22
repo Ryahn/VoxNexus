@@ -1,12 +1,12 @@
 # VoxNexus
 
-Self-hostable community chat: Discord-class chat and voice, Guilded-class Spaces, and a first-class app/workflow platform. Source-available for one private personal instance — not a hosted SaaS and not OSI open source.
+Self-hostable community chat: Discord-class chat and voice, Guilded-class Spaces, and a first-class app/workflow platform. **Source-available** for inspection, contribution, and one private personal instance — not OSI open source, and not free for commercial use, public hosting, or reuse in other projects.
 
 **AI-assisted build.** This project was developed with substantial help from AI coding tools: [Cursor](https://cursor.com/), Claude, and Grok. Humans own the product direction, review, and responsibility for what ships.
 
 ## License
 
-[VoxNexus Source-Available Personal Use License v1](LICENSE). Study the code and run one private personal instance. Commercial use, public instances, reuse in other projects, and redistribution are not allowed except by contributing under the [CLA](CLA.md).
+[VoxNexus Source-Available Personal Use License v1](LICENSE). Study the code and run one private personal instance. Commercial use, public instances, reuse in other projects, and redistribution are not allowed without separate written permission (contributions go through the [CLA](CLA.md)).
 
 Plain-language FAQ: [LICENSE.md](LICENSE.md). Short form: [NOTICE](NOTICE).
 
@@ -20,9 +20,12 @@ Rust binary `voxnexus` plus a Vite/React SPA:
 | `GET /ready` | Postgres + Redis + SeaweedFS + Typesense |
 | `GET /api/v1/meta` | Instance name + version |
 | `POST /api/v1/auth/register` · `login` · `logout` · `GET …/me` | Local email/password sessions (cookie) |
+| `POST …/auth/me/password` · `PATCH …/auth/me/email` | Change password (re-auth) and email (immediate until SMTP) |
+| `GET/PATCH /api/v1/me/profile` · avatar/banner upload | Own profile; images stored in SeaweedFS |
+| `GET /api/v1/profiles/{id}` · `/avatar` · `/banner` | Read profiles/images (session required) |
 | `GET /api/v1/gateway` | WebSocket gateway; session cookie required; IDENTIFY → READY (resume token) |
 | `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
-| SPA | Register / login / logout + meta; optional gateway debug UI. Served by Axum when `WEB_DIST` is set (Compose), or via Vite in dev |
+| SPA | VOX UI shell (communities/chat chrome on mock data) + session auth + live profile settings. Served by Axum when `WEB_DIST` is set (Compose), or via Vite in dev |
 | Object storage | S3 client to SeaweedFS; bucket created on startup if missing |
 | Jobs | Apalis workers on Redis; sample `HealthPing` job |
 | Search | Typesense client; `messages` / `users` / `channels` collections ensured |
@@ -33,13 +36,13 @@ Docker Compose stack: [`deploy/docker`](deploy/docker). Config keys and options:
 
 - **Server:** Rust (stable via `rust-toolchain.toml`), Axum, Tokio, SQLx + PostgreSQL 16
 - **Deps:** Redis (jobs), SeaweedFS S3 (media), Typesense (search)
-- **Web:** React 19, Vite, TypeScript, pnpm workspace
+- **Web:** React 19, Vite, TypeScript, Tailwind, Zustand, pnpm workspace — VOX UI shell in `apps/web`
 - **Contracts:** OpenAPI → `@voxnexus/api-client`; gateway JSON Schema → `@voxnexus/protocol`
 
 ## Layout
 
 ```text
-apps/web             Vite + React SPA
+apps/web             Vite + React SPA (VOX UI shell + auth)
 crates/server        voxnexus binary (HTTP + gateway + workers)
 crates/config        file + env configuration
 crates/db            PostgreSQL pool and migrations
@@ -52,7 +55,7 @@ crates/search        Typesense client
 crates/*             other domain crates (permissions, media, …)
 packages/api-client  generated OpenAPI TypeScript client
 packages/protocol    generated gateway types + WS client
-packages/ui          shared presentational components
+packages/ui          shared presentational primitives (extract from shell over time)
 tools/codegen        export OpenAPI + gateway JSON Schema
 migrations/          SQLx migration files
 deploy/docker/       Compose stack + app Dockerfile

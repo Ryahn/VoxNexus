@@ -5,8 +5,12 @@ mod error;
 mod gateway;
 mod meta;
 mod pagination;
+mod profile;
 
-pub use auth::{AccountResponse, AuthSessionResponse, LoginRequest, RegisterRequest};
+pub use auth::{
+    AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, LoginRequest,
+    RegisterRequest,
+};
 pub use error::{error_codes, ErrorBody};
 pub use gateway::{
     gateway_schema, gateway_schema_json, DevPingPayload, DevPongPayload, Envelope, EventScope,
@@ -16,3 +20,4 @@ pub use gateway::{
 };
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
+pub use profile::{ProfileResponse, UpdateProfileRequest};

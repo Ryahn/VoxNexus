@@ -9,6 +9,7 @@ pub mod extract_auth;
 pub mod gateway;
 pub mod http;
 pub mod openapi;
+pub mod profile;
 pub mod telemetry;
 
 /// Product name.

@@ -22,6 +22,26 @@ export type AuthSessionResponse = {
 };
 
 /**
+ * Change email (requires current password; applied immediately until F117 adds confirmation mail).
+ */
+export type ChangeEmailRequest = {
+    current_password: string;
+    email: string;
+};
+
+/**
+ * Change password (requires current password).
+ */
+export type ChangePasswordRequest = {
+    current_password: string;
+    new_password: string;
+    /**
+     * When true, delete all other sessions for this account (current session stays).
+     */
+    revoke_other_sessions?: boolean | null;
+};
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -50,11 +70,32 @@ export type MetaResponse = {
 };
 
 /**
+ * Public profile fields.
+ */
+export type ProfileResponse = {
+    account_id: string;
+    avatar_url?: string | null;
+    banner_url?: string | null;
+    bio: string;
+    display_name: string;
+    has_avatar: boolean;
+    has_banner: boolean;
+};
+
+/**
  * Register with email and password.
  */
 export type RegisterRequest = {
     email: string;
     password: string;
+};
+
+/**
+ * Patch display name and/or bio.
+ */
+export type UpdateProfileRequest = {
+    bio?: string | null;
+    display_name?: string | null;
 };
 
 export type LoginData = {
@@ -127,6 +168,68 @@ export type GetMeResponses = {
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 
+export type ChangeMyEmailData = {
+    body: ChangeEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me/email';
+};
+
+export type ChangeMyEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Wrong current password or not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Email taken
+     */
+    409: ErrorBody;
+};
+
+export type ChangeMyEmailError = ChangeMyEmailErrors[keyof ChangeMyEmailErrors];
+
+export type ChangeMyEmailResponses = {
+    /**
+     * Email updated
+     */
+    200: AuthSessionResponse;
+};
+
+export type ChangeMyEmailResponse = ChangeMyEmailResponses[keyof ChangeMyEmailResponses];
+
+export type ChangeMyPasswordData = {
+    body: ChangePasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me/password';
+};
+
+export type ChangeMyPasswordErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Wrong current password or not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type ChangeMyPasswordError = ChangeMyPasswordErrors[keyof ChangeMyPasswordErrors];
+
+export type ChangeMyPasswordResponses = {
+    /**
+     * Password updated
+     */
+    204: void;
+};
+
+export type ChangeMyPasswordResponse = ChangeMyPasswordResponses[keyof ChangeMyPasswordResponses];
+
 export type RegisterData = {
     body: RegisterRequest;
     path?: never;
@@ -160,6 +263,118 @@ export type RegisterResponses = {
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
 
+export type GetMyProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/profile';
+};
+
+export type GetMyProfileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type GetMyProfileError = GetMyProfileErrors[keyof GetMyProfileErrors];
+
+export type GetMyProfileResponses = {
+    /**
+     * Own profile
+     */
+    200: ProfileResponse;
+};
+
+export type GetMyProfileResponse = GetMyProfileResponses[keyof GetMyProfileResponses];
+
+export type UpdateMyProfileData = {
+    body: UpdateProfileRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/profile';
+};
+
+export type UpdateMyProfileErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type UpdateMyProfileError = UpdateMyProfileErrors[keyof UpdateMyProfileErrors];
+
+export type UpdateMyProfileResponses = {
+    /**
+     * Updated profile
+     */
+    200: ProfileResponse;
+};
+
+export type UpdateMyProfileResponse = UpdateMyProfileResponses[keyof UpdateMyProfileResponses];
+
+export type UploadMyAvatarData = {
+    body?: unknown;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/profile/avatar';
+};
+
+export type UploadMyAvatarErrors = {
+    /**
+     * Invalid or oversized image
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type UploadMyAvatarError = UploadMyAvatarErrors[keyof UploadMyAvatarErrors];
+
+export type UploadMyAvatarResponses = {
+    /**
+     * Updated profile
+     */
+    200: ProfileResponse;
+};
+
+export type UploadMyAvatarResponse = UploadMyAvatarResponses[keyof UploadMyAvatarResponses];
+
+export type UploadMyBannerData = {
+    body?: unknown;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/profile/banner';
+};
+
+export type UploadMyBannerErrors = {
+    /**
+     * Invalid or oversized image
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type UploadMyBannerError = UploadMyBannerErrors[keyof UploadMyBannerErrors];
+
+export type UploadMyBannerResponses = {
+    /**
+     * Updated profile
+     */
+    200: ProfileResponse;
+};
+
+export type UploadMyBannerResponse = UploadMyBannerResponses[keyof UploadMyBannerResponses];
+
 export type GetMetaData = {
     body?: never;
     path?: never;
@@ -175,3 +390,101 @@ export type GetMetaResponses = {
 };
 
 export type GetMetaResponse = GetMetaResponses[keyof GetMetaResponses];
+
+export type GetProfileData = {
+    body?: never;
+    path: {
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/profiles/{account_id}';
+};
+
+export type GetProfileErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetProfileError = GetProfileErrors[keyof GetProfileErrors];
+
+export type GetProfileResponses = {
+    /**
+     * Profile
+     */
+    200: ProfileResponse;
+};
+
+export type GetProfileResponse = GetProfileResponses[keyof GetProfileResponses];
+
+export type GetProfileAvatarData = {
+    body?: never;
+    path: {
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/profiles/{account_id}/avatar';
+};
+
+export type GetProfileAvatarErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetProfileAvatarError = GetProfileAvatarErrors[keyof GetProfileAvatarErrors];
+
+export type GetProfileAvatarResponses = {
+    /**
+     * Image bytes
+     */
+    200: unknown;
+};
+
+export type GetProfileBannerData = {
+    body?: never;
+    path: {
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/profiles/{account_id}/banner';
+};
+
+export type GetProfileBannerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetProfileBannerError = GetProfileBannerErrors[keyof GetProfileBannerErrors];
+
+export type GetProfileBannerResponses = {
+    /**
+     * Image bytes
+     */
+    200: unknown;
+};

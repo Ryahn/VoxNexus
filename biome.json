@@ -27,7 +27,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "recommended": true
     }
   },
   "javascript": {
@@ -35,5 +35,34 @@
       "quoteStyle": "single",
       "semicolons": "always"
     }
-  }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useButtonType": "off",
+            "noStaticElementInteractions": "off"
+          },
+          "suspicious": {
+            "noArrayIndexKey": "off",
+            "noUnknownAtRules": "off",
+            "useIterableCallbackReturn": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          }
+        }
+      }
+    }
+  ]
 }

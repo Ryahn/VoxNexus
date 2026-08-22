@@ -11,8 +11,11 @@ Open Source Initiative. You must agree to these terms to receive any license.
    "Public Instance" means making the Software available so that people beyond
    a private personal group can create accounts, join, or discover the service
    (including a public registration page or advertised community).
-   "Use the code" means copying, forking, or incorporating any substantial
-   portion of the Software into other software or services.
+   "Use the code" means copying or incorporating any substantial portion of
+   the Software into other software or services, or redistributing the
+   Software outside the limited hosting-service fork described in section 1(d).
+   Platform forks used only to view, study, or contribute under the CLA are
+   not "Use the code" by themselves.
 
 1. Limited grant
    Provided you comply with these terms, the copyright holder grants you a
@@ -21,7 +24,12 @@ Open Source Initiative. You must agree to these terms to receive any license.
    (b) compile and run one private instance for personal, non-commercial use
        that is not a Public Instance (invite-only household/friends use is
        allowed; advertised or general-public use is not);
-   (c) make private modifications solely to run that instance.
+   (c) make private modifications solely to run that instance;
+   (d) fork the repository using functionality provided by the repository
+       hosting service solely for viewing, studying, or contributing to
+       VoxNexus under the CLA. Such a fork does not grant permission to
+       operate a Public Instance, redistribute, commercialize, or
+       incorporate the Software into another project.
    A limited patent license is granted only for the same permitted purposes
    and only for claims the copyright holder can license that you would
    infringe by exercising this grant.
@@ -31,8 +39,9 @@ Open Source Initiative. You must agree to these terms to receive any license.
        (internal company chat included);
    (b) operating a Public Instance;
    (c) using the code in other projects, including hobby projects;
-   (d) distributing the Software or modifications except as a contribution
-       to the copyright holder’s official repository under the CLA;
+   (d) distributing the Software or modifications except (i) as a
+       contribution to the copyright holder’s official repository under
+       the CLA, or (ii) the limited hosting-service fork in section 1(d);
    (e) offering the Software as hosted/SaaS, or selling a product whose value
        derives substantially from the Software;
    (f) relicensing.

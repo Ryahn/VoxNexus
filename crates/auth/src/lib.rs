@@ -1,6 +1,7 @@
 //! Passwords, sessions, and account persistence.
 
 mod password;
+mod profile;
 mod session;
 
 use chrono::{DateTime, Duration, Utc};
@@ -9,6 +10,10 @@ use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
 pub use password::{hash_password, verify_password, PasswordError};
+pub use profile::{
+    delete_object_meta, ensure_profile, get_object, get_profile, insert_object, set_avatar_object,
+    set_banner_object, update_profile,
+};
 pub use session::{
     clear_session_cookie, hash_session_token, new_session_token, session_cookie,
     session_cookie_name, SessionCookieOptions, SESSION_TTL,
@@ -68,9 +73,12 @@ pub async fn create_local_account(
     .await;
 
     match result {
-        Ok(_) => get_account(pool, id)
-            .await?
-            .ok_or_else(|| AuthError::Db(sqlx::Error::RowNotFound)),
+        Ok(_) => {
+            ensure_profile(pool, id).await?;
+            get_account(pool, id)
+                .await?
+                .ok_or_else(|| AuthError::Db(sqlx::Error::RowNotFound))
+        }
         Err(sqlx::Error::Database(db)) if db.constraint() == Some("accounts_email_unique") => {
             Err(AuthError::EmailTaken)
         }
@@ -285,6 +293,103 @@ pub async fn revoke_session(pool: &PgPool, raw_token: &str) -> Result<bool, Auth
         .execute(pool)
         .await?;
     Ok(result.rows_affected() > 0)
+}
+
+/// Delete all sessions for an account except one (F015 revoke-other on password change).
+///
+/// # Errors
+///
+/// Returns database errors if the delete fails.
+pub async fn revoke_other_sessions(
+    pool: &PgPool,
+    account_id: Uuid,
+    except_session_id: Uuid,
+) -> Result<u64, AuthError> {
+    let result = sqlx::query("DELETE FROM sessions WHERE account_id = $1 AND id != $2")
+        .bind(account_id)
+        .bind(except_session_id)
+        .execute(pool)
+        .await?;
+    Ok(result.rows_affected())
+}
+
+/// Change password after verifying the current one.
+///
+/// # Errors
+///
+/// Returns [`AuthError::InvalidCredentials`] when the current password is wrong, or database / hash errors.
+pub async fn change_password(
+    pool: &PgPool,
+    account_id: Uuid,
+    current_password: &str,
+    new_password: &str,
+) -> Result<(), AuthError> {
+    let account = get_account(pool, account_id)
+        .await?
+        .ok_or(AuthError::InvalidCredentials)?;
+    let hash = account.password_hash.as_deref();
+    if !verify_password(current_password, hash)? {
+        return Err(AuthError::InvalidCredentials);
+    }
+    let new_hash = hash_password(new_password)?;
+    let now = Utc::now();
+    sqlx::query(
+        r"
+        UPDATE accounts
+        SET password_hash = $2, updated_at = $3
+        WHERE id = $1 AND deleted_at IS NULL
+        ",
+    )
+    .bind(account_id)
+    .bind(&new_hash)
+    .bind(now)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Change email after verifying the current password (immediate until F117 confirmation mail).
+///
+/// # Errors
+///
+/// Returns [`AuthError::InvalidCredentials`], [`AuthError::EmailTaken`], or database errors.
+pub async fn change_email(
+    pool: &PgPool,
+    account_id: Uuid,
+    email: &str,
+    current_password: &str,
+) -> Result<Account, AuthError> {
+    let account = get_account(pool, account_id)
+        .await?
+        .ok_or(AuthError::InvalidCredentials)?;
+    let hash = account.password_hash.as_deref();
+    if !verify_password(current_password, hash)? {
+        return Err(AuthError::InvalidCredentials);
+    }
+    let email = normalize_email(email);
+    let now = Utc::now();
+    let result = sqlx::query(
+        r"
+        UPDATE accounts
+        SET email = $2, updated_at = $3
+        WHERE id = $1 AND deleted_at IS NULL
+        ",
+    )
+    .bind(account_id)
+    .bind(&email)
+    .bind(now)
+    .execute(pool)
+    .await;
+
+    match result {
+        Ok(_) => get_account(pool, account_id)
+            .await?
+            .ok_or_else(|| AuthError::Db(sqlx::Error::RowNotFound)),
+        Err(sqlx::Error::Database(db)) if db.constraint() == Some("accounts_email_unique") => {
+            Err(AuthError::EmailTaken)
+        }
+        Err(error) => Err(AuthError::Db(error)),
+    }
 }
 
 /// Load an account by id.

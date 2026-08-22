@@ -11,8 +11,10 @@ workspace = true
 
 [dependencies]
 axum = { version = "0.8", features = ["ws"] }
+bytes = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = [
@@ -23,6 +25,7 @@ tower-http = { version = "0.6", features = [
     "limit",
     "cors",
     "fs",
+    "set-header",
 ] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter"] }
@@ -35,6 +38,7 @@ voxnexus-auth = { path = "../auth" }
 voxnexus-config = { path = "../config" }
 voxnexus-db = { path = "../db" }
 voxnexus-domain = { path = "../domain" }
+voxnexus-media = { path = "../media" }
 voxnexus-protocol = { path = "../protocol" }
 voxnexus-realtime = { path = "../realtime" }
 voxnexus-jobs = { path = "../jobs" }
