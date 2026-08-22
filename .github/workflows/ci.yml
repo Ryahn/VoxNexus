@@ -45,6 +45,12 @@ jobs:
     env:
       DATABASE_URL_TEST: postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable
       REDIS_URL_TEST: redis://127.0.0.1:6379
+      S3_ENDPOINT_TEST: http://127.0.0.1:8333
+      S3_ACCESS_KEY_TEST: any
+      S3_SECRET_KEY_TEST: minioadmin
+      S3_BUCKET_TEST: voxnexus
+      TYPESENSE_URL_TEST: http://127.0.0.1:8108
+      TYPESENSE_API_KEY_TEST: ts
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,6 +76,31 @@ jobs:
 
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Start MinIO (S3) and Typesense
+        run: |
+          docker run -d --name voxnexus-ci-minio \
+            -p 8333:9000 \
+            -e MINIO_ROOT_USER=any \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio server /data
+          docker run -d --name voxnexus-ci-typesense \
+            -p 8108:8108 \
+            -v "${{ runner.temp }}/typesense-data:/data" \
+            typesense/typesense:27.1 \
+            --data-dir /data --api-key=ts --enable-cors
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8333/minio/health/live >/dev/null \
+              && curl -fsS http://127.0.0.1:8108/health >/dev/null; then
+              echo "MinIO and Typesense are up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "deps failed to become ready"
+          docker logs voxnexus-ci-minio || true
+          docker logs voxnexus-ci-typesense || true
+          exit 1
 
       - name: cargo fmt
         run: cargo fmt --all -- --check
@@ -112,6 +143,7 @@ jobs:
 
       - name: Wait for /health
         run: |
+          set +e
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:8080/health; then
               exit 0
@@ -119,6 +151,7 @@ jobs:
             sleep 5
           done
           echo "health never became ready"
+          docker compose -f docker-compose.yml ps
           docker compose -f docker-compose.yml logs
           exit 1
 
