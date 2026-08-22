@@ -36,3 +36,4 @@ coverage/
 graft/
 docs/
 logs/
+*-s3.json

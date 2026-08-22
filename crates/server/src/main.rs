@@ -44,6 +44,31 @@ async fn run() -> Result<(), i32> {
     })?;
     tracing::info!("database ready");
 
+    if let (Some(email), Some(password)) = (
+        config.bootstrap_admin_email.as_ref(),
+        config.bootstrap_admin_password.as_ref(),
+    ) {
+        match voxnexus_auth::bootstrap_instance_admin(&pool, email, password.expose()).await {
+            Ok(voxnexus_auth::BootstrapResult::Created) => {
+                tracing::info!(
+                    email = %email,
+                    "bootstrap instance admin created from environment"
+                );
+            }
+            Ok(voxnexus_auth::BootstrapResult::AlreadyBootstrapped) => {
+                tracing::info!("instance admin already exists; skipping bootstrap");
+            }
+            Err(error) => {
+                tracing::error!(error = %error, "bootstrap instance admin failed");
+                return Err(1);
+            }
+        }
+    } else if config.bootstrap_admin_email.is_some() || config.bootstrap_admin_password.is_some() {
+        tracing::warn!(
+            "BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD must both be set; skipping bootstrap"
+        );
+    }
+
     let redis = start_redis(config.redis_url.as_str()).await?;
     let storage = start_storage(&config).await?;
     let search = start_typesense(&config).await?;

@@ -69,7 +69,15 @@ deploy/docker/       Compose stack + app Dockerfile
 
 ## Configure
 
-Copy [`config.example.toml`](config.example.toml) → `config.toml` (Unix: `chmod 600`), or set the same keys as environment variables. Env overrides the file. Missing/invalid required keys fail startup with the key name.
+There are **two** config places. Both are hand-edited; keep overlapping values in sync yourself.
+
+1. **App config** — copy [`config.example.toml`](config.example.toml) → `config.toml` (Unix: `chmod 600`) for `cargo run` without Compose. Uses `127.0.0.1` host URLs for Postgres, Redis, SeaweedFS, and Typesense (the ports published by Compose, or your own local services).
+
+2. **Compose env** — copy [`deploy/docker/.env.example`](deploy/docker/.env.example) → `deploy/docker/.env` for `docker compose`. Sets Postgres container credentials plus app env vars injected by [`docker-compose.yml`](deploy/docker/docker-compose.yml). Connection URLs inside the stack use Docker service names (`postgres`, `redis`, `seaweedfs`, `typesense`), not `127.0.0.1`.
+
+Shared keys (`PUBLIC_URL`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `TYPESENSE_API_KEY`, `COOKIE_SECURE`, `LOG_LEVEL`, `GATEWAY_ALLOW_UNAUTH`, `METRICS_ENABLED`) should match when you run the app against the same stack. [`deploy/docker/seaweedfs-s3.json`](deploy/docker/seaweedfs-s3.json) must use the same S3 credentials as both files.
+
+Env vars override `config.toml`. Missing/invalid required keys fail startup with the key name.
 
 Full key-by-key reference (defaults and allowed values such as `LOG_FORMAT = auto|pretty|json`): **[`config.README.md`](config.README.md)**.
 

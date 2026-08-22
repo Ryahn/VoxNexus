@@ -5,7 +5,8 @@ mod profile;
 mod session;
 
 use chrono::{DateTime, Duration, Utc};
-use sqlx::PgPool;
+use sqlx::postgres::Postgres;
+use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
@@ -21,6 +22,18 @@ pub use session::{
 
 /// Product crate name.
 pub const CRATE_NAME: &str = "voxnexus-auth";
+
+/// Advisory lock key for one-shot instance admin bootstrap (transaction-scoped).
+const INSTANCE_BOOTSTRAP_ADVISORY_LOCK: i64 = 0x766f_786e_6578_7573; // "voxnexus"
+
+/// Outcome of [`bootstrap_instance_admin`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BootstrapResult {
+    /// A new or existing account was promoted to instance admin.
+    Created,
+    /// An instance admin already exists; bootstrap was skipped.
+    AlreadyBootstrapped,
+}
 
 /// Auth and account persistence errors.
 #[derive(Debug, thiserror::Error)]
@@ -57,23 +70,30 @@ pub async fn create_local_account(
     let password_hash = hash_password(password)?;
     let now = Utc::now();
     let id = Uuid::now_v7();
+
+    let mut tx = pool.begin().await?;
+    acquire_bootstrap_lock(&mut tx).await?;
+    let is_instance_admin = !instance_admin_exists(&mut tx).await?;
+
     let result = sqlx::query(
         r"
         INSERT INTO accounts (
             id, instance_id, email, password_hash, is_bot, is_instance_admin, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, FALSE, FALSE, $5, $5)
+        ) VALUES ($1, $2, $3, $4, FALSE, $5, $6, $6)
         ",
     )
     .bind(id)
     .bind(DEFAULT_INSTANCE_ID)
     .bind(&email)
     .bind(&password_hash)
+    .bind(is_instance_admin)
     .bind(now)
-    .execute(pool)
+    .execute(&mut *tx)
     .await;
 
     match result {
         Ok(_) => {
+            tx.commit().await?;
             ensure_profile(pool, id).await?;
             get_account(pool, id)
                 .await?
@@ -84,6 +104,65 @@ pub async fn create_local_account(
         }
         Err(error) => Err(AuthError::Db(error)),
     }
+}
+
+/// Create or promote the instance admin from environment credentials when no admin exists yet.
+///
+/// # Errors
+///
+/// Returns password hash failures or database errors.
+pub async fn bootstrap_instance_admin(
+    pool: &PgPool,
+    email: &str,
+    password: &str,
+) -> Result<BootstrapResult, AuthError> {
+    let email = normalize_email(email);
+    let password_hash = hash_password(password)?;
+    let now = Utc::now();
+
+    let mut tx = pool.begin().await?;
+    acquire_bootstrap_lock(&mut tx).await?;
+    if instance_admin_exists(&mut tx).await? {
+        tx.commit().await?;
+        return Ok(BootstrapResult::AlreadyBootstrapped);
+    }
+
+    if let Some(existing) = fetch_account_by_email_tx(&mut tx, &email).await? {
+        sqlx::query(
+            r"
+            UPDATE accounts
+            SET is_instance_admin = TRUE, password_hash = $2, updated_at = $3
+            WHERE id = $1 AND deleted_at IS NULL
+            ",
+        )
+        .bind(existing.id)
+        .bind(&password_hash)
+        .bind(now)
+        .execute(&mut *tx)
+        .await?;
+        tx.commit().await?;
+        return Ok(BootstrapResult::Created);
+    }
+
+    let id = Uuid::now_v7();
+    sqlx::query(
+        r"
+        INSERT INTO accounts (
+            id, instance_id, email, password_hash, is_bot, is_instance_admin, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, FALSE, TRUE, $5, $5)
+        ",
+    )
+    .bind(id)
+    .bind(DEFAULT_INSTANCE_ID)
+    .bind(&email)
+    .bind(&password_hash)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
+
+    tx.commit().await?;
+    ensure_profile(pool, id).await?;
+    Ok(BootstrapResult::Created)
 }
 
 /// Link an OIDC (or other) identity to an account.
@@ -425,6 +504,46 @@ async fn find_account_by_email(pool: &PgPool, email: &str) -> Result<Option<Acco
     .fetch_optional(pool)
     .await?;
     Ok(row.map(AccountRow::into_account))
+}
+
+async fn fetch_account_by_email_tx(
+    tx: &mut Transaction<'_, Postgres>,
+    email: &str,
+) -> Result<Option<Account>, AuthError> {
+    let row = sqlx::query_as::<_, AccountRow>(
+        r"
+        SELECT id, instance_id, email, password_hash, is_bot, is_instance_admin,
+               created_at, updated_at, deleted_at
+        FROM accounts
+        WHERE email = $1 AND deleted_at IS NULL
+        ",
+    )
+    .bind(email)
+    .fetch_optional(&mut **tx)
+    .await?;
+    Ok(row.map(AccountRow::into_account))
+}
+
+async fn acquire_bootstrap_lock(tx: &mut Transaction<'_, Postgres>) -> Result<(), AuthError> {
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(INSTANCE_BOOTSTRAP_ADVISORY_LOCK)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+async fn instance_admin_exists(tx: &mut Transaction<'_, Postgres>) -> Result<bool, AuthError> {
+    sqlx::query_scalar(
+        r"
+        SELECT EXISTS(
+            SELECT 1 FROM accounts
+            WHERE is_instance_admin = TRUE AND deleted_at IS NULL
+        )
+        ",
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(AuthError::from)
 }
 
 fn normalize_email(email: &str) -> String {

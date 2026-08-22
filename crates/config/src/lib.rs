@@ -56,6 +56,8 @@ const ENV_KEYS: &[&str] = &[
     "METRICS_ENABLED",
     "GATEWAY_ALLOW_UNAUTH",
     "REGISTRATION_OPEN",
+    "BOOTSTRAP_ADMIN_EMAIL",
+    "BOOTSTRAP_ADMIN_PASSWORD",
     "WEB_DIST",
     "LIVEKIT_URL",
     "LIVEKIT_API_KEY",
@@ -89,6 +91,10 @@ pub struct Config {
     pub gateway_allow_unauth: bool,
     /// When true, `POST /api/v1/auth/register` is allowed. Default true until F017 instance settings.
     pub registration_open: bool,
+    /// When set with [`Self::bootstrap_admin_password`], creates the instance admin on startup if none exists.
+    pub bootstrap_admin_email: Option<String>,
+    /// Password for [`Self::bootstrap_admin_email`]. Secret; both must be set to bootstrap.
+    pub bootstrap_admin_password: Option<Secret>,
     /// Directory of built SPA assets (`apps/web/dist`). When set, Axum serves them in production.
     pub web_dist: Option<PathBuf>,
     pub livekit_url: Option<Url>,
@@ -154,6 +160,10 @@ struct RawConfig {
     gateway_allow_unauth: Option<FlexString>,
     #[serde(rename = "REGISTRATION_OPEN")]
     registration_open: Option<FlexString>,
+    #[serde(rename = "BOOTSTRAP_ADMIN_EMAIL")]
+    bootstrap_admin_email: Option<String>,
+    #[serde(rename = "BOOTSTRAP_ADMIN_PASSWORD")]
+    bootstrap_admin_password: Option<String>,
     #[serde(rename = "WEB_DIST")]
     web_dist: Option<String>,
     #[serde(rename = "LIVEKIT_URL")]
@@ -253,6 +263,8 @@ impl Config {
                 raw.registration_open.map(FlexString::into_string),
                 true,
             )?,
+            bootstrap_admin_email: optional_nonempty(raw.bootstrap_admin_email),
+            bootstrap_admin_password: optional_secret(raw.bootstrap_admin_password),
             web_dist: optional_path(raw.web_dist),
             livekit_url: optional_url("LIVEKIT_URL", raw.livekit_url)?,
             livekit_api_key: optional_secret(raw.livekit_api_key),

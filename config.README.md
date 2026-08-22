@@ -13,6 +13,8 @@ Empty strings are treated as missing. Invalid values fail startup and name the k
 
 Boolean keys accept: `true` / `false`, `1` / `0`, `yes` / `no`, `on` / `off` (case-insensitive). TOML may also use bare `true`/`false`.
 
+For Docker Compose, also edit [`deploy/docker/.env.example`](deploy/docker/.env.example) (copy to `.env`) and keep [`seaweedfs-s3.json`](deploy/docker/seaweedfs-s3.json) in sync with S3 credentials. See the **Configure** section in [`README.md`](README.md).
+
 ---
 
 ## Required
@@ -48,8 +50,8 @@ S3_ENDPOINT = "http://127.0.0.1:8333"
 Credentials for the S3 API. Treated as secrets (not logged in plain form).
 
 ```toml
-S3_ACCESS_KEY = "any"
-S3_SECRET_KEY = "any"
+S3_ACCESS_KEY = "voxnexus"
+S3_SECRET_KEY = "voxnexus-s3-dev-secret"
 ```
 
 Compose defaults match [`deploy/docker/seaweedfs-s3.json`](deploy/docker/seaweedfs-s3.json).
@@ -108,6 +110,17 @@ When `true`, `POST /api/v1/auth/register` is allowed. When `false`, registration
 ```toml
 # REGISTRATION_OPEN = "true"
 ```
+
+### `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`
+
+Optional. When **both** are set, the server creates (or promotes) an instance admin account on startup if no admin exists yet. Use this for automated first-boot setup; otherwise the first registered user becomes admin.
+
+```toml
+# BOOTSTRAP_ADMIN_EMAIL = "admin@example.com"
+# BOOTSTRAP_ADMIN_PASSWORD = "change-me"
+```
+
+`BOOTSTRAP_ADMIN_PASSWORD` is a secret. If only one of the pair is set, bootstrap is skipped with a warning.
 
 ### `LOG_LEVEL`
 
