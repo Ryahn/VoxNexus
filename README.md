@@ -2,6 +2,8 @@
 
 Self-hostable community chat: Discord-class chat and voice, Guilded-class Spaces, and a first-class app/workflow platform. Source-available for one private personal instance — not a hosted SaaS and not OSI open source.
 
+**AI-assisted build.** This project was developed with substantial help from AI coding tools: [Cursor](https://cursor.com/), Claude, and Grok. Humans own the product direction, review, and responsibility for what ships.
+
 ## License
 
 [VoxNexus Source-Available Personal Use License v1](LICENSE). Study the code and run one private personal instance. Commercial use, public instances, reuse in other projects, and redistribution are not allowed except by contributing under the [CLA](CLA.md).
