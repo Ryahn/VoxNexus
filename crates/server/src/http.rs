@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use axum::extract::DefaultBodyLimit;
 use axum::extract::State;
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue, Method, Request, StatusCode};
 use axum::middleware;
@@ -134,6 +135,7 @@ pub fn app(state: AppState) -> Router {
         None => router.fallback(not_found),
     };
     let router = router
+        .layer(DefaultBodyLimit::max(MAX_JSON_BODY_BYTES))
         .layer(middleware::from_fn_with_state(
             auth_state,
             require_api_session,
