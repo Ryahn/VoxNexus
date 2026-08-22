@@ -15,16 +15,18 @@ Rust binary `voxnexus` plus a Vite/React SPA:
 | Surface | Behavior |
 |---|---|
 | `GET /health` | Liveness |
-| `GET /ready` | Postgres ping + SeaweedFS `HeadBucket` (Redis/Typesense still skipped) |
+| `GET /ready` | Postgres + Redis + SeaweedFS + Typesense |
 | `GET /api/v1/meta` | Instance name + version |
 | `GET /api/v1/gateway` | WebSocket gateway (Hello / heartbeat / DevPing); gated by `GATEWAY_ALLOW_UNAUTH` |
 | `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
 | Web app | Loads meta via the generated API client; optional gateway debug UI |
 | Object storage | S3 client to SeaweedFS; bucket created on startup if missing |
+| Jobs | Apalis workers on Redis; sample `HealthPing` job |
+| Search | Typesense client; `messages` / `users` / `channels` collections ensured |
 
-Redis and Typesense keys are required at startup but not connected yet. There is no Docker Compose stack yet (F009).
+There is a Docker Compose stack under [`deploy/docker`](deploy/docker) ([docs/compose.md](docs/compose.md)).
 
-Operator docs: [config](docs/config.md), [database](docs/database.md), [storage](docs/storage.md), [API](docs/api.md), [gateway](docs/gateway.md), [observability](docs/observability.md), [codegen](docs/codegen.md).
+Operator docs: [config](docs/config.md), [database](docs/database.md), [storage](docs/storage.md), [jobs](docs/jobs.md), [search](docs/search.md), [compose](docs/compose.md), [CI](docs/ci.md), [API](docs/api.md), [gateway](docs/gateway.md), [observability](docs/observability.md), [codegen](docs/codegen.md).
 
 ## Stack
 
@@ -42,12 +44,15 @@ crates/db            PostgreSQL pool and migrations
 crates/protocol      shared HTTP/gateway types (Rust)
 crates/realtime      WebSocket session loop
 crates/storage       S3 / SeaweedFS object store
+crates/jobs          Apalis workers + Redis queue
+crates/search        Typesense search trait + client
 crates/*             domain crates (auth, permissions, media, …)
 packages/api-client  generated OpenAPI TypeScript client
 packages/protocol    generated gateway types + WS client
 packages/ui          shared presentational components
 tools/codegen        export OpenAPI + gateway JSON Schema
 migrations/          SQLx migration files
+deploy/docker/       Compose stack + app Dockerfile
 docs/                operator and planning docs
 ```
 
@@ -55,14 +60,25 @@ docs/                operator and planning docs
 
 - [Rust](https://rustup.rs/) (stable) with rustfmt and clippy
 - [pnpm](https://pnpm.io/) 10
-- PostgreSQL 16 reachable at `DATABASE_URL`
-- S3-compatible endpoint at `S3_ENDPOINT` (SeaweedFS or LocalStack)
+- [Docker](https://docs.docker.com/get-docker/) (Compose) **or** PostgreSQL 16 + Redis + SeaweedFS/S3 + Typesense reachable as in `config.toml`
 
 ## Configure
 
 Copy [`config.example.toml`](config.example.toml) to `config.toml` (Unix: `chmod 600`) or set the same keys as environment variables. Env overrides the file. Missing or invalid required keys fail startup with the key name.
 
-Defaults: listen `127.0.0.1:8080`, CORS origin from `PUBLIC_URL`. Useful toggles: `GATEWAY_ALLOW_UNAUTH`, `METRICS_ENABLED`, `LOG_LEVEL`, `LOG_FORMAT`.
+Defaults: listen `127.0.0.1:8080`, CORS origin from `PUBLIC_URL`. Useful toggles: `GATEWAY_ALLOW_UNAUTH`, `METRICS_ENABLED`, `LOG_LEVEL`, `LOG_FORMAT`, `WEB_DIST` (SPA directory for Axum).
+
+## Docker Compose
+
+```powershell
+cd deploy/docker
+copy .env.example .env
+docker compose -f docker-compose.yml up -d --build
+curl.exe http://127.0.0.1:8080/health
+curl.exe http://127.0.0.1:8080/ready
+```
+
+See [docs/compose.md](docs/compose.md). CI: [docs/ci.md](docs/ci.md) (GitHub Actions on every PR).
 
 ## Build and check
 
@@ -73,11 +89,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 pnpm check-codegen
 pnpm build
+pnpm lint
 ```
-
 Database integration tests need `DATABASE_URL_TEST` ([docs/database.md](docs/database.md)). Live S3 tests need `S3_ENDPOINT_TEST` ([docs/storage.md](docs/storage.md)).
 
-## Run
+## Run (without Compose)
 
 Terminal 1 — API (migrations run on startup):
 

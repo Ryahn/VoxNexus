@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "voxnexus",
+      "credentials": [
+        {
+          "accessKey": "voxnexus",
+          "secretKey": "voxnexus-s3-dev-secret"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

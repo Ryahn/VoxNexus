@@ -1,5 +1,6 @@
-//! HTTP surface: probes, `/api/v1`, error fallback, and shared middleware.
+//! HTTP surface: probes, `/api/v1`, SPA static files, error fallback, and shared middleware.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -7,7 +8,7 @@ use axum::extract::State;
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue, Method, Request, StatusCode};
 use axum::middleware;
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{any, get};
 use axum::{Json, Router};
 use serde::Serialize;
 use tower::ServiceBuilder;
@@ -17,6 +18,7 @@ use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::request_id::{
     MakeRequestId, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
 };
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing::Span;
 use utoipa_axum::router::OpenApiRouter;
@@ -24,7 +26,9 @@ use utoipa_axum::routes;
 use uuid::Uuid;
 use voxnexus_config::Url;
 use voxnexus_db::PgPool;
+use voxnexus_jobs::RedisConn;
 use voxnexus_protocol::MetaResponse;
+use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
 
 use crate::csrf::csrf_hook;
@@ -55,6 +59,10 @@ pub struct AppState {
     pub gateway_allow_unauth: bool,
     pub gateway_heartbeat_interval: Duration,
     pub storage: Arc<dyn ObjectStore>,
+    pub redis: RedisConn,
+    pub search: Arc<dyn SearchEngine>,
+    /// Built SPA directory for production (`WEB_DIST`). None keeps JSON API-only fallbacks.
+    pub web_dist: Option<PathBuf>,
 }
 
 #[derive(Serialize)]
@@ -76,20 +84,39 @@ pub fn health_router() -> Router {
     with_observe(Router::new().route("/health", get(health)))
 }
 
-/// Application router: probes, `/api/v1`, and optional `/metrics`.
+/// Application router: probes, `/api/v1`, optional SPA static files, and optional `/metrics`.
 pub fn app(state: AppState) -> Router {
     let public_url = state.public_url.clone();
     let metrics_enabled = state.metrics_enabled;
+    let web_dist = state.web_dist.clone();
     let (api, _) = api_v1().split_for_parts();
     let mut router = Router::new()
         .route("/health", get(health))
         .route("/ready", get(ready))
         .route("/api/v1/gateway", get(crate::gateway::gateway_upgrade))
-        .merge(api);
+        .merge(api)
+        .route("/api/{*rest}", any(not_found));
     if metrics_enabled {
         router = router.route("/metrics", get(metrics));
     }
-    with_middleware(router.fallback(not_found).with_state(state), &public_url)
+    let router = match web_dist {
+        Some(dir) if dir.is_dir() => {
+            let index = dir.join("index.html");
+            let spa = ServeDir::new(dir)
+                .append_index_html_on_directories(true)
+                .not_found_service(ServeFile::new(index));
+            router.fallback_service(spa)
+        }
+        Some(dir) => {
+            tracing::warn!(
+                path = %dir.display(),
+                "WEB_DIST set but directory missing; API-only fallbacks"
+            );
+            router.fallback(not_found)
+        }
+        None => router.fallback(not_found),
+    };
+    with_middleware(router.with_state(state), &public_url)
 }
 
 fn api_v1() -> OpenApiRouter<AppState> {
@@ -191,6 +218,13 @@ async fn ready(State(state): State<AppState>) -> impl IntoResponse {
             "error"
         }
     };
+    let redis = match voxnexus_jobs::ping(&state.redis).await {
+        Ok(()) => "ok",
+        Err(error) => {
+            tracing::warn!(error = %error, "redis readiness check failed");
+            "error"
+        }
+    };
     let seaweedfs = match state.storage.head_bucket().await {
         Ok(()) => "ok",
         Err(error) => {
@@ -198,7 +232,14 @@ async fn ready(State(state): State<AppState>) -> impl IntoResponse {
             "error"
         }
     };
-    let ok = postgres == "ok" && seaweedfs == "ok";
+    let typesense = match state.search.ping().await {
+        Ok(()) => "ok",
+        Err(error) => {
+            tracing::warn!(error = %error, "typesense readiness check failed");
+            "error"
+        }
+    };
+    let ok = postgres == "ok" && redis == "ok" && seaweedfs == "ok" && typesense == "ok";
     let status = if ok { "ok" } else { "unavailable" };
     let code = if ok {
         StatusCode::OK
@@ -210,9 +251,9 @@ async fn ready(State(state): State<AppState>) -> impl IntoResponse {
         Json(ReadyBody {
             status,
             postgres,
-            redis: "skipped",
+            redis,
             seaweedfs,
-            typesense: "skipped",
+            typesense,
         }),
     )
         .into_response()

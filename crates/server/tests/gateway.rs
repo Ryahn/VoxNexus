@@ -10,12 +10,22 @@ use tokio_tungstenite::tungstenite::protocol::Message;
 use tower::ServiceExt;
 use voxnexus::http::{app, AppState};
 use voxnexus_db::{test_database_url, PgPool};
+use voxnexus_jobs::{connect, RedisConn};
 use voxnexus_protocol::{
     error_codes, Envelope, ErrorBody, EventType, HeartbeatPayload, GATEWAY_SUBPROTOCOL,
 };
+use voxnexus_search::{MemorySearchEngine, SearchEngine};
 use voxnexus_storage::{MemoryObjectStore, ObjectStore};
 
-fn state(pool: PgPool, allow_unauth: bool, heartbeat: Duration) -> AppState {
+async fn test_redis() -> Option<RedisConn> {
+    let url = std::env::var("REDIS_URL_TEST")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "redis://127.0.0.1:6379".to_owned());
+    connect(&url).await.ok()
+}
+
+fn state(pool: PgPool, redis: RedisConn, allow_unauth: bool, heartbeat: Duration) -> AppState {
     AppState {
         pool,
         metrics_enabled: false,
@@ -23,6 +33,9 @@ fn state(pool: PgPool, allow_unauth: bool, heartbeat: Duration) -> AppState {
         gateway_allow_unauth: allow_unauth,
         gateway_heartbeat_interval: heartbeat,
         storage: Arc::new(MemoryObjectStore::new_ready()) as Arc<dyn ObjectStore>,
+        redis,
+        search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
+        web_dist: None,
     }
 }
 
@@ -32,8 +45,12 @@ async fn gateway_refused_without_unauth_flag() {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
     let pool = voxnexus_db::connect(&url).await.expect("connect");
-    let response = app(state(pool, false, Duration::from_secs(15)))
+    let response = app(state(pool, redis, false, Duration::from_secs(15)))
         .oneshot(
             Request::builder()
                 .uri("/api/v1/gateway")
@@ -63,12 +80,16 @@ async fn gateway_hello_and_heartbeat_ack() {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
     let pool = voxnexus_db::connect(&url).await.expect("connect");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind");
     let addr = listener.local_addr().expect("addr");
-    let router = app(state(pool, true, Duration::from_secs(15)));
+    let router = app(state(pool, redis, true, Duration::from_secs(15)));
     tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
     });
@@ -116,12 +137,16 @@ async fn gateway_heartbeat_timeout_disconnects() {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
     let pool = voxnexus_db::connect(&url).await.expect("connect");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind");
     let addr = listener.local_addr().expect("addr");
-    let router = app(state(pool, true, Duration::from_millis(40)));
+    let router = app(state(pool, redis, true, Duration::from_millis(40)));
     tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
     });

@@ -55,6 +55,7 @@ const ENV_KEYS: &[&str] = &[
     "LISTEN_ADDR",
     "METRICS_ENABLED",
     "GATEWAY_ALLOW_UNAUTH",
+    "WEB_DIST",
     "LIVEKIT_URL",
     "LIVEKIT_API_KEY",
     "LIVEKIT_API_SECRET",
@@ -84,6 +85,8 @@ pub struct Config {
     pub metrics_enabled: bool,
     /// When true, `/api/v1/gateway` accepts unauthenticated sessions (dev-only ping). Default false until F013.
     pub gateway_allow_unauth: bool,
+    /// Directory of built SPA assets (`apps/web/dist`). When set, Axum serves them in production.
+    pub web_dist: Option<PathBuf>,
     pub livekit_url: Option<Url>,
     pub livekit_api_key: Option<Secret>,
     pub livekit_api_secret: Option<Secret>,
@@ -145,6 +148,8 @@ struct RawConfig {
     metrics_enabled: Option<FlexString>,
     #[serde(rename = "GATEWAY_ALLOW_UNAUTH")]
     gateway_allow_unauth: Option<FlexString>,
+    #[serde(rename = "WEB_DIST")]
+    web_dist: Option<String>,
     #[serde(rename = "LIVEKIT_URL")]
     livekit_url: Option<String>,
     #[serde(rename = "LIVEKIT_API_KEY")]
@@ -237,6 +242,7 @@ impl Config {
                 raw.gateway_allow_unauth.map(FlexString::into_string),
                 false,
             )?,
+            web_dist: optional_path(raw.web_dist),
             livekit_url: optional_url("LIVEKIT_URL", raw.livekit_url)?,
             livekit_api_key: optional_secret(raw.livekit_api_key),
             livekit_api_secret: optional_secret(raw.livekit_api_secret),
@@ -317,6 +323,10 @@ fn optional_nonempty(value: Option<String>) -> Option<String> {
             Some(trimmed.to_string())
         }
     })
+}
+
+fn optional_path(value: Option<String>) -> Option<PathBuf> {
+    optional_nonempty(value).map(PathBuf::from)
 }
 
 fn optional_secret(value: Option<String>) -> Option<Secret> {
@@ -519,11 +529,20 @@ PUBLIC_URL = "http://file.example:8080"
         assert!(config.livekit_url.is_none());
         assert!(config.oidc_issuer.is_none());
         assert!(config.smtp_url.is_none());
+        assert!(config.web_dist.is_none());
         assert!(!config.cookie_secure);
         assert_eq!(config.log_level, LogLevel::Info);
         assert_eq!(config.log_format, LogFormat::Auto);
         assert_eq!(config.listen_addr, DEFAULT_LISTEN_ADDR);
         assert!(!config.metrics_enabled);
+    }
+
+    #[test]
+    fn web_dist_optional_path() {
+        let mut env = valid_pairs();
+        env.push(("WEB_DIST".to_string(), "apps/web/dist".to_string()));
+        let config = Config::from_sources(None, &env).expect("load");
+        assert_eq!(config.web_dist.as_deref(), Some(Path::new("apps/web/dist")));
     }
 
     #[test]

@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use tokio::net::TcpListener;
 use voxnexus_config::Config;
+use voxnexus_jobs::{connect, health_ping_storage, ping, run_health_ping_workers, RedisConn};
+use voxnexus_search::{SearchEngine, TypesenseClient, TypesenseConfig};
 use voxnexus_storage::{ObjectStore, S3ObjectStore, S3ObjectStoreConfig};
 
 #[tokio::main]
@@ -42,18 +44,16 @@ async fn run() -> Result<(), i32> {
     })?;
     tracing::info!("database ready");
 
-    let storage = Arc::new(S3ObjectStore::new(S3ObjectStoreConfig {
-        endpoint: config.s3_endpoint.as_str().to_owned(),
-        access_key: config.s3_access_key.expose().to_owned(),
-        secret_key: config.s3_secret_key.expose().to_owned(),
-        bucket: config.s3_bucket.clone(),
-        region: "us-east-1".to_owned(),
-    }));
-    storage.ensure_bucket().await.map_err(|error| {
-        tracing::error!(error = %error, "object storage startup failed");
-        1
-    })?;
-    tracing::info!(bucket = %config.s3_bucket, "object storage ready");
+    let redis = start_redis(config.redis_url.as_str()).await?;
+    let storage = start_storage(&config).await?;
+    let search = start_typesense(&config).await?;
+
+    let job_storage = health_ping_storage(redis.clone());
+    let worker = tokio::spawn(async move {
+        if let Err(error) = run_health_ping_workers(job_storage, shutdown_signal()).await {
+            tracing::error!(error = %error, "job workers stopped");
+        }
+    });
 
     let listener = TcpListener::bind(config.listen_addr)
         .await
@@ -75,16 +75,72 @@ async fn run() -> Result<(), i32> {
         gateway_heartbeat_interval: std::time::Duration::from_millis(
             voxnexus_protocol::DEFAULT_HEARTBEAT_INTERVAL_MS,
         ),
-        storage: storage as Arc<dyn ObjectStore>,
+        storage,
+        redis,
+        search,
+        web_dist: config.web_dist.clone(),
     });
-    axum::serve(listener, app)
+    let serve = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
         .map_err(|error| {
             tracing::error!(error = %error, "server error");
             1
-        })?;
-    Ok(())
+        });
+    worker.abort();
+    serve
+}
+
+async fn start_redis(redis_url: &str) -> Result<RedisConn, i32> {
+    let redis = connect(redis_url).await.map_err(|error| {
+        tracing::error!(error = %error, "redis startup failed");
+        1
+    })?;
+    ping(&redis).await.map_err(|error| {
+        tracing::error!(error = %error, "redis ping failed");
+        1
+    })?;
+    tracing::info!("redis ready");
+    Ok(redis)
+}
+
+async fn start_storage(config: &Config) -> Result<Arc<dyn ObjectStore>, i32> {
+    let storage = Arc::new(S3ObjectStore::new(S3ObjectStoreConfig {
+        endpoint: config.s3_endpoint.as_str().to_owned(),
+        access_key: config.s3_access_key.expose().to_owned(),
+        secret_key: config.s3_secret_key.expose().to_owned(),
+        bucket: config.s3_bucket.clone(),
+        region: "us-east-1".to_owned(),
+    }));
+    storage.ensure_bucket().await.map_err(|error| {
+        tracing::error!(error = %error, "object storage startup failed");
+        1
+    })?;
+    tracing::info!(bucket = %config.s3_bucket, "object storage ready");
+    Ok(storage)
+}
+
+async fn start_typesense(config: &Config) -> Result<Arc<dyn SearchEngine>, i32> {
+    let search = Arc::new(
+        TypesenseClient::new(TypesenseConfig {
+            base_url: config.typesense_url.clone(),
+            api_key: config.typesense_api_key.expose().to_owned(),
+        })
+        .map_err(|error| {
+            tracing::error!(error = %error, "typesense client build failed");
+            1
+        })?,
+    );
+    search.ping().await.map_err(|error| {
+        tracing::error!(error = %error, "typesense ping failed");
+        1
+    })?;
+    search.ensure_collections().await.map_err(|error| {
+        tracing::error!(error = %error, "typesense ensure collections failed");
+        1
+    })?;
+    tracing::info!("typesense ready");
+    Ok(search)
 }
 
 async fn shutdown_signal() {

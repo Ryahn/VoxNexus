@@ -16,6 +16,7 @@ LOG_LEVEL = "info"
 # LISTEN_ADDR = "127.0.0.1:8080"
 # METRICS_ENABLED = "false"
 # GATEWAY_ALLOW_UNAUTH = "false"
+# WEB_DIST = "apps/web/dist"
 
 # Optional until later Feature Tasks:
 # LIVEKIT_URL = "http://127.0.0.1:7880"

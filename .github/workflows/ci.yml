@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+jobs:
+  check:
+    name: fmt · clippy · test · web · codegen
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: voxnexus
+          POSTGRES_PASSWORD: voxnexus
+          POSTGRES_DB: voxnexus
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U voxnexus -d voxnexus"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable
+      REDIS_URL_TEST: redis://127.0.0.1:6379
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace
+
+      - name: pnpm build
+        run: pnpm build
+
+      - name: codegen drift
+        run: pnpm check-codegen
+
+      - name: biome
+        run: pnpm lint
+
+  compose-smoke:
+    name: compose smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Optional / heavy (full image build). Runs on main and manual dispatch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
+    defaults:
+      run:
+        working-directory: deploy/docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare env
+        run: cp .env.example .env
+
+      - name: Compose up
+        run: docker compose -f docker-compose.yml up -d --build
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/health; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "health never became ready"
+          docker compose -f docker-compose.yml logs
+          exit 1
+
+      - name: Smoke /ready and /api/v1/meta
+        run: |
+          curl -fsS http://127.0.0.1:8080/ready
+          curl -fsS http://127.0.0.1:8080/api/v1/meta
+          curl -fsSI http://127.0.0.1:8080/ | head -n 1
+
+      - name: Compose down
+        if: always()
+        run: docker compose -f docker-compose.yml down -v

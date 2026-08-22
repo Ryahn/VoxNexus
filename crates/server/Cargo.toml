@@ -22,6 +22,7 @@ tower-http = { version = "0.6", features = [
     "compression-gzip",
     "limit",
     "cors",
+    "fs",
 ] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "json", "env-filter"] }
@@ -33,6 +34,8 @@ voxnexus-config = { path = "../config" }
 voxnexus-db = { path = "../db" }
 voxnexus-protocol = { path = "../protocol" }
 voxnexus-realtime = { path = "../realtime" }
+voxnexus-jobs = { path = "../jobs" }
+voxnexus-search = { path = "../search" }
 voxnexus-storage = { path = "../storage" }
 
 [dev-dependencies]
