@@ -1,9 +1,4 @@
-import type {
-  Envelope,
-  HelloPayload,
-  ReadyPayload,
-  ResumedPayload,
-} from './generated/gateway';
+import type { Envelope, HelloPayload, ReadyPayload, ResumedPayload } from './generated/gateway';
 
 export type {
   DevPingPayload,
@@ -14,8 +9,8 @@ export type {
   IdentifyPayload,
   InvalidSessionPayload,
   ReadyPayload,
-  ResumePayload,
   ResumedPayload,
+  ResumePayload,
 } from './generated/gateway';
 
 export const GATEWAY_SUBPROTOCOL = 'voxnexus.gateway.v1';

@@ -208,7 +208,7 @@ body {
   cursor: pointer;
 }
 
-.vn-auth-actions button[type='submit'] {
+.vn-auth-actions button[type="submit"] {
   padding: 0.55rem 1rem;
   border: 1px solid var(--tungsten);
   background: transparent;
@@ -220,7 +220,7 @@ body {
   cursor: pointer;
 }
 
-.vn-auth-actions button[type='submit']:disabled,
+.vn-auth-actions button[type="submit"]:disabled,
 .vn-linkish:disabled {
   opacity: 0.5;
   cursor: not-allowed;

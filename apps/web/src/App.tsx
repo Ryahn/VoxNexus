@@ -1,8 +1,8 @@
-import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
-import { getMe, login, logout, register, type AuthSessionResponse } from '@voxnexus/api-client';
+import { type AuthSessionResponse, getMe, login, logout, register } from '@voxnexus/api-client';
 import { createGatewayClient } from '@voxnexus/protocol';
 import { HelloPanel } from '@voxnexus/ui';
+import type { FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 
 type AuthView = 'home' | 'login' | 'register';
 
