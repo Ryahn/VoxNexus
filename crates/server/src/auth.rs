@@ -101,7 +101,7 @@ pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Respon
         .into_response()
 }
 
-/// Current account for the session cookie, if any.
+/// Current account for the session cookie.
 #[utoipa::path(
     get,
     path = "/api/v1/auth/me",
@@ -112,25 +112,15 @@ pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Respon
         (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody)
     )
 )]
-pub async fn me(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    let request_id = request_id_from_headers(&headers);
-    let options = SessionCookieOptions {
-        secure: state.cookie_secure,
-    };
-    let Some(token) = read_session_cookie(&headers, options.secure) else {
-        return ApiError::unauthenticated(request_id).into_response();
-    };
-    match voxnexus_auth::resolve_session(&state.pool, &token).await {
-        Ok(Some((_session, account))) => (
-            StatusCode::OK,
-            Json(AuthSessionResponse {
-                account: account_response(&account),
-            }),
-        )
-            .into_response(),
-        Ok(None) => ApiError::unauthenticated(request_id).into_response(),
-        Err(error) => map_auth_error(&error, request_id).into_response(),
-    }
+pub async fn me(user: crate::extract_auth::AuthUser) -> Json<AuthSessionResponse> {
+    Json(AuthSessionResponse {
+        account: AccountResponse {
+            id: user.account_id,
+            email: user.email,
+            is_bot: user.is_bot,
+            is_instance_admin: user.is_instance_admin,
+        },
+    })
 }
 
 async fn issue_session(
@@ -145,8 +135,8 @@ async fn issue_session(
         .and_then(|value| value.to_str().ok());
     let (_session, token) = match create_session(&state.pool, account.id, user_agent, None).await {
         Ok(pair) => pair,
-            Err(error) => return map_auth_error(&error, request_id).into_response(),
-        };
+        Err(error) => return map_auth_error(&error, request_id).into_response(),
+    };
     let options = SessionCookieOptions {
         secure: state.cookie_secure,
     };

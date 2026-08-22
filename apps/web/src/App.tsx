@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { getMe, login, logout, register, type AuthSessionResponse } from '@voxnexus/api-client';
+import { createGatewayClient } from '@voxnexus/protocol';
 import { HelloPanel } from '@voxnexus/ui';
 
 type AuthView = 'home' | 'login' | 'register';
@@ -21,6 +22,7 @@ function navigate(path: string) {
 }
 
 const credentials = { credentials: 'include' as const };
+const gatewayDebug = import.meta.env.VITE_GATEWAY_DEBUG === 'true';
 
 export function App() {
   const [view, setView] = useState<AuthView>(() => pathToView(window.location.pathname));
@@ -30,6 +32,7 @@ export function App() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [gatewayReady, setGatewayReady] = useState<string | null>(null);
 
   useEffect(() => {
     const onPop = () => setView(pathToView(window.location.pathname));
@@ -61,6 +64,27 @@ export function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!gatewayDebug || !session) {
+      setGatewayReady(null);
+      return;
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const client = createGatewayClient({
+      url: `${protocol}://${window.location.host}/api/v1/gateway`,
+      onReady: (ready) => {
+        setGatewayReady(ready.account_id);
+      },
+      onClose: () => {
+        setGatewayReady(null);
+      },
+    });
+    client.connect();
+    return () => {
+      client.disconnect();
+    };
+  }, [session]);
 
   async function onSubmit(event: FormEvent, mode: 'login' | 'register') {
     event.preventDefault();
@@ -139,7 +163,13 @@ export function App() {
                     </button>
                   ) : (
                     <>
-                      <a href="/login" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>
+                      <a
+                        href="/login"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/login');
+                        }}
+                      >
                         Log in
                       </a>
                       <a
@@ -156,6 +186,16 @@ export function App() {
                 </dd>
               </div>
             </dl>
+            {gatewayDebug ? (
+              <p className="vn-meta-note">
+                Gateway:{' '}
+                {gatewayReady
+                  ? `READY account ${gatewayReady}`
+                  : session
+                    ? 'connecting…'
+                    : 'sign in'}
+              </p>
+            ) : null}
             {error ? <p className="vn-meta-note">{error}</p> : null}
           </HelloPanel>
         ) : null}

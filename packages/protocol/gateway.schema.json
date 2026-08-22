@@ -11,7 +11,12 @@
     "event_type",
     "heartbeat_ack_payload",
     "heartbeat_payload",
-    "hello_payload"
+    "hello_payload",
+    "identify_payload",
+    "invalid_session_payload",
+    "ready_payload",
+    "resume_payload",
+    "resumed_payload"
   ],
   "properties": {
     "dev_ping_payload": {
@@ -37,11 +42,26 @@
     },
     "hello_payload": {
       "$ref": "#/definitions/HelloPayload"
+    },
+    "identify_payload": {
+      "$ref": "#/definitions/IdentifyPayload"
+    },
+    "invalid_session_payload": {
+      "$ref": "#/definitions/InvalidSessionPayload"
+    },
+    "ready_payload": {
+      "$ref": "#/definitions/ReadyPayload"
+    },
+    "resume_payload": {
+      "$ref": "#/definitions/ResumePayload"
+    },
+    "resumed_payload": {
+      "$ref": "#/definitions/ResumedPayload"
     }
   },
   "definitions": {
     "DevPingPayload": {
-      "description": "Dev-only unauthenticated ping (requires `GATEWAY_ALLOW_UNAUTH`).",
+      "description": "Dev-only ping (requires `GATEWAY_ALLOW_UNAUTH` after identify).",
       "type": "object",
       "required": [
         "nonce"
@@ -122,12 +142,17 @@
       }
     },
     "EventType": {
-      "description": "Closed set of gateway `event_type` values for F007 (+ later features append here).",
+      "description": "Closed set of gateway `event_type` values.",
       "type": "string",
       "enum": [
         "HELLO",
         "HEARTBEAT",
         "HEARTBEAT_ACK",
+        "IDENTIFY",
+        "READY",
+        "RESUME",
+        "RESUMED",
+        "INVALID_SESSION",
         "DEV_PING",
         "DEV_PONG"
       ]
@@ -159,6 +184,80 @@
           "format": "uint32",
           "minimum": 0.0
         },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "IdentifyPayload": {
+      "description": "Client → server identify (HTTP session cookie already bound on the handshake).",
+      "type": "object"
+    },
+    "InvalidSessionPayload": {
+      "description": "Server → client when resume cannot continue.",
+      "type": "object",
+      "required": [
+        "resumable"
+      ],
+      "properties": {
+        "resumable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ReadyPayload": {
+      "description": "Server → client ready after successful identify.",
+      "type": "object",
+      "required": [
+        "account_id",
+        "resume_token",
+        "session_id"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "resume_token": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ResumePayload": {
+      "description": "Client → server resume after reconnect.",
+      "type": "object",
+      "required": [
+        "last_sequence",
+        "resume_token",
+        "session_id"
+      ],
+      "properties": {
+        "last_sequence": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "resume_token": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ResumedPayload": {
+      "description": "Server → client after a successful resume (event buffer may still be empty in F013).",
+      "type": "object",
+      "required": [
+        "session_id"
+      ],
+      "properties": {
         "session_id": {
           "type": "string",
           "format": "uuid"

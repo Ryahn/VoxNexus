@@ -1,31 +1,44 @@
 //! Per-connection gateway loop.
 
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use axum::extract::ws::{Message, WebSocket};
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
 use futures_util::{SinkExt, StreamExt};
+use rand::RngCore;
 use tokio::time::{interval, MissedTickBehavior};
 use uuid::Uuid;
 use voxnexus_protocol::{
     DevPingPayload, DevPongPayload, Envelope, EventType, HeartbeatAckPayload, HeartbeatPayload,
-    HelloPayload, DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
+    HelloPayload, IdentifyPayload, InvalidSessionPayload, ReadyPayload, ResumePayload,
+    ResumedPayload, DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
 };
 
-/// Multiply [`DEFAULT_HEARTBEAT_INTERVAL_MS`] by this for the disconnect deadline.
+use crate::resume::ResumeStore;
+
+/// Multiply heartbeat interval by this for the disconnect deadline.
 pub const HEARTBEAT_TIMEOUT_FACTOR: u32 = 2;
 
 /// Options for one gateway WebSocket session.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct GatewaySessionOptions {
     pub heartbeat_interval: Duration,
+    /// Account bound from the HTTP session cookie on the upgrade.
+    pub account_id: Uuid,
+    /// When true, `DEV_PING` is accepted after identify (local protocol work).
     pub allow_dev_ping: bool,
+    pub resume_store: Arc<ResumeStore>,
 }
 
 impl Default for GatewaySessionOptions {
     fn default() -> Self {
         Self {
             heartbeat_interval: Duration::from_millis(DEFAULT_HEARTBEAT_INTERVAL_MS),
+            account_id: Uuid::nil(),
             allow_dev_ping: false,
+            resume_store: Arc::new(ResumeStore::new()),
         }
     }
 }
@@ -41,6 +54,8 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
     let session_id = Uuid::now_v7();
     let mut sequence: u64 = 0;
     let mut last_client_heartbeat = Instant::now();
+    let mut identified = false;
+    let mut resume_token = String::new();
 
     let (mut sink, mut stream) = socket.split();
 
@@ -61,7 +76,6 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
 
     let mut tick = interval(options.heartbeat_interval);
     tick.set_missed_tick_behavior(MissedTickBehavior::Delay);
-    // First tick completes immediately; skip so we wait a full interval before checking.
     tick.tick().await;
 
     loop {
@@ -73,7 +87,10 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             &mut sink,
                             &mut sequence,
                             &mut last_client_heartbeat,
-                            options.allow_dev_ping,
+                            &mut identified,
+                            &mut resume_token,
+                            session_id,
+                            &options,
                             &text,
                         ).await {
                             if fatal {
@@ -105,11 +122,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
     }
 }
 
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 async fn handle_text(
     sink: &mut (impl SinkExt<Message> + Unpin),
     sequence: &mut u64,
     last_client_heartbeat: &mut Instant,
-    allow_dev_ping: bool,
+    identified: &mut bool,
+    resume_token: &mut String,
+    session_id: Uuid,
+    options: &GatewaySessionOptions,
     text: &str,
 ) -> Result<(), bool> {
     let envelope: Envelope = match serde_json::from_str(text) {
@@ -129,7 +150,74 @@ async fn handle_text(
             send_envelope(sink, &ack).await.map_err(|()| true)?;
             Ok(())
         }
-        EventType::DevPing if allow_dev_ping => {
+        EventType::Identify => {
+            let _: IdentifyPayload = serde_json::from_value(envelope.payload).unwrap_or_default();
+            if *identified {
+                return Err(false);
+            }
+            *resume_token = new_resume_token();
+            options.resume_store.put(
+                resume_token.clone(),
+                options.account_id,
+                session_id,
+                *sequence,
+            );
+            *identified = true;
+            *sequence += 1;
+            let ready = Envelope::new(
+                *sequence,
+                EventType::Ready,
+                ReadyPayload {
+                    account_id: options.account_id,
+                    session_id,
+                    resume_token: resume_token.clone(),
+                },
+            );
+            send_envelope(sink, &ready).await.map_err(|()| true)?;
+            Ok(())
+        }
+        EventType::Resume => {
+            let request: ResumePayload = match serde_json::from_value(envelope.payload) {
+                Ok(value) => value,
+                Err(_) => return Err(false),
+            };
+            if *identified {
+                return Err(false);
+            }
+            match options
+                .resume_store
+                .take_valid(&request.resume_token, options.account_id)
+            {
+                Some(entry) if entry.gateway_session_id == request.session_id => {
+                    // F013: ring buffer may be empty; accept resume and reissue a token.
+                    let _ = request.last_sequence;
+                    *resume_token = new_resume_token();
+                    options.resume_store.put(
+                        resume_token.clone(),
+                        options.account_id,
+                        session_id,
+                        *sequence,
+                    );
+                    *identified = true;
+                    *sequence += 1;
+                    let resumed =
+                        Envelope::new(*sequence, EventType::Resumed, ResumedPayload { session_id });
+                    send_envelope(sink, &resumed).await.map_err(|()| true)?;
+                    Ok(())
+                }
+                _ => {
+                    *sequence += 1;
+                    let invalid = Envelope::new(
+                        *sequence,
+                        EventType::InvalidSession,
+                        InvalidSessionPayload { resumable: false },
+                    );
+                    send_envelope(sink, &invalid).await.map_err(|()| true)?;
+                    Err(true)
+                }
+            }
+        }
+        EventType::DevPing if options.allow_dev_ping && *identified => {
             let request: DevPingPayload = match serde_json::from_value(envelope.payload) {
                 Ok(value) => value,
                 Err(_) => return Err(false),
@@ -145,10 +233,20 @@ async fn handle_text(
             send_envelope(sink, &reply).await.map_err(|()| true)?;
             Ok(())
         }
-        EventType::Hello | EventType::HeartbeatAck | EventType::DevPong | EventType::DevPing => {
-            Err(false)
-        }
+        EventType::Hello
+        | EventType::HeartbeatAck
+        | EventType::Ready
+        | EventType::Resumed
+        | EventType::InvalidSession
+        | EventType::DevPong
+        | EventType::DevPing => Err(false),
     }
+}
+
+fn new_resume_token() -> String {
+    let mut bytes = [0_u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    URL_SAFE_NO_PAD.encode(bytes)
 }
 
 async fn send_envelope(

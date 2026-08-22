@@ -33,6 +33,7 @@ fn state(pool: PgPool, redis: RedisConn) -> AppState {
         redis,
         search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
         web_dist: None,
+        resume_store: Arc::new(voxnexus_realtime::ResumeStore::new()),
     }
 }
 
@@ -61,6 +62,31 @@ fn cookie_from(response: &axum::response::Response) -> String {
         .strip_prefix(&format!("{name}="))
         .expect("token");
     format!("{name}={token}")
+}
+
+#[tokio::test]
+async fn protected_route_without_cookie_is_401() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    let response = app(state(pool, redis))
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/auth/me")
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    let err: ErrorBody = serde_json::from_slice(&json_body(response).await).expect("error");
+    assert_eq!(err.code, error_codes::UNAUTHENTICATED);
 }
 
 #[tokio::test]

@@ -15,13 +15,18 @@ pub const GATEWAY_PROTOCOL_VERSION: u32 = 1;
 /// Default client heartbeat interval in milliseconds.
 pub const DEFAULT_HEARTBEAT_INTERVAL_MS: u64 = 15_000;
 
-/// Closed set of gateway `event_type` values for F007 (+ later features append here).
+/// Closed set of gateway `event_type` values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum EventType {
     Hello,
     Heartbeat,
     HeartbeatAck,
+    Identify,
+    Ready,
+    Resume,
+    Resumed,
+    InvalidSession,
     DevPing,
     DevPong,
 }
@@ -77,7 +82,39 @@ pub struct HeartbeatPayload {}
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct HeartbeatAckPayload {}
 
-/// Dev-only unauthenticated ping (requires `GATEWAY_ALLOW_UNAUTH`).
+/// Client → server identify (HTTP session cookie already bound on the handshake).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct IdentifyPayload {}
+
+/// Server → client ready after successful identify.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ReadyPayload {
+    pub account_id: Uuid,
+    pub session_id: Uuid,
+    pub resume_token: String,
+}
+
+/// Client → server resume after reconnect.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ResumePayload {
+    pub session_id: Uuid,
+    pub last_sequence: u64,
+    pub resume_token: String,
+}
+
+/// Server → client after a successful resume (event buffer may still be empty in F013).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ResumedPayload {
+    pub session_id: Uuid,
+}
+
+/// Server → client when resume cannot continue.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct InvalidSessionPayload {
+    pub resumable: bool,
+}
+
+/// Dev-only ping (requires `GATEWAY_ALLOW_UNAUTH` after identify).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct DevPingPayload {
     pub nonce: String,
@@ -98,6 +135,11 @@ pub struct GatewaySchemaCatalog {
     pub hello_payload: HelloPayload,
     pub heartbeat_payload: HeartbeatPayload,
     pub heartbeat_ack_payload: HeartbeatAckPayload,
+    pub identify_payload: IdentifyPayload,
+    pub ready_payload: ReadyPayload,
+    pub resume_payload: ResumePayload,
+    pub resumed_payload: ResumedPayload,
+    pub invalid_session_payload: InvalidSessionPayload,
     pub dev_ping_payload: DevPingPayload,
     pub dev_pong_payload: DevPongPayload,
 }
@@ -146,6 +188,8 @@ mod tests {
     fn event_type_serializes_screaming_snake() {
         let json = serde_json::to_string(&EventType::HeartbeatAck).expect("ser");
         assert_eq!(json, "\"HEARTBEAT_ACK\"");
+        let identify = serde_json::to_string(&EventType::Identify).expect("ser");
+        assert_eq!(identify, "\"IDENTIFY\"");
     }
 
     #[test]

@@ -11,6 +11,7 @@ pub use error::{error_codes, ErrorBody};
 pub use gateway::{
     gateway_schema, gateway_schema_json, DevPingPayload, DevPongPayload, Envelope, EventScope,
     EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload, HelloPayload,
+    IdentifyPayload, InvalidSessionPayload, ReadyPayload, ResumePayload, ResumedPayload,
     DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
 };
 pub use meta::MetaResponse;

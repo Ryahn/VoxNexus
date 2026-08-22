@@ -175,13 +175,13 @@ When `true`, serves Prometheus metrics at `GET /metrics`.
 
 Default: `false`
 
-When `true`, allows unauthenticated WebSocket upgrades to `GET /api/v1/gateway` (Hello / heartbeat / DevPing). **Dev only** — leave `false` in production.
+When `true`, allows the `DEV_PING` / `DEV_PONG` events **after** a cookie-authenticated identify. Gateway upgrade itself always requires a valid session cookie.
 
 ```toml
 # GATEWAY_ALLOW_UNAUTH = "false"
 ```
 
-Pair with the web app: `$env:VITE_GATEWAY_DEBUG="true"` then `pnpm dev`.
+Pair with the web app: sign in, then `$env:VITE_GATEWAY_DEBUG="true"` and `pnpm dev`.
 
 ### `WEB_DIST`
 

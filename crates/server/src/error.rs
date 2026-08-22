@@ -71,7 +71,7 @@ impl ApiError {
         Self::new(
             StatusCode::SERVICE_UNAVAILABLE,
             error_codes::GATEWAY_UNAVAILABLE,
-            "Gateway requires authentication (F013). Set GATEWAY_ALLOW_UNAUTH=true for local protocol development only.",
+            "Gateway is unavailable.",
             None,
             request_id,
         )

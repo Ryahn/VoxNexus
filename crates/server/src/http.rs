@@ -28,9 +28,11 @@ use voxnexus_config::Url;
 use voxnexus_db::PgPool;
 use voxnexus_jobs::RedisConn;
 use voxnexus_protocol::MetaResponse;
+use voxnexus_realtime::ResumeStore;
 use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
 
+use crate::auth_middleware::require_api_session;
 use crate::csrf::{csrf_hook, CsrfState};
 use crate::error::ApiError;
 
@@ -66,6 +68,8 @@ pub struct AppState {
     pub search: Arc<dyn SearchEngine>,
     /// Built SPA directory for production (`WEB_DIST`). None keeps JSON API-only fallbacks.
     pub web_dist: Option<PathBuf>,
+    /// In-memory gateway resume tokens.
+    pub resume_store: Arc<ResumeStore>,
 }
 
 #[derive(Serialize)]
@@ -103,6 +107,7 @@ pub fn app(state: AppState) -> Router {
         router = router.route("/metrics", get(metrics));
     }
     let cookie_secure = state.cookie_secure;
+    let auth_state = state.clone();
     let router = match web_dist {
         Some(dir) if dir.is_dir() => {
             let index = dir.join("index.html");
@@ -120,7 +125,13 @@ pub fn app(state: AppState) -> Router {
         }
         None => router.fallback(not_found),
     };
-    with_middleware(router.with_state(state), &public_url, cookie_secure)
+    let router = router
+        .layer(middleware::from_fn_with_state(
+            auth_state,
+            require_api_session,
+        ))
+        .with_state(state);
+    with_middleware(router, &public_url, cookie_secure)
 }
 
 fn api_v1() -> OpenApiRouter<AppState> {

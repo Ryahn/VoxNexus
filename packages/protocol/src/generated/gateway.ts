@@ -5,12 +5,22 @@
  */
 
 /**
- * Closed set of gateway `event_type` values for F007 (+ later features append here).
+ * Closed set of gateway `event_type` values.
  *
  * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
  * via the `definition` "EventType".
  */
-export type EventType = 'HELLO' | 'HEARTBEAT' | 'HEARTBEAT_ACK' | 'DEV_PING' | 'DEV_PONG';
+export type EventType =
+  | 'HELLO'
+  | 'HEARTBEAT'
+  | 'HEARTBEAT_ACK'
+  | 'IDENTIFY'
+  | 'READY'
+  | 'RESUME'
+  | 'RESUMED'
+  | 'INVALID_SESSION'
+  | 'DEV_PING'
+  | 'DEV_PONG';
 
 /**
  * Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
@@ -24,10 +34,15 @@ export interface GatewaySchemaCatalog {
   heartbeat_ack_payload: HeartbeatAckPayload;
   heartbeat_payload: HeartbeatPayload;
   hello_payload: HelloPayload;
+  identify_payload: IdentifyPayload;
+  invalid_session_payload: InvalidSessionPayload;
+  ready_payload: ReadyPayload;
+  resume_payload: ResumePayload;
+  resumed_payload: ResumedPayload;
   [k: string]: unknown;
 }
 /**
- * Dev-only unauthenticated ping (requires `GATEWAY_ALLOW_UNAUTH`).
+ * Dev-only ping (requires `GATEWAY_ALLOW_UNAUTH` after identify).
  *
  * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
  * via the `definition` "DevPingPayload".
@@ -99,6 +114,59 @@ export interface HeartbeatPayload {
 export interface HelloPayload {
   heartbeat_interval_ms: number;
   protocol_version: number;
+  session_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Client → server identify (HTTP session cookie already bound on the handshake).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "IdentifyPayload".
+ */
+export interface IdentifyPayload {
+  [k: string]: unknown;
+}
+/**
+ * Server → client when resume cannot continue.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "InvalidSessionPayload".
+ */
+export interface InvalidSessionPayload {
+  resumable: boolean;
+  [k: string]: unknown;
+}
+/**
+ * Server → client ready after successful identify.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "ReadyPayload".
+ */
+export interface ReadyPayload {
+  account_id: string;
+  resume_token: string;
+  session_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Client → server resume after reconnect.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "ResumePayload".
+ */
+export interface ResumePayload {
+  last_sequence: number;
+  resume_token: string;
+  session_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Server → client after a successful resume (event buffer may still be empty in F013).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "ResumedPayload".
+ */
+export interface ResumedPayload {
   session_id: string;
   [k: string]: unknown;
 }

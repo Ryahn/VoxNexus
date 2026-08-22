@@ -81,6 +81,7 @@ async fn run() -> Result<(), i32> {
         redis,
         search,
         web_dist: config.web_dist.clone(),
+        resume_store: std::sync::Arc::new(voxnexus_realtime::ResumeStore::new()),
     });
     let serve = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

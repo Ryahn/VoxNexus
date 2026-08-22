@@ -85,7 +85,7 @@ pub struct Config {
     pub log_format: LogFormat,
     pub listen_addr: SocketAddr,
     pub metrics_enabled: bool,
-    /// When true, `/api/v1/gateway` accepts unauthenticated sessions (dev-only ping). Default false until F013.
+    /// When true, `/api/v1/gateway` accepts `DEV_PING` after identify (local protocol work).
     pub gateway_allow_unauth: bool,
     /// When true, `POST /api/v1/auth/register` is allowed. Default true until F017 instance settings.
     pub registration_open: bool,

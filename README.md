@@ -20,7 +20,7 @@ Rust binary `voxnexus` plus a Vite/React SPA:
 | `GET /ready` | Postgres + Redis + SeaweedFS + Typesense |
 | `GET /api/v1/meta` | Instance name + version |
 | `POST /api/v1/auth/register` · `login` · `logout` · `GET …/me` | Local email/password sessions (cookie) |
-| `GET /api/v1/gateway` | WebSocket gateway (Hello / heartbeat / DevPing); gated by `GATEWAY_ALLOW_UNAUTH` |
+| `GET /api/v1/gateway` | WebSocket gateway; session cookie required; IDENTIFY → READY (resume token) |
 | `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
 | SPA | Register / login / logout + meta; optional gateway debug UI. Served by Axum when `WEB_DIST` is set (Compose), or via Vite in dev |
 | Object storage | S3 client to SeaweedFS; bucket created on startup if missing |

@@ -80,7 +80,7 @@
         "tags": [
           "auth"
         ],
-        "summary": "Current account for the session cookie, if any.",
+        "summary": "Current account for the session cookie.",
         "operationId": "getMe",
         "responses": {
           "200": {
