@@ -10,7 +10,7 @@ description = "VoxNexus composition root (HTTP, gateway, jobs)"
 workspace = true
 
 [dependencies]
-axum = "0.8"
+axum = { version = "0.8", features = ["ws"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
@@ -32,7 +32,11 @@ validator = { version = "0.20", features = ["derive"] }
 voxnexus-config = { path = "../config" }
 voxnexus-db = { path = "../db" }
 voxnexus-protocol = { path = "../protocol" }
+voxnexus-realtime = { path = "../realtime" }
+voxnexus-storage = { path = "../storage" }
 
 [dev-dependencies]
+futures-util = { version = "0.3", features = ["sink"] }
 http-body-util = "0.1"
 tempfile = "3"
+tokio-tungstenite = "0.26"

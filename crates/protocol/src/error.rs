@@ -11,6 +11,7 @@ pub mod error_codes {
     pub const PERMISSION_DENIED: &str = "permission_denied";
     pub const CONFLICT: &str = "conflict";
     pub const RATE_LIMITED: &str = "rate_limited";
+    pub const GATEWAY_UNAVAILABLE: &str = "gateway_unavailable";
 }
 
 /// JSON error envelope for `/api/v1` and unknown routes.

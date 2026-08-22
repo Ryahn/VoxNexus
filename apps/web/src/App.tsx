@@ -1,4 +1,5 @@
 import { getMeta, type MetaResponse } from '@voxnexus/api-client';
+import { createGatewayClient } from '@voxnexus/protocol';
 import { HelloPanel } from '@voxnexus/ui';
 import { useEffect, useState } from 'react';
 
@@ -37,8 +38,11 @@ function instanceValue(carrier: CarrierState): string {
   return 'calling /api/v1/meta';
 }
 
+const gatewayDebug = import.meta.env.VITE_GATEWAY_DEBUG === 'true';
+
 export function App() {
   const [carrier, setCarrier] = useState<CarrierState>({ status: 'loading' });
+  const [gatewaySession, setGatewaySession] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +75,26 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!gatewayDebug) {
+      return;
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const client = createGatewayClient({
+      url: `${protocol}://${window.location.host}/api/v1/gateway`,
+      onHello: (hello) => {
+        setGatewaySession(hello.session_id);
+      },
+      onClose: () => {
+        setGatewaySession(null);
+      },
+    });
+    client.connect();
+    return () => {
+      client.disconnect();
+    };
+  }, []);
+
   return (
     <div className="vn-shell">
       <aside className="vn-rail" aria-label="Instance status">
@@ -98,6 +122,12 @@ export function App() {
             </div>
           </dl>
           {carrier.status === 'down' ? <p className="vn-meta-note">{carrier.detail}</p> : null}
+          {gatewayDebug ? (
+            <p className="vn-meta-note">
+              Gateway debug:{' '}
+              {gatewaySession ? `HELLO session ${gatewaySession}` : 'connecting or down'}
+            </p>
+          ) : null}
         </HelloPanel>
       </main>
     </div>

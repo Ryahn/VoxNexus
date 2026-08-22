@@ -1,54 +1,85 @@
 # VoxNexus
 
-A self-hostable community chat system: Discord-class chat and voice, Guilded-class organization (Spaces), and a first-class app/workflow platform.
+Self-hostable community chat: Discord-class chat and voice, Guilded-class Spaces, and a first-class app/workflow platform. Source-available for one private personal instance — not a hosted SaaS and not OSI open source.
 
-This is **not** a hosted SaaS and **not** an OSI open-source project. Default install (later phases) is a single server via Docker Compose.
+## License
 
-## License (not OSI)
+[VoxNexus Source-Available Personal Use License v1](LICENSE). Study the code and run one private personal instance. Commercial use, public instances, reuse in other projects, and redistribution are not allowed except by contributing under the [CLA](CLA.md).
 
-VoxNexus is **source-available** under the [VoxNexus Source-Available Personal Use License v1](LICENSE). You may study the code and run one private personal instance. You may not use it commercially, operate a public instance, reuse the code in other projects, or redistribute it, except by contributing under the [CLA](CLA.md).
+Plain-language FAQ: [LICENSE.md](LICENSE.md). Short form: [NOTICE](NOTICE).
 
-See [LICENSE.md](LICENSE.md) for a plain-language FAQ and [NOTICE](NOTICE) for the short form.
+## What works today
 
-## Status
+Rust binary `voxnexus` plus a Vite/React SPA:
 
-Engineering foundation (Feature Task F006). The `voxnexus` binary serves `/health`, `/ready`, optional `/metrics`, and `GET /api/v1/meta`. The web app loads instance name and version through a generated TypeScript client. There is no Docker stack yet.
+| Surface | Behavior |
+|---|---|
+| `GET /health` | Liveness |
+| `GET /ready` | Postgres ping + SeaweedFS `HeadBucket` (Redis/Typesense still skipped) |
+| `GET /api/v1/meta` | Instance name + version |
+| `GET /api/v1/gateway` | WebSocket gateway (Hello / heartbeat / DevPing); gated by `GATEWAY_ALLOW_UNAUTH` |
+| `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
+| Web app | Loads meta via the generated API client; optional gateway debug UI |
+| Object storage | S3 client to SeaweedFS; bucket created on startup if missing |
 
-Development follows [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md). See [`docs/config.md`](docs/config.md), [`docs/database.md`](docs/database.md), [`docs/observability.md`](docs/observability.md), [`docs/api.md`](docs/api.md), and [`docs/codegen.md`](docs/codegen.md).
+Redis and Typesense keys are required at startup but not connected yet. There is no Docker Compose stack yet (F009).
 
-## Repository layout
+Operator docs: [config](docs/config.md), [database](docs/database.md), [storage](docs/storage.md), [API](docs/api.md), [gateway](docs/gateway.md), [observability](docs/observability.md), [codegen](docs/codegen.md).
+
+## Stack
+
+- **Server:** Rust (stable via `rust-toolchain.toml`), Axum, Tokio, SQLx + PostgreSQL 16
+- **Web:** React 19, Vite, TypeScript, pnpm workspace
+- **Contracts:** OpenAPI → `@voxnexus/api-client`; gateway JSON Schema → `@voxnexus/protocol`
+
+## Layout
 
 ```text
-apps/web          Vite + React SPA
-crates/server     voxnexus binary (composition root)
-crates/config     env + file configuration
-crates/db         PostgreSQL pool and migrations
-crates/*          other domain crates (stubs until later Feature Tasks)
+apps/web             Vite + React SPA
+crates/server        voxnexus binary (HTTP + gateway composition root)
+crates/config        file + env configuration
+crates/db            PostgreSQL pool and migrations
+crates/protocol      shared HTTP/gateway types (Rust)
+crates/realtime      WebSocket session loop
+crates/storage       S3 / SeaweedFS object store
+crates/*             domain crates (auth, permissions, media, …)
 packages/api-client  generated OpenAPI TypeScript client
-packages/ui       shared presentational components
-tools/codegen     export OpenAPI from Rust handlers
-migrations/       SQLx migration files
-docs/             master plan and operator docs
+packages/protocol    generated gateway types + WS client
+packages/ui          shared presentational components
+tools/codegen        export OpenAPI + gateway JSON Schema
+migrations/          SQLx migration files
+docs/                operator and planning docs
 ```
 
-## Build
+## Prerequisites
 
-Requires [Rust](https://rustup.rs/) (stable, via `rust-toolchain.toml`) and [pnpm](https://pnpm.io/).
+- [Rust](https://rustup.rs/) (stable) with rustfmt and clippy
+- [pnpm](https://pnpm.io/) 10
+- PostgreSQL 16 reachable at `DATABASE_URL`
+- S3-compatible endpoint at `S3_ENDPOINT` (SeaweedFS or LocalStack)
+
+## Configure
+
+Copy [`config.example.toml`](config.example.toml) to `config.toml` (Unix: `chmod 600`) or set the same keys as environment variables. Env overrides the file. Missing or invalid required keys fail startup with the key name.
+
+Defaults: listen `127.0.0.1:8080`, CORS origin from `PUBLIC_URL`. Useful toggles: `GATEWAY_ALLOW_UNAUTH`, `METRICS_ENABLED`, `LOG_LEVEL`, `LOG_FORMAT`.
+
+## Build and check
 
 ```powershell
+pnpm install
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 pnpm check-codegen
-pnpm install
 pnpm build
 ```
 
-Database integration tests (including `/ready`) run only when `DATABASE_URL_TEST` is set (see [`docs/database.md`](docs/database.md)). `/health` and `x-request-id` tests do not need Postgres.
+Database integration tests need `DATABASE_URL_TEST` ([docs/database.md](docs/database.md)). Live S3 tests need `S3_ENDPOINT_TEST` ([docs/storage.md](docs/storage.md)).
 
-## Run the server
+## Run
 
-Copy [`config.example.toml`](config.example.toml) to `config.toml` (Unix: `chmod 600`) or set the same keys as environment variables. PostgreSQL 16 must be reachable; migrations run on startup. The process then listens (default `127.0.0.1:8080`).
+Terminal 1 — API (migrations run on startup):
 
 ```powershell
 cargo run -p voxnexus
@@ -60,14 +91,17 @@ curl.exe http://127.0.0.1:8080/ready
 curl.exe http://127.0.0.1:8080/api/v1/meta
 ```
 
-Without required keys (for example `DATABASE_URL`), the process prints the missing key name and exits non-zero. If Postgres is down at startup, it exits non-zero after the connect timeout.
-
-## Web
-
-With the API listening on `127.0.0.1:8080`, start the SPA. Vite proxies `/api` to the binary so `getMeta` hits `GET /api/v1/meta`.
+Terminal 2 — SPA (Vite proxies `/api` and WebSockets to `:8080`):
 
 ```powershell
-pnpm --filter @voxnexus/web dev
+pnpm dev
 ```
 
-After HTTP type changes, regenerate the client (`pnpm codegen`). Drift: `pnpm check-codegen`.
+Gateway debug UI (also set `GATEWAY_ALLOW_UNAUTH=true` on the server):
+
+```powershell
+$env:VITE_GATEWAY_DEBUG="true"
+pnpm dev
+```
+
+After HTTP or gateway type changes: `pnpm codegen`. Drift check: `pnpm check-codegen`.

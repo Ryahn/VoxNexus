@@ -13,7 +13,9 @@
       "!**/dist",
       "!**/node_modules",
       "!packages/api-client/src",
-      "!packages/api-client/openapi.json"
+      "!packages/api-client/openapi.json",
+      "!packages/protocol/src/generated",
+      "!packages/protocol/gateway.schema.json"
     ]
   },
   "formatter": {

@@ -1,15 +1,21 @@
+use std::sync::Arc;
+
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 use voxnexus::http::{app, health_router, AppState, REQUEST_ID_HEADER};
 use voxnexus_db::{test_database_url, PgPool};
+use voxnexus_storage::{MemoryObjectStore, ObjectStore};
 
 fn test_state(pool: PgPool, metrics_enabled: bool) -> AppState {
     AppState {
         pool,
         metrics_enabled,
         public_url: "http://127.0.0.1:8080".parse().expect("public url"),
+        gateway_allow_unauth: false,
+        gateway_heartbeat_interval: std::time::Duration::from_secs(15),
+        storage: Arc::new(MemoryObjectStore::new_ready()) as Arc<dyn ObjectStore>,
     }
 }
 
@@ -103,7 +109,7 @@ async fn metrics_enabled_exposes_prometheus_text() {
 }
 
 #[tokio::test]
-async fn ready_requires_postgres() {
+async fn ready_requires_postgres_and_seaweedfs() {
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required for /ready");
         return;
@@ -129,5 +135,6 @@ async fn ready_requires_postgres() {
         .to_bytes();
     let body = String::from_utf8(body.to_vec()).expect("utf8");
     assert!(body.contains("postgres"));
+    assert!(body.contains("\"seaweedfs\":\"ok\"") || body.contains("\"seaweedfs\": \"ok\""));
     assert!(body.contains("skipped"));
 }

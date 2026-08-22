@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GatewaySchemaCatalog",
+  "description": "Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).",
+  "type": "object",
+  "required": [
+    "dev_ping_payload",
+    "dev_pong_payload",
+    "envelope",
+    "event_scope",
+    "event_type",
+    "heartbeat_ack_payload",
+    "heartbeat_payload",
+    "hello_payload"
+  ],
+  "properties": {
+    "dev_ping_payload": {
+      "$ref": "#/definitions/DevPingPayload"
+    },
+    "dev_pong_payload": {
+      "$ref": "#/definitions/DevPongPayload"
+    },
+    "envelope": {
+      "$ref": "#/definitions/Envelope"
+    },
+    "event_scope": {
+      "$ref": "#/definitions/EventScope"
+    },
+    "event_type": {
+      "$ref": "#/definitions/EventType"
+    },
+    "heartbeat_ack_payload": {
+      "$ref": "#/definitions/HeartbeatAckPayload"
+    },
+    "heartbeat_payload": {
+      "$ref": "#/definitions/HeartbeatPayload"
+    },
+    "hello_payload": {
+      "$ref": "#/definitions/HelloPayload"
+    }
+  },
+  "definitions": {
+    "DevPingPayload": {
+      "description": "Dev-only unauthenticated ping (requires `GATEWAY_ALLOW_UNAUTH`).",
+      "type": "object",
+      "required": [
+        "nonce"
+      ],
+      "properties": {
+        "nonce": {
+          "type": "string"
+        }
+      }
+    },
+    "DevPongPayload": {
+      "description": "Reply to [`DevPingPayload`].",
+      "type": "object",
+      "required": [
+        "nonce"
+      ],
+      "properties": {
+        "nonce": {
+          "type": "string"
+        }
+      }
+    },
+    "Envelope": {
+      "description": "Versioned JSON envelope on the gateway WebSocket.",
+      "type": "object",
+      "required": [
+        "event_id",
+        "event_type",
+        "payload",
+        "sequence",
+        "timestamp"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_type": {
+          "$ref": "#/definitions/EventType"
+        },
+        "payload": true,
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EventScope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "EventScope": {
+      "description": "Subscription / fanout scope (connection-level events omit this).",
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "EventType": {
+      "description": "Closed set of gateway `event_type` values for F007 (+ later features append here).",
+      "type": "string",
+      "enum": [
+        "HELLO",
+        "HEARTBEAT",
+        "HEARTBEAT_ACK",
+        "DEV_PING",
+        "DEV_PONG"
+      ]
+    },
+    "HeartbeatAckPayload": {
+      "description": "Server → client heartbeat acknowledgment.",
+      "type": "object"
+    },
+    "HeartbeatPayload": {
+      "description": "Client → server heartbeat (empty object).",
+      "type": "object"
+    },
+    "HelloPayload": {
+      "description": "`HELLO` payload after WebSocket accept.",
+      "type": "object",
+      "required": [
+        "heartbeat_interval_ms",
+        "protocol_version",
+        "session_id"
+      ],
+      "properties": {
+        "heartbeat_interval_ms": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "protocol_version": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    }
+  }
+}

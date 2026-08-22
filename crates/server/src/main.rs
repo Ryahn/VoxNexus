@@ -1,7 +1,9 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 use tokio::net::TcpListener;
 use voxnexus_config::Config;
+use voxnexus_storage::{ObjectStore, S3ObjectStore, S3ObjectStoreConfig};
 
 #[tokio::main]
 async fn main() {
@@ -24,6 +26,7 @@ async fn run() -> Result<(), i32> {
         log_level = %config.log_level,
         log_format = %config.log_format,
         metrics_enabled = config.metrics_enabled,
+        gateway_allow_unauth = config.gateway_allow_unauth,
         "configuration loaded"
     );
 
@@ -38,6 +41,19 @@ async fn run() -> Result<(), i32> {
         1
     })?;
     tracing::info!("database ready");
+
+    let storage = Arc::new(S3ObjectStore::new(S3ObjectStoreConfig {
+        endpoint: config.s3_endpoint.as_str().to_owned(),
+        access_key: config.s3_access_key.expose().to_owned(),
+        secret_key: config.s3_secret_key.expose().to_owned(),
+        bucket: config.s3_bucket.clone(),
+        region: "us-east-1".to_owned(),
+    }));
+    storage.ensure_bucket().await.map_err(|error| {
+        tracing::error!(error = %error, "object storage startup failed");
+        1
+    })?;
+    tracing::info!(bucket = %config.s3_bucket, "object storage ready");
 
     let listener = TcpListener::bind(config.listen_addr)
         .await
@@ -55,6 +71,11 @@ async fn run() -> Result<(), i32> {
         pool,
         metrics_enabled: config.metrics_enabled,
         public_url: config.public_url.clone(),
+        gateway_allow_unauth: config.gateway_allow_unauth,
+        gateway_heartbeat_interval: std::time::Duration::from_millis(
+            voxnexus_protocol::DEFAULT_HEARTBEAT_INTERVAL_MS,
+        ),
+        storage: storage as Arc<dyn ObjectStore>,
     });
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

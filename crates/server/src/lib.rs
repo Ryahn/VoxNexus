@@ -3,6 +3,7 @@
 pub mod csrf;
 pub mod error;
 pub mod extract;
+pub mod gateway;
 pub mod http;
 pub mod openapi;
 pub mod telemetry;

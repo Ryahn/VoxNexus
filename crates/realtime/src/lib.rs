@@ -1,4 +1,5 @@
-//! Gateway, subscriptions, fanout, and resume. Implementation lands in F007 and F035.
+//! Gateway WebSocket session: HELLO, heartbeat, and dev-only ping.
 
-/// Workspace crate identity until the Feature Task lands.
-pub const CRATE_NAME: &str = "voxnexus-realtime";
+mod session;
+
+pub use session::{missed_heartbeat, run_session, GatewaySessionOptions, HEARTBEAT_TIMEOUT_FACTOR};

@@ -67,6 +67,17 @@ impl ApiError {
     }
 
     #[must_use]
+    pub fn gateway_unavailable(request_id: impl Into<String>) -> Self {
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            error_codes::GATEWAY_UNAVAILABLE,
+            "Gateway requires authentication (F013). Set GATEWAY_ALLOW_UNAUTH=true for local protocol development only.",
+            None,
+            request_id,
+        )
+    }
+
+    #[must_use]
     pub fn body(&self) -> &ErrorBody {
         &self.body
     }

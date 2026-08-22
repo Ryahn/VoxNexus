@@ -1,5 +1,8 @@
 //! HTTP surface: probes, `/api/v1`, error fallback, and shared middleware.
 
+use std::sync::Arc;
+use std::time::Duration;
+
 use axum::extract::State;
 use axum::http::{header, HeaderMap, HeaderName, HeaderValue, Method, Request, StatusCode};
 use axum::middleware;
@@ -22,6 +25,7 @@ use uuid::Uuid;
 use voxnexus_config::Url;
 use voxnexus_db::PgPool;
 use voxnexus_protocol::MetaResponse;
+use voxnexus_storage::ObjectStore;
 
 use crate::csrf::csrf_hook;
 use crate::error::ApiError;
@@ -48,6 +52,9 @@ pub struct AppState {
     pub pool: PgPool,
     pub metrics_enabled: bool,
     pub public_url: Url,
+    pub gateway_allow_unauth: bool,
+    pub gateway_heartbeat_interval: Duration,
+    pub storage: Arc<dyn ObjectStore>,
 }
 
 #[derive(Serialize)]
@@ -77,6 +84,7 @@ pub fn app(state: AppState) -> Router {
     let mut router = Router::new()
         .route("/health", get(health))
         .route("/ready", get(ready))
+        .route("/api/v1/gateway", get(crate::gateway::gateway_upgrade))
         .merge(api);
     if metrics_enabled {
         router = router.route("/metrics", get(metrics));
@@ -176,33 +184,38 @@ async fn health() -> impl IntoResponse {
 }
 
 async fn ready(State(state): State<AppState>) -> impl IntoResponse {
-    match voxnexus_db::ping(&state.pool).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ReadyBody {
-                status: "ok",
-                postgres: "ok",
-                redis: "skipped",
-                seaweedfs: "skipped",
-                typesense: "skipped",
-            }),
-        )
-            .into_response(),
+    let postgres = match voxnexus_db::ping(&state.pool).await {
+        Ok(()) => "ok",
         Err(error) => {
             tracing::warn!(error = %error, "postgres readiness check failed");
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                Json(ReadyBody {
-                    status: "unavailable",
-                    postgres: "error",
-                    redis: "skipped",
-                    seaweedfs: "skipped",
-                    typesense: "skipped",
-                }),
-            )
-                .into_response()
+            "error"
         }
-    }
+    };
+    let seaweedfs = match state.storage.head_bucket().await {
+        Ok(()) => "ok",
+        Err(error) => {
+            tracing::warn!(error = %error, "seaweedfs readiness check failed");
+            "error"
+        }
+    };
+    let ok = postgres == "ok" && seaweedfs == "ok";
+    let status = if ok { "ok" } else { "unavailable" };
+    let code = if ok {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    (
+        code,
+        Json(ReadyBody {
+            status,
+            postgres,
+            redis: "skipped",
+            seaweedfs,
+            typesense: "skipped",
+        }),
+    )
+        .into_response()
 }
 
 async fn metrics() -> Response {

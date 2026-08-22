@@ -54,6 +54,7 @@ const ENV_KEYS: &[&str] = &[
     "LOG_FORMAT",
     "LISTEN_ADDR",
     "METRICS_ENABLED",
+    "GATEWAY_ALLOW_UNAUTH",
     "LIVEKIT_URL",
     "LIVEKIT_API_KEY",
     "LIVEKIT_API_SECRET",
@@ -81,6 +82,8 @@ pub struct Config {
     pub log_format: LogFormat,
     pub listen_addr: SocketAddr,
     pub metrics_enabled: bool,
+    /// When true, `/api/v1/gateway` accepts unauthenticated sessions (dev-only ping). Default false until F013.
+    pub gateway_allow_unauth: bool,
     pub livekit_url: Option<Url>,
     pub livekit_api_key: Option<Secret>,
     pub livekit_api_secret: Option<Secret>,
@@ -140,6 +143,8 @@ struct RawConfig {
     listen_addr: Option<String>,
     #[serde(rename = "METRICS_ENABLED")]
     metrics_enabled: Option<FlexString>,
+    #[serde(rename = "GATEWAY_ALLOW_UNAUTH")]
+    gateway_allow_unauth: Option<FlexString>,
     #[serde(rename = "LIVEKIT_URL")]
     livekit_url: Option<String>,
     #[serde(rename = "LIVEKIT_API_KEY")]
@@ -225,6 +230,11 @@ impl Config {
             metrics_enabled: parse_bool(
                 "METRICS_ENABLED",
                 raw.metrics_enabled.map(FlexString::into_string),
+                false,
+            )?,
+            gateway_allow_unauth: parse_bool(
+                "GATEWAY_ALLOW_UNAUTH",
+                raw.gateway_allow_unauth.map(FlexString::into_string),
                 false,
             )?,
             livekit_url: optional_url("LIVEKIT_URL", raw.livekit_url)?,

@@ -7,8 +7,8 @@
     "dev": "pnpm --filter @voxnexus/web dev",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "codegen": "cargo run -p voxnexus-codegen && pnpm --filter @voxnexus/api-client generate",
-    "check-codegen": "pnpm codegen && git diff --exit-code -- packages/api-client"
+    "codegen": "cargo run -p voxnexus-codegen --bin export-openapi && cargo run -p voxnexus-codegen --bin export-events && pnpm --filter @voxnexus/api-client generate && pnpm --filter @voxnexus/protocol generate",
+    "check-codegen": "pnpm codegen && git diff --exit-code -- packages/api-client packages/protocol/gateway.schema.json packages/protocol/src/generated"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.9"

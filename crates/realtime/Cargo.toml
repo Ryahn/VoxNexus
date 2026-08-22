@@ -8,3 +8,15 @@ description = "VoxNexus gateway, subscriptions, fanout, and resume"
 
 [lints]
 workspace = true
+
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+futures-util = { version = "0.3", features = ["sink"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "time"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v7"] }
+voxnexus-protocol = { path = "../protocol" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
