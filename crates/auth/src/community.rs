@@ -137,6 +137,8 @@ pub async fn create_community(
     .execute(&mut *tx)
     .await?;
 
+    crate::role::insert_everyone_role(&mut tx, id, now).await?;
+
     tx.commit().await?;
     get_community(pool, id)
         .await?

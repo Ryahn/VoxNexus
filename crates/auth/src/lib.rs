@@ -8,6 +8,7 @@ mod invite;
 mod oidc;
 mod password;
 mod profile;
+mod role;
 mod session;
 mod space;
 
@@ -45,6 +46,12 @@ pub use password::{hash_password, verify_password, PasswordError};
 pub use profile::{
     delete_object_meta, ensure_profile, ensure_profile_with_name, get_object, get_profile,
     insert_object, set_avatar_object, set_banner_object, update_profile,
+};
+pub use role::{
+    assign_role, can_manage_role_position, clone_role, create_role, delete_role, get_role,
+    insert_everyone_role, list_member_roles, list_roles, permissions_manage_roles,
+    permissions_with_manage_roles, remove_role_assignment, role_actor, update_role,
+    CreateRoleInput, RoleActor, RolePatch,
 };
 pub use session::{
     clear_session_cookie, hash_session_token, new_session_token, session_cookie,
@@ -94,6 +101,16 @@ pub enum AuthError {
     CategoryScopeMismatch,
     #[error("channel scope mismatch")]
     ChannelScopeMismatch,
+    #[error("role name already taken")]
+    RoleNameTaken,
+    #[error("role scope mismatch")]
+    RoleScopeMismatch,
+    #[error("@everyone role cannot be deleted")]
+    EveryoneRoleImmutable,
+    #[error("role hierarchy denied")]
+    RoleHierarchyDenied,
+    #[error("cannot manage roles")]
+    CannotManageRoles,
     #[error("community join not allowed")]
     JoinNotAllowed,
     #[error("community owner cannot leave")]

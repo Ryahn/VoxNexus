@@ -8,7 +8,10 @@ use tokio::sync::{mpsc, RwLock};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
-use voxnexus_protocol::{MemberJoinPayload, MemberLeavePayload, PresenceUpdatePayload};
+use voxnexus_protocol::{
+    CommunityRolePayload, MemberJoinPayload, MemberLeavePayload, MemberRoleUpdatePayload,
+    PresenceUpdatePayload, RoleDeletePayload,
+};
 
 /// Outbound gateway fanout for one WebSocket connection.
 pub type PresenceOutbound = mpsc::UnboundedSender<PresenceHubMessage>;
@@ -24,6 +27,14 @@ pub enum PresenceHubMessage {
     MemberJoin(MemberJoinPayload),
     /// Account left a community (F020).
     MemberLeave(MemberLeavePayload),
+    /// Role created (F028).
+    RoleCreate(CommunityRolePayload),
+    /// Role updated (F028).
+    RoleUpdate(CommunityRolePayload),
+    /// Role deleted (F028).
+    RoleDelete(RoleDeletePayload),
+    /// Member role assignments changed (F028).
+    MemberRoleUpdate(MemberRoleUpdatePayload),
 }
 
 #[derive(Clone)]

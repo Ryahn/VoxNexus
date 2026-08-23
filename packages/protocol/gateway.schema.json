@@ -4,6 +4,7 @@
   "description": "Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).",
   "type": "object",
   "required": [
+    "community_role_payload",
     "dev_ping_payload",
     "dev_pong_payload",
     "envelope",
@@ -16,14 +17,19 @@
     "invalid_session_payload",
     "member_join_payload",
     "member_leave_payload",
+    "member_role_update_payload",
     "presence_sync_payload",
     "presence_update_payload",
     "ready_payload",
     "resume_payload",
     "resumed_payload",
+    "role_delete_payload",
     "status_update_payload"
   ],
   "properties": {
+    "community_role_payload": {
+      "$ref": "#/definitions/CommunityRolePayload"
+    },
     "dev_ping_payload": {
       "$ref": "#/definitions/DevPingPayload"
     },
@@ -60,6 +66,9 @@
     "member_leave_payload": {
       "$ref": "#/definitions/MemberLeavePayload"
     },
+    "member_role_update_payload": {
+      "$ref": "#/definitions/MemberRoleUpdatePayload"
+    },
     "presence_sync_payload": {
       "$ref": "#/definitions/PresenceSyncPayload"
     },
@@ -75,11 +84,59 @@
     "resumed_payload": {
       "$ref": "#/definitions/ResumedPayload"
     },
+    "role_delete_payload": {
+      "$ref": "#/definitions/RoleDeletePayload"
+    },
     "status_update_payload": {
       "$ref": "#/definitions/StatusUpdatePayload"
     }
   },
   "definitions": {
+    "CommunityRolePayload": {
+      "description": "Server → client when a role is created (F028).",
+      "type": "object",
+      "required": [
+        "color",
+        "community_id",
+        "hoist",
+        "id",
+        "is_everyone",
+        "mentionable",
+        "name",
+        "permissions",
+        "position"
+      ],
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "hoist": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "is_everyone": {
+          "type": "boolean"
+        },
+        "mentionable": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "permissions": true,
+        "position": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "DevPingPayload": {
       "description": "Dev-only ping (requires `GATEWAY_ALLOW_UNAUTH` after identify).",
       "type": "object",
@@ -179,7 +236,11 @@
         "PRESENCE_UPDATE",
         "PRESENCE_SYNC",
         "MEMBER_JOIN",
-        "MEMBER_LEAVE"
+        "MEMBER_LEAVE",
+        "ROLE_CREATE",
+        "ROLE_UPDATE",
+        "ROLE_DELETE",
+        "MEMBER_ROLE_UPDATE"
       ]
     },
     "HeartbeatAckPayload": {
@@ -276,6 +337,32 @@
         "community_id": {
           "type": "string",
           "format": "uuid"
+        }
+      }
+    },
+    "MemberRoleUpdatePayload": {
+      "description": "Server → client when a member's role set changes (F028).",
+      "type": "object",
+      "required": [
+        "account_id",
+        "community_id",
+        "role_ids"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "role_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
@@ -389,6 +476,24 @@
       ],
       "properties": {
         "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "RoleDeletePayload": {
+      "description": "Server → client when a role is deleted (F028).",
+      "type": "object",
+      "required": [
+        "community_id",
+        "role_id"
+      ],
+      "properties": {
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "role_id": {
           "type": "string",
           "format": "uuid"
         }

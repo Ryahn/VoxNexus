@@ -25,7 +25,11 @@ export type EventType =
   | 'PRESENCE_UPDATE'
   | 'PRESENCE_SYNC'
   | 'MEMBER_JOIN'
-  | 'MEMBER_LEAVE';
+  | 'MEMBER_LEAVE'
+  | 'ROLE_CREATE'
+  | 'ROLE_UPDATE'
+  | 'ROLE_DELETE'
+  | 'MEMBER_ROLE_UPDATE';
 /**
  * Presence exposed to clients (offline when disconnected or hidden from viewers).
  *
@@ -45,6 +49,7 @@ export type PresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible';
  * Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
  */
 export interface GatewaySchemaCatalog {
+  community_role_payload: CommunityRolePayload;
   dev_ping_payload: DevPingPayload;
   dev_pong_payload: DevPongPayload;
   envelope: Envelope;
@@ -57,12 +62,32 @@ export interface GatewaySchemaCatalog {
   invalid_session_payload: InvalidSessionPayload;
   member_join_payload: MemberJoinPayload;
   member_leave_payload: MemberLeavePayload;
+  member_role_update_payload: MemberRoleUpdatePayload;
   presence_sync_payload: PresenceSyncPayload;
   presence_update_payload: PresenceUpdatePayload;
   ready_payload: ReadyPayload;
   resume_payload: ResumePayload;
   resumed_payload: ResumedPayload;
+  role_delete_payload: RoleDeletePayload;
   status_update_payload: StatusUpdatePayload;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when a role is created (F028).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "CommunityRolePayload".
+ */
+export interface CommunityRolePayload {
+  color: string;
+  community_id: string;
+  hoist: boolean;
+  id: string;
+  is_everyone: boolean;
+  mentionable: boolean;
+  name: string;
+  permissions: unknown;
+  position: number;
   [k: string]: unknown;
 }
 /**
@@ -186,6 +211,18 @@ export interface MemberLeavePayload {
   [k: string]: unknown;
 }
 /**
+ * Server → client when a member's role set changes (F028).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MemberRoleUpdatePayload".
+ */
+export interface MemberRoleUpdatePayload {
+  account_id: string;
+  community_id: string;
+  role_ids: string[];
+  [k: string]: unknown;
+}
+/**
  * Server → client bulk presence after identify.
  *
  * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
@@ -239,6 +276,17 @@ export interface ResumePayload {
  */
 export interface ResumedPayload {
   session_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when a role is deleted (F028).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "RoleDeletePayload".
+ */
+export interface RoleDeletePayload {
+  community_id: string;
+  role_id: string;
   [k: string]: unknown;
 }
 /**

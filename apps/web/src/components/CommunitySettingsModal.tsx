@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../auth';
 import { readApiErrorMessage } from '../lib/apiError';
 import { useUI } from '../store';
+import { CommunityRolesPanel } from './CommunityRolesPanel';
 import { Portal } from './ui/Portal';
 
 type Props = {
@@ -31,6 +32,7 @@ export function CommunitySettingsModal({ communityId }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [tab, setTab] = useState<'settings' | 'roles'>('settings');
 
   const isOwner = community?.owner_account_id === session.account.id;
 
@@ -58,6 +60,7 @@ export function CommunitySettingsModal({ communityId }: Props) {
     setPending(false);
     setTransferTarget('');
     setDeleteConfirm('');
+    setTab('settings');
     void refresh();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -156,7 +159,30 @@ export function CommunitySettingsModal({ communityId }: Props) {
             instance.
           </p>
 
-          {isOwner ? (
+          <div className="mb-4 flex gap-1 rounded-lg border border-line/60 p-0.5">
+            <button
+              type="button"
+              onClick={() => setTab('settings')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm ${
+                tab === 'settings' ? 'bg-surface-active text-ink' : 'text-ink-3 hover:text-ink-2'
+              }`}
+            >
+              General
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('roles')}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm ${
+                tab === 'roles' ? 'bg-surface-active text-ink' : 'text-ink-3 hover:text-ink-2'
+              }`}
+            >
+              Roles
+            </button>
+          </div>
+
+          {tab === 'roles' ? (
+            <CommunityRolesPanel communityId={communityId} canManage={isOwner} />
+          ) : isOwner ? (
             <>
               <fieldset className="mb-4">
                 <legend className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-3">
@@ -216,7 +242,7 @@ export function CommunitySettingsModal({ communityId }: Props) {
             </p>
           )}
 
-          {isOwner ? (
+          {tab === 'settings' && isOwner ? (
             <div className="mb-4 rounded-lg border border-dnd/30 bg-dnd/5 p-3">
               <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-dnd">
                 Danger zone
@@ -276,7 +302,7 @@ export function CommunitySettingsModal({ communityId }: Props) {
             >
               {isOwner ? 'Cancel' : 'Close'}
             </button>
-            {isOwner ? (
+            {isOwner && tab === 'settings' ? (
               <button
                 type="button"
                 disabled={pending || !community}

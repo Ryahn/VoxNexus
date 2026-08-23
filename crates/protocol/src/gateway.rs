@@ -35,6 +35,10 @@ pub enum EventType {
     PresenceSync,
     MemberJoin,
     MemberLeave,
+    RoleCreate,
+    RoleUpdate,
+    RoleDelete,
+    MemberRoleUpdate,
 }
 
 /// Subscription / fanout scope (connection-level events omit this).
@@ -188,6 +192,35 @@ pub struct MemberLeavePayload {
     pub account_id: Uuid,
 }
 
+/// Server → client when a role is created (F028).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CommunityRolePayload {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub name: String,
+    pub position: i32,
+    pub color: String,
+    pub hoist: bool,
+    pub mentionable: bool,
+    pub permissions: Value,
+    pub is_everyone: bool,
+}
+
+/// Server → client when a role is deleted (F028).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RoleDeletePayload {
+    pub community_id: Uuid,
+    pub role_id: Uuid,
+}
+
+/// Server → client when a member's role set changes (F028).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MemberRoleUpdatePayload {
+    pub community_id: Uuid,
+    pub account_id: Uuid,
+    pub role_ids: Vec<Uuid>,
+}
+
 /// Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
 #[derive(Debug, Clone, JsonSchema)]
 pub struct GatewaySchemaCatalog {
@@ -209,6 +242,9 @@ pub struct GatewaySchemaCatalog {
     pub presence_sync_payload: PresenceSyncPayload,
     pub member_join_payload: MemberJoinPayload,
     pub member_leave_payload: MemberLeavePayload,
+    pub community_role_payload: CommunityRolePayload,
+    pub role_delete_payload: RoleDeletePayload,
+    pub member_role_update_payload: MemberRoleUpdatePayload,
 }
 
 /// Root JSON Schema for gateway types (deterministic export).

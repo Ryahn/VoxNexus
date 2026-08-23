@@ -17,6 +17,7 @@ pub mod oidc;
 pub mod openapi;
 pub mod presence;
 pub mod profile;
+pub mod roles;
 pub mod spaces;
 pub mod telemetry;
 

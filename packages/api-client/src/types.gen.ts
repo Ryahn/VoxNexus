@@ -22,6 +22,13 @@ export type AddSpaceMemberRequest = {
 };
 
 /**
+ * Assign a role to a member.
+ */
+export type AssignRoleRequest = {
+    role_id: string;
+};
+
+/**
  * Authenticated session payload.
  */
 export type AuthSessionResponse = {
@@ -196,6 +203,17 @@ export type CreateInviteRequest = {
      * `null` / omitted = unlimited. Otherwise `1..=1000`.
      */
     max_uses?: number | null;
+};
+
+/**
+ * Create a custom role.
+ */
+export type CreateRoleRequest = {
+    color?: string | null;
+    hoist?: boolean | null;
+    manage_roles?: boolean | null;
+    mentionable?: boolean | null;
+    name: string;
 };
 
 /**
@@ -413,6 +431,37 @@ export type ReorderChannelsRequest = {
 };
 
 /**
+ * Reorder roles by id list (`@everyone` stays at position 0).
+ */
+export type ReorderRolesRequest = {
+    role_ids: Array<string>;
+};
+
+/**
+ * Roles in a community.
+ */
+export type RoleListResponse = {
+    roles: Array<RoleResponse>;
+};
+
+/**
+ * Public role representation.
+ */
+export type RoleResponse = {
+    color: string;
+    community_id: string;
+    created_at: string;
+    hoist: boolean;
+    id: string;
+    is_everyone: boolean;
+    mentionable: boolean;
+    name: string;
+    permissions: unknown;
+    position: number;
+    updated_at: string;
+};
+
+/**
  * Spaces in a community, ordered by position.
  */
 export type SpaceListResponse = {
@@ -541,6 +590,18 @@ export type UpdateProfileRequest = {
      */
     display_name?: string | null;
     presence_status?: null | PresenceStatus;
+};
+
+/**
+ * Update a role.
+ */
+export type UpdateRoleRequest = {
+    color?: string | null;
+    hoist?: boolean | null;
+    manage_roles?: boolean | null;
+    mentionable?: boolean | null;
+    name?: string | null;
+    position?: number | null;
 };
 
 /**
@@ -2011,6 +2072,254 @@ export type UpdateMyCommunityNicknameResponses = {
 
 export type UpdateMyCommunityNicknameResponse = UpdateMyCommunityNicknameResponses[keyof UpdateMyCommunityNicknameResponses];
 
+export type ListMemberRolesData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/members/{account_id}/roles';
+};
+
+export type ListMemberRolesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListMemberRolesError = ListMemberRolesErrors[keyof ListMemberRolesErrors];
+
+export type ListMemberRolesResponses = {
+    /**
+     * Member roles
+     */
+    200: RoleListResponse;
+};
+
+export type ListMemberRolesResponse = ListMemberRolesResponses[keyof ListMemberRolesResponses];
+
+export type AssignMemberRoleData = {
+    body: AssignRoleRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/members/{account_id}/roles';
+};
+
+export type AssignMemberRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type AssignMemberRoleError = AssignMemberRoleErrors[keyof AssignMemberRoleErrors];
+
+export type AssignMemberRoleResponses = {
+    /**
+     * Assigned
+     */
+    204: void;
+};
+
+export type AssignMemberRoleResponse = AssignMemberRoleResponses[keyof AssignMemberRoleResponses];
+
+export type RemoveMemberRoleData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Account id
+         */
+        account_id: string;
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/members/{account_id}/roles/{role_id}';
+};
+
+export type RemoveMemberRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type RemoveMemberRoleError = RemoveMemberRoleErrors[keyof RemoveMemberRoleErrors];
+
+export type RemoveMemberRoleResponses = {
+    /**
+     * Removed
+     */
+    204: void;
+};
+
+export type RemoveMemberRoleResponse = RemoveMemberRoleResponses[keyof RemoveMemberRoleResponses];
+
+export type ListRolesData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/roles';
+};
+
+export type ListRolesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListRolesError = ListRolesErrors[keyof ListRolesErrors];
+
+export type ListRolesResponses = {
+    /**
+     * Role list
+     */
+    200: RoleListResponse;
+};
+
+export type ListRolesResponse = ListRolesResponses[keyof ListRolesResponses];
+
+export type CreateRoleData = {
+    body: CreateRoleRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/roles';
+};
+
+export type CreateRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Name taken
+     */
+    409: ErrorBody;
+};
+
+export type CreateRoleError = CreateRoleErrors[keyof CreateRoleErrors];
+
+export type CreateRoleResponses = {
+    /**
+     * Role created
+     */
+    201: RoleResponse;
+};
+
+export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
+
+export type ReorderRolesData = {
+    body: ReorderRolesRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/roles/reorder';
+};
+
+export type ReorderRolesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ReorderRolesError = ReorderRolesErrors[keyof ReorderRolesErrors];
+
+export type ReorderRolesResponses = {
+    /**
+     * Reordered
+     */
+    200: RoleListResponse;
+};
+
+export type ReorderRolesResponse = ReorderRolesResponses[keyof ReorderRolesResponses];
+
 export type ListSpacesData = {
     body?: never;
     path: {
@@ -2513,6 +2822,158 @@ export type GetProfileBannerResponses = {
      */
     200: unknown;
 };
+
+export type DeleteRoleData = {
+    body?: never;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}';
+};
+
+export type DeleteRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteRoleError = DeleteRoleErrors[keyof DeleteRoleErrors];
+
+export type DeleteRoleResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteRoleResponse = DeleteRoleResponses[keyof DeleteRoleResponses];
+
+export type GetRoleData = {
+    body?: never;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}';
+};
+
+export type GetRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetRoleError = GetRoleErrors[keyof GetRoleErrors];
+
+export type GetRoleResponses = {
+    /**
+     * Role
+     */
+    200: RoleResponse;
+};
+
+export type GetRoleResponse = GetRoleResponses[keyof GetRoleResponses];
+
+export type UpdateRoleData = {
+    body: UpdateRoleRequest;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}';
+};
+
+export type UpdateRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateRoleError = UpdateRoleErrors[keyof UpdateRoleErrors];
+
+export type UpdateRoleResponses = {
+    /**
+     * Updated role
+     */
+    200: RoleResponse;
+};
+
+export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
+
+export type CloneRoleData = {
+    body?: never;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}/clone';
+};
+
+export type CloneRoleErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type CloneRoleError = CloneRoleErrors[keyof CloneRoleErrors];
+
+export type CloneRoleResponses = {
+    /**
+     * Cloned role
+     */
+    201: RoleResponse;
+};
+
+export type CloneRoleResponse = CloneRoleResponses[keyof CloneRoleResponses];
 
 export type DeleteSpaceData = {
     body?: never;

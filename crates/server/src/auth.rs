@@ -325,6 +325,11 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         | AuthError::NotCommunityOwner
         | AuthError::CategoryScopeMismatch
         | AuthError::ChannelScopeMismatch
+        | AuthError::RoleNameTaken
+        | AuthError::RoleScopeMismatch
+        | AuthError::EveryoneRoleImmutable
+        | AuthError::RoleHierarchyDenied
+        | AuthError::CannotManageRoles
         | AuthError::InviteNotFound
         | AuthError::InviteExpired
         | AuthError::InviteExhausted

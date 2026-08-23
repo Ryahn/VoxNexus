@@ -3,18 +3,20 @@
 use utoipa::OpenApi;
 use voxnexus_domain::{ChannelType, CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
-    AccountResponse, AddSpaceMemberRequest, AuthSessionResponse, CategoryListResponse,
-    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, ChannelListResponse,
-    ChannelResponse, CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse,
-    CommunityResponse, CreateCategoryRequest, CreateChannelRequest, CreateCommunityRequest,
-    CreateInviteRequest, CreateSpaceRequest, DeleteCommunityRequest, ErrorBody,
-    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
-    InvitePreviewResponse, InviteResponse, ListCategoriesQuery, ListChannelsQuery, LoginRequest,
-    MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
-    ReorderCategoriesRequest, ReorderChannelsRequest, SpaceListResponse, SpaceMemberListResponse,
-    SpaceMemberResponse, SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest,
-    UpdateChannelRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
-    UpdateInviteRequest, UpdateNicknameRequest, UpdateProfileRequest, UpdateSpaceRequest,
+    AccountResponse, AddSpaceMemberRequest, AssignRoleRequest, AuthSessionResponse,
+    CategoryListResponse, CategoryResponse, ChangeEmailRequest, ChangePasswordRequest,
+    ChannelListResponse, ChannelResponse, CommunityListResponse, CommunityMemberListResponse,
+    CommunityMemberResponse, CommunityResponse, CreateCategoryRequest, CreateChannelRequest,
+    CreateCommunityRequest, CreateInviteRequest, CreateRoleRequest, CreateSpaceRequest,
+    DeleteCommunityRequest, ErrorBody, InstanceSettingsResponse, InviteExpireAfter,
+    InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
+    ListCategoriesQuery, ListChannelsQuery, LoginRequest, MetaResponse, PresenceEntry,
+    PresenceListResponse, ProfileResponse, RegisterRequest, ReorderCategoriesRequest,
+    ReorderChannelsRequest, ReorderRolesRequest, RoleListResponse, RoleResponse, SpaceListResponse,
+    SpaceMemberListResponse, SpaceMemberResponse, SpaceResponse, TransferCommunityRequest,
+    UpdateCategoryRequest, UpdateChannelRequest, UpdateCommunityRequest,
+    UpdateInstanceSettingsRequest, UpdateInviteRequest, UpdateNicknameRequest,
+    UpdateProfileRequest, UpdateRoleRequest, UpdateSpaceRequest,
 };
 
 use crate::auth;
@@ -27,6 +29,7 @@ use crate::invites;
 use crate::oidc;
 use crate::presence;
 use crate::profile;
+use crate::roles;
 use crate::spaces;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
@@ -93,6 +96,16 @@ use crate::spaces;
         channels::archive_channel,
         channels::restore_channel,
         channels::clone_channel,
+        roles::create_role,
+        roles::list_roles,
+        roles::reorder_roles,
+        roles::get_role_by_id,
+        roles::update_role,
+        roles::delete_role,
+        roles::clone_role,
+        roles::list_member_roles,
+        roles::assign_member_role,
+        roles::remove_member_role,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -145,6 +158,12 @@ use crate::spaces;
         ReorderChannelsRequest,
         ListChannelsQuery,
         ChannelType,
+        RoleResponse,
+        RoleListResponse,
+        CreateRoleRequest,
+        UpdateRoleRequest,
+        ReorderRolesRequest,
+        AssignRoleRequest,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -165,6 +184,7 @@ use crate::spaces;
         (name = "spaces", description = "Spaces (groups) within a community"),
         (name = "categories", description = "Channel sidebar categories"),
         (name = "channels", description = "Channels within a community"),
+        (name = "roles", description = "Community roles and assignments"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

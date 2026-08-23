@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 pub use community::{
     Channel, ChannelCategory, ChannelType, Community, CommunityInvite, CommunityMember,
-    CommunityMemberRole, JoinMode, Space, SpaceMember, SpaceVisibility,
+    CommunityMemberRole, CommunityRole, JoinMode, Space, SpaceMember, SpaceVisibility,
 };
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
 pub use presence::{PresenceStatus, PublicPresenceStatus};

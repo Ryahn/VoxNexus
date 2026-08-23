@@ -248,3 +248,19 @@ pub struct Channel {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// Custom role within a community (F028). `@everyone` is implicit for all members.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunityRole {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub name: String,
+    pub position: i32,
+    pub color: String,
+    pub hoist: bool,
+    pub mentionable: bool,
+    pub permissions: serde_json::Value,
+    pub is_everyone: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}

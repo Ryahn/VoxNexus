@@ -185,6 +185,70 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             break;
                         }
                     }
+                    Some(PresenceHubMessage::RoleCreate(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::RoleCreate,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::RoleUpdate(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::RoleUpdate,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::RoleDelete(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::RoleDelete,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MemberRoleUpdate(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MemberRoleUpdate,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
                     None => break,
                 }
             }
@@ -391,7 +455,11 @@ async fn handle_text(
         | EventType::PresenceUpdate
         | EventType::PresenceSync
         | EventType::MemberJoin
-        | EventType::MemberLeave => Err(false),
+        | EventType::MemberLeave
+        | EventType::RoleCreate
+        | EventType::RoleUpdate
+        | EventType::RoleDelete
+        | EventType::MemberRoleUpdate => Err(false),
     }
 }
 
