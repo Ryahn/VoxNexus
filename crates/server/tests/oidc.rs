@@ -74,7 +74,8 @@ fn html_bounce_target(body: &str) -> String {
     let marker = "location.replace(";
     let start = body.find(marker).expect("location.replace in bounce html") + marker.len();
     let rest = &body[start..];
-    let parsed: String = serde_json::from_str(rest.split(')').next().expect("js call")).expect("url json");
+    let parsed: String =
+        serde_json::from_str(rest.split(')').next().expect("js call")).expect("url json");
     parsed
 }
 
@@ -167,7 +168,10 @@ async fn oidc_jit_login_creates_account_once() {
     assert_eq!(first.status(), StatusCode::OK);
     assert!(first.headers().get(header::SET_COOKIE).is_some());
     assert_eq!(
-        first.headers().get(header::CONTENT_TYPE).and_then(|v| v.to_str().ok()),
+        first
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok()),
         Some("text/html; charset=utf-8")
     );
 

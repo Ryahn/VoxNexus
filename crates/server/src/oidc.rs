@@ -10,8 +10,8 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use openidconnect::core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata};
 use openidconnect::{
-    AuthorizationCode, AsyncHttpClient, ClientId, ClientSecret, CsrfToken, HttpRequest, HttpResponse,
-    IssuerUrl, Nonce, PkceCodeChallenge, RedirectUrl, Scope,
+    AsyncHttpClient, AuthorizationCode, ClientId, ClientSecret, CsrfToken, HttpRequest,
+    HttpResponse, IssuerUrl, Nonce, PkceCodeChallenge, RedirectUrl, Scope,
 };
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
