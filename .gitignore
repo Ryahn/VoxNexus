@@ -3,6 +3,9 @@
 **/*.rs.bk
 Cargo.lock.bak
 
+# Relocated UI stub (canonical app is apps/web)
+VoxUI/
+
 # Node / pnpm
 node_modules/
 .pnpm-store/
