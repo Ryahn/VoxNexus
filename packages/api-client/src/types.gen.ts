@@ -339,6 +339,13 @@ export type OidcCallbackErrors = {
 
 export type OidcCallbackError = OidcCallbackErrors[keyof OidcCallbackErrors];
 
+export type OidcCallbackResponses = {
+    /**
+     * HTML bounce to SPA with session cookie
+     */
+    200: unknown;
+};
+
 export type StartOidcLoginData = {
     body?: never;
     path?: never;
@@ -358,6 +365,13 @@ export type StartOidcLoginErrors = {
 };
 
 export type StartOidcLoginError = StartOidcLoginErrors[keyof StartOidcLoginErrors];
+
+export type StartOidcLoginResponses = {
+    /**
+     * HTML bounce to OIDC provider
+     */
+    200: unknown;
+};
 
 export type RegisterData = {
     body: RegisterRequest;

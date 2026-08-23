@@ -219,8 +219,11 @@
         "summary": "OIDC provider callback: exchange code, resolve account, set session cookie, redirect home.",
         "operationId": "oidcCallback",
         "responses": {
+          "200": {
+            "description": "HTML bounce to SPA with session cookie"
+          },
           "302": {
-            "description": "Redirect to SPA with session cookie or login error"
+            "description": "Redirect to login on provider/login error"
           },
           "400": {
             "description": "Invalid callback",
@@ -253,8 +256,8 @@
         "summary": "Redirect the browser to the configured OIDC provider (authorization code + PKCE).",
         "operationId": "startOidcLogin",
         "responses": {
-          "302": {
-            "description": "Redirect to OIDC provider"
+          "200": {
+            "description": "HTML bounce to OIDC provider"
           },
           "404": {
             "description": "OIDC not configured",

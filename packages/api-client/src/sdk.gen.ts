@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -67,12 +67,12 @@ export const changeMyPassword = <ThrowOnError extends boolean = false>(options: 
 /**
  * OIDC provider callback: exchange code, resolve account, set session cookie, redirect home.
  */
-export const oidcCallback = <ThrowOnError extends boolean = false>(options?: Options<OidcCallbackData, ThrowOnError>): RequestResult<unknown, OidcCallbackErrors, ThrowOnError> => (options?.client ?? client).get<unknown, OidcCallbackErrors, ThrowOnError>({ url: '/api/v1/auth/oidc/callback', ...options });
+export const oidcCallback = <ThrowOnError extends boolean = false>(options?: Options<OidcCallbackData, ThrowOnError>): RequestResult<OidcCallbackResponses, OidcCallbackErrors, ThrowOnError> => (options?.client ?? client).get<OidcCallbackResponses, OidcCallbackErrors, ThrowOnError>({ url: '/api/v1/auth/oidc/callback', ...options });
 
 /**
  * Redirect the browser to the configured OIDC provider (authorization code + PKCE).
  */
-export const startOidcLogin = <ThrowOnError extends boolean = false>(options?: Options<StartOidcLoginData, ThrowOnError>): RequestResult<unknown, StartOidcLoginErrors, ThrowOnError> => (options?.client ?? client).get<unknown, StartOidcLoginErrors, ThrowOnError>({ url: '/api/v1/auth/oidc/start', ...options });
+export const startOidcLogin = <ThrowOnError extends boolean = false>(options?: Options<StartOidcLoginData, ThrowOnError>): RequestResult<StartOidcLoginResponses, StartOidcLoginErrors, ThrowOnError> => (options?.client ?? client).get<StartOidcLoginResponses, StartOidcLoginErrors, ThrowOnError>({ url: '/api/v1/auth/oidc/start', ...options });
 
 /**
  * Register a local account and set the session cookie.
