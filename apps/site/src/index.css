@@ -1,3 +1,5 @@
+@layer theme, base, components, utilities;
+
 @import "@voxnexus/ui/theme/tokens.css";
 
 @tailwind base;
@@ -22,7 +24,6 @@ body {
   font-family: "Manrope", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
 }
 
 #root {
@@ -66,10 +67,6 @@ body {
     @apply font-mono text-3xs font-medium uppercase tracking-[0.16em] text-ink-3;
   }
 
-  .tick {
-    @apply pointer-events-none absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-accent;
-  }
-
   .grid-veil {
     background-image:
       linear-gradient(rgb(var(--border) / 0.35) 1px, transparent 1px),
@@ -77,25 +74,77 @@ body {
     background-size: 44px 44px;
   }
 
-  .chip {
-    @apply inline-flex items-center gap-1 rounded-md border border-line-2/60 bg-surface/60 px-1.5 py-0.5 font-mono text-3xs uppercase tracking-wider text-ink-2;
+  .prose-vox {
+    @apply text-ink-2 leading-relaxed;
   }
-}
 
-@layer utilities {
-  .clip-corner {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  .prose-vox h1 {
+    @apply mb-4 mt-8 font-sans text-xl font-semibold text-ink first:mt-0;
   }
-  .clip-corner-sm {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+
+  .prose-vox h2 {
+    @apply mb-3 mt-8 font-sans text-lg font-semibold text-ink;
   }
-  .text-balance {
-    text-wrap: balance;
+
+  .prose-vox h3 {
+    @apply mb-2 mt-6 font-sans text-base font-semibold text-ink;
   }
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+
+  .prose-vox p {
+    @apply mb-4;
   }
-  .no-scrollbar {
-    scrollbar-width: none;
+
+  .prose-vox a {
+    @apply text-accent underline decoration-accent/30 underline-offset-2 transition-colors hover:decoration-accent;
+  }
+
+  .prose-vox ul,
+  .prose-vox ol {
+    @apply mb-4 ml-5 list-outside space-y-1;
+  }
+
+  .prose-vox ul {
+    @apply list-disc;
+  }
+
+  .prose-vox ol {
+    @apply list-decimal;
+  }
+
+  .prose-vox li {
+    @apply pl-1;
+  }
+
+  .prose-vox code {
+    @apply rounded bg-surface px-1.5 py-0.5 font-mono text-sm text-accent;
+  }
+
+  .prose-vox pre {
+    @apply mb-4 overflow-x-auto rounded-lg border border-line bg-input p-4;
+  }
+
+  .prose-vox pre code {
+    @apply bg-transparent p-0 text-ink-2;
+  }
+
+  .prose-vox table {
+    @apply mb-4 w-full border-collapse text-sm;
+  }
+
+  .prose-vox th,
+  .prose-vox td {
+    @apply border border-line px-3 py-2 text-left;
+  }
+
+  .prose-vox th {
+    @apply bg-surface font-medium text-ink;
+  }
+
+  .prose-vox hr {
+    @apply my-8 border-line;
+  }
+
+  .prose-vox blockquote {
+    @apply mb-4 border-l-2 border-accent/40 pl-4 text-ink-3;
   }
 }

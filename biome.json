@@ -43,7 +43,7 @@
   },
   "overrides": [
     {
-      "includes": ["apps/web/**"],
+      "includes": ["apps/**"],
       "linter": {
         "rules": {
           "a11y": {

@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./theme/tokens.css": "./theme/tokens.css",
+    "./theme/tailwind-preset": "./theme/tailwind-preset.js"
   },
   "peerDependencies": {
     "react": "^19.0.0",

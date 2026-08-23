@@ -1,0 +1,43 @@
+/* ============================================================
+   VOX — Design Tokens
+   Colors expressed as space-separated RGB channels so Tailwind's
+   `rgb(var(--x) / <alpha-value>)` can apply opacity. Swap this
+   block to reskin the whole app — the seed of user theming.
+   ============================================================ */
+:root {
+  /* Backgrounds — very dark blue-gray, never pure black */
+  --bg-app: 11 14 20; /* #0b0e14 */
+  --bg-rail: 9 12 18; /* #090c12 */
+  --bg-panel: 15 19 27; /* #0f131b */
+  --bg-panel-2: 18 23 33; /* #121721 */
+  --surface: 26 33 47; /* #1a212f */
+  --surface-hover: 32 40 56; /* #202838 */
+  --surface-active: 37 47 66; /* #252f42 */
+  --input: 13 17 24; /* #0d1118 */
+
+  /* Text — soft off-white to muted blue-gray */
+  --text: 221 228 240; /* #dde4f0 */
+  --text-2: 141 152 173; /* #8d98ad */
+  --text-3: 96 106 124; /* #606a7c */
+  --text-4: 66 74 89; /* #424a59 */
+
+  /* Lines / dividers */
+  --border: 35 43 56; /* #232b38 */
+  --border-2: 46 56 73; /* #2e3849 */
+
+  /* Accents — restrained cyberpunk */
+  --accent: 54 210 205; /* #36d2cd teal-cyan */
+  --accent-2: 138 124 246; /* #8a7cf6 muted violet */
+  --magenta: 240 97 168; /* #f061a8 */
+  --mention: 245 197 88; /* #f5c558 amber */
+
+  /* Status / presence — color-blind aware (distinct shapes used too) */
+  --online: 63 202 122; /* #3fca7a */
+  --idle: 240 180 41; /* #f0b429 */
+  --dnd: 240 91 99; /* #f05b63 */
+  --success: 63 202 122;
+  --warning: 240 180 41;
+  --error: 240 91 99;
+
+  --ring: var(--accent);
+}
