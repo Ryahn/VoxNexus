@@ -278,6 +278,13 @@ pub async fn oidc_callback(
     let nonce = Nonce::new(pending.nonce);
     let claims = match id_token.claims(&client.id_token_verifier(), &nonce) {
         Ok(claims) => claims,
+        Err(openidconnect::ClaimsVerificationError::InvalidIssuer(_)) => {
+            return login_error_redirect(
+                &state,
+                "wrong_issuer",
+                "Provider issuer does not match configuration.",
+            );
+        }
         Err(error) => {
             warn!(error = %error, "oidc id token validation failed");
             return login_error_redirect(

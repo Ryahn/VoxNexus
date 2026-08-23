@@ -79,6 +79,24 @@ fn html_bounce_target(body: &str) -> String {
     parsed
 }
 
+/// Hit the mock IdP authorize endpoint without following its redirect to PUBLIC_URL
+/// (oneshot router is not listening on a real TCP port).
+async fn fetch_authorize_redirect(authorize_url: &str) -> String {
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .expect("reqwest");
+    let authorize = client.get(authorize_url).send().await.expect("authorize");
+    assert_eq!(authorize.status(), StatusCode::SEE_OTHER);
+    authorize
+        .headers()
+        .get(reqwest::header::LOCATION)
+        .expect("callback location")
+        .to_str()
+        .expect("callback str")
+        .to_owned()
+}
+
 fn callback_request_path(callback_url: &str) -> String {
     let parsed = Url::parse(callback_url).expect("callback url");
     match parsed.query() {
@@ -113,15 +131,7 @@ async fn follow_oidc_login(
         .await
         .expect("start body");
     let authorize_url = html_bounce_target(std::str::from_utf8(&body).expect("utf8"));
-    let authorize = reqwest::get(&authorize_url).await.expect("authorize");
-    assert_eq!(authorize.status(), StatusCode::SEE_OTHER);
-    let callback_url = authorize
-        .headers()
-        .get(reqwest::header::LOCATION)
-        .expect("callback location")
-        .to_str()
-        .expect("callback str")
-        .to_owned();
+    let callback_url = fetch_authorize_redirect(&authorize_url).await;
     let callback_path = callback_request_path(&callback_url);
     router
         .oneshot(
@@ -234,14 +244,7 @@ async fn replayed_oidc_code_fails() {
         .await
         .expect("start body");
     let authorize_url = html_bounce_target(std::str::from_utf8(&start_body).expect("utf8"));
-    let authorize = reqwest::get(&authorize_url).await.expect("authorize");
-    let callback_url = authorize
-        .headers()
-        .get(reqwest::header::LOCATION)
-        .expect("callback")
-        .to_str()
-        .expect("str")
-        .to_owned();
+    let callback_url = fetch_authorize_redirect(&authorize_url).await;
 
     let first = router
         .clone()

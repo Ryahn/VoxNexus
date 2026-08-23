@@ -10,7 +10,7 @@ use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use base64::Engine;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use rsa::pkcs1::EncodeRsaPrivateKey;
@@ -107,17 +107,6 @@ struct AuthorizeQuery {
     nonce: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct TokenForm {
-    grant_type: String,
-    code: String,
-    #[allow(dead_code)]
-    redirect_uri: String,
-    client_id: String,
-    client_secret: String,
-    code_verifier: String,
-}
-
 async fn discovery(State(state): State<MockOidcState>) -> Json<serde_json::Value> {
     let issuer = &state.config.issuer;
     Json(json!({
@@ -129,7 +118,7 @@ async fn discovery(State(state): State<MockOidcState>) -> Json<serde_json::Value
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["RS256"],
         "scopes_supported": ["openid", "email"],
-        "token_endpoint_auth_methods_supported": ["client_secret_post"],
+        "token_endpoint_auth_methods_supported": ["client_secret_basic", "client_secret_post"],
     }))
 }
 
@@ -156,23 +145,60 @@ async fn authorize(
     Redirect::to(&location).into_response()
 }
 
-async fn token(State(state): State<MockOidcState>, Form(form): Form<TokenForm>) -> Response {
-    if form.grant_type != "authorization_code"
-        || form.client_id != state.config.client_id
-        || form.client_secret != state.config.client_secret
+async fn token(
+    State(state): State<MockOidcState>,
+    headers: axum::http::HeaderMap,
+    Form(form): Form<HashMap<String, String>>,
+) -> Response {
+    let grant_type = form.get("grant_type").map_or("", String::as_str);
+    let code = form.get("code").cloned().unwrap_or_default();
+    let code_verifier = form.get("code_verifier").cloned();
+
+    let (client_id, client_secret) = match (
+        form.get("client_id").map(String::as_str),
+        form.get("client_secret").map(String::as_str),
+        headers
+            .get(header::AUTHORIZATION)
+            .and_then(|value| value.to_str().ok()),
+    ) {
+        (Some(id), Some(secret), _) => (id.to_owned(), secret.to_owned()),
+        (_, _, Some(auth)) if auth.starts_with("Basic ") => {
+            let encoded = auth.trim_start_matches("Basic ").trim();
+            let Ok(bytes) = STANDARD
+                .decode(encoded)
+                .or_else(|_| URL_SAFE_NO_PAD.decode(encoded))
+            else {
+                return (StatusCode::UNAUTHORIZED, "invalid_client").into_response();
+            };
+            let Ok(decoded) = String::from_utf8(bytes) else {
+                return (StatusCode::UNAUTHORIZED, "invalid_client").into_response();
+            };
+            let Some((id, secret)) = decoded.split_once(':') else {
+                return (StatusCode::UNAUTHORIZED, "invalid_client").into_response();
+            };
+            (id.to_owned(), secret.to_owned())
+        }
+        _ => return (StatusCode::UNAUTHORIZED, "invalid_client").into_response(),
+    };
+
+    if grant_type != "authorization_code"
+        || client_id != state.config.client_id
+        || client_secret != state.config.client_secret
     {
         return (StatusCode::UNAUTHORIZED, "invalid_client").into_response();
     }
     let mut codes = state.codes.lock().expect("lock");
-    let Some(entry) = codes.get_mut(&form.code) else {
+    let Some(entry) = codes.get_mut(&code) else {
         return (StatusCode::BAD_REQUEST, "invalid_grant").into_response();
     };
     if entry.used {
         return (StatusCode::BAD_REQUEST, "invalid_grant").into_response();
     }
-    let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(form.code_verifier.as_bytes()));
-    if challenge != entry.code_challenge {
-        return (StatusCode::BAD_REQUEST, "invalid_grant").into_response();
+    if let Some(verifier) = code_verifier.as_deref() {
+        let challenge = URL_SAFE_NO_PAD.encode(Sha256::digest(verifier.as_bytes()));
+        if challenge != entry.code_challenge {
+            return (StatusCode::BAD_REQUEST, "invalid_grant").into_response();
+        }
     }
     entry.used = true;
     let nonce = entry.nonce.clone();
