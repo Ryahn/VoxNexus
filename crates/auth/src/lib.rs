@@ -1,5 +1,6 @@
 //! Passwords, sessions, and account persistence.
 
+mod category;
 mod community;
 mod instance;
 mod invite;
@@ -15,6 +16,10 @@ use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
+pub use category::{
+    create_category, delete_category, get_category, list_categories, update_category,
+    CategoryPatch, CreateCategoryInput,
+};
 pub use community::{
     count_communities, create_community, delete_community, ensure_bootstrap_community,
     first_instance_admin_id, get_community, get_membership, join_community, leave_community,
@@ -80,6 +85,8 @@ pub enum AuthError {
     NotSpaceMember,
     #[error("space join not allowed")]
     SpaceJoinNotAllowed,
+    #[error("category scope mismatch")]
+    CategoryScopeMismatch,
     #[error("community join not allowed")]
     JoinNotAllowed,
     #[error("community owner cannot leave")]

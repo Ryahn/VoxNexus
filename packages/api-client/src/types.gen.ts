@@ -29,6 +29,26 @@ export type AuthSessionResponse = {
 };
 
 /**
+ * Categories in a community scope.
+ */
+export type CategoryListResponse = {
+    categories: Array<CategoryResponse>;
+};
+
+/**
+ * Public category representation.
+ */
+export type CategoryResponse = {
+    community_id: string;
+    created_at: string;
+    id: string;
+    name: string;
+    position: number;
+    space_id?: string | null;
+    updated_at: string;
+};
+
+/**
  * Change email (requires current password; applied immediately until F117 adds confirmation mail).
  */
 export type ChangeEmailRequest = {
@@ -103,6 +123,14 @@ export type CommunityResponse = {
     slug: string;
     timezone: string;
     updated_at: string;
+};
+
+/**
+ * Create a category in a community (optionally scoped to a Space).
+ */
+export type CreateCategoryRequest = {
+    name: string;
+    space_id?: string | null;
 };
 
 /**
@@ -232,6 +260,13 @@ export type InviteResponse = {
 export type JoinMode = 'open' | 'invite' | 'application';
 
 /**
+ * List categories query (`space_id` omitted = community-level).
+ */
+export type ListCategoriesQuery = {
+    space_id?: string | null;
+};
+
+/**
  * Login with email and password.
  */
 export type LoginRequest = {
@@ -313,6 +348,13 @@ export type RegisterRequest = {
 export type RegistrationMode = 'open' | 'invite' | 'closed';
 
 /**
+ * Reorder categories by sending new positions in order.
+ */
+export type ReorderCategoriesRequest = {
+    category_ids: Array<string>;
+};
+
+/**
  * Spaces in a community, ordered by position.
  */
 export type SpaceListResponse = {
@@ -369,6 +411,15 @@ export type SpaceVisibility = 'open' | 'restricted';
  */
 export type TransferCommunityRequest = {
     account_id: string;
+};
+
+/**
+ * Update a category (name, position, or scope).
+ */
+export type UpdateCategoryRequest = {
+    name?: string | null;
+    position?: number | null;
+    space_id?: string | null;
 };
 
 /**
@@ -653,6 +704,120 @@ export type RegisterResponses = {
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
 
+export type DeleteCategoryData = {
+    body?: never;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}';
+};
+
+export type DeleteCategoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteCategoryError = DeleteCategoryErrors[keyof DeleteCategoryErrors];
+
+export type DeleteCategoryResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteCategoryResponse = DeleteCategoryResponses[keyof DeleteCategoryResponses];
+
+export type GetCategoryData = {
+    body?: never;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}';
+};
+
+export type GetCategoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetCategoryError = GetCategoryErrors[keyof GetCategoryErrors];
+
+export type GetCategoryResponses = {
+    /**
+     * Category
+     */
+    200: CategoryResponse;
+};
+
+export type GetCategoryResponse = GetCategoryResponses[keyof GetCategoryResponses];
+
+export type UpdateCategoryData = {
+    body: UpdateCategoryRequest;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}';
+};
+
+export type UpdateCategoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateCategoryError = UpdateCategoryErrors[keyof UpdateCategoryErrors];
+
+export type UpdateCategoryResponses = {
+    /**
+     * Updated category
+     */
+    200: CategoryResponse;
+};
+
+export type UpdateCategoryResponse = UpdateCategoryResponses[keyof UpdateCategoryResponses];
+
 export type ListCommunitiesData = {
     body?: never;
     path?: never;
@@ -862,6 +1027,126 @@ export type UploadCommunityBannerResponses = {
 };
 
 export type UploadCommunityBannerResponse = UploadCommunityBannerResponses[keyof UploadCommunityBannerResponses];
+
+export type ListCategoriesData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: {
+        space_id?: string;
+    };
+    url: '/api/v1/communities/{community_id}/categories';
+};
+
+export type ListCategoriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListCategoriesError = ListCategoriesErrors[keyof ListCategoriesErrors];
+
+export type ListCategoriesResponses = {
+    /**
+     * Category list
+     */
+    200: CategoryListResponse;
+};
+
+export type ListCategoriesResponse = ListCategoriesResponses[keyof ListCategoriesResponses];
+
+export type CreateCategoryData = {
+    body: CreateCategoryRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/categories';
+};
+
+export type CreateCategoryErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type CreateCategoryError = CreateCategoryErrors[keyof CreateCategoryErrors];
+
+export type CreateCategoryResponses = {
+    /**
+     * Category created
+     */
+    201: CategoryResponse;
+};
+
+export type CreateCategoryResponse = CreateCategoryResponses[keyof CreateCategoryResponses];
+
+export type ReorderCategoriesData = {
+    body: ReorderCategoriesRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/categories/reorder';
+};
+
+export type ReorderCategoriesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type ReorderCategoriesError = ReorderCategoriesErrors[keyof ReorderCategoriesErrors];
+
+export type ReorderCategoriesResponses = {
+    /**
+     * Reordered
+     */
+    200: CategoryListResponse;
+};
+
+export type ReorderCategoriesResponse = ReorderCategoriesResponses[keyof ReorderCategoriesResponses];
 
 export type DeleteCommunityData = {
     body: DeleteCommunityRequest;

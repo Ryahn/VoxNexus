@@ -3,18 +3,21 @@
 use utoipa::OpenApi;
 use voxnexus_domain::{CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
-    AccountResponse, AddSpaceMemberRequest, AuthSessionResponse, ChangeEmailRequest,
-    ChangePasswordRequest, CommunityListResponse, CommunityMemberListResponse,
-    CommunityMemberResponse, CommunityResponse, CreateCommunityRequest, CreateInviteRequest,
-    CreateSpaceRequest, DeleteCommunityRequest, ErrorBody, InstanceSettingsResponse,
-    InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
-    LoginRequest, MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse,
-    RegisterRequest, SpaceListResponse, SpaceMemberListResponse, SpaceMemberResponse,
-    SpaceResponse, TransferCommunityRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
-    UpdateInviteRequest, UpdateNicknameRequest, UpdateProfileRequest, UpdateSpaceRequest,
+    AccountResponse, AddSpaceMemberRequest, AuthSessionResponse, CategoryListResponse,
+    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, CommunityListResponse,
+    CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse, CreateCategoryRequest,
+    CreateCommunityRequest, CreateInviteRequest, CreateSpaceRequest, DeleteCommunityRequest,
+    ErrorBody, InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
+    InvitePreviewResponse, InviteResponse, ListCategoriesQuery, LoginRequest, MetaResponse,
+    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
+    ReorderCategoriesRequest, SpaceListResponse, SpaceMemberListResponse, SpaceMemberResponse,
+    SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest, UpdateCommunityRequest,
+    UpdateInstanceSettingsRequest, UpdateInviteRequest, UpdateNicknameRequest,
+    UpdateProfileRequest, UpdateSpaceRequest,
 };
 
 use crate::auth;
+use crate::categories;
 use crate::communities;
 use crate::http;
 use crate::instance;
@@ -73,6 +76,12 @@ use crate::spaces;
         spaces::list_space_members,
         spaces::add_space_member,
         spaces::remove_space_member,
+        categories::create_category,
+        categories::list_categories,
+        categories::reorder_categories,
+        categories::get_category_by_id,
+        categories::update_category,
+        categories::delete_category,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -112,6 +121,12 @@ use crate::spaces;
         SpaceListResponse,
         SpaceMemberResponse,
         SpaceMemberListResponse,
+        CategoryResponse,
+        CategoryListResponse,
+        CreateCategoryRequest,
+        UpdateCategoryRequest,
+        ReorderCategoriesRequest,
+        ListCategoriesQuery,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -130,6 +145,7 @@ use crate::spaces;
         (name = "communities", description = "Communities and settings"),
         (name = "invites", description = "Community invite links"),
         (name = "spaces", description = "Spaces (groups) within a community"),
+        (name = "categories", description = "Channel sidebar categories"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

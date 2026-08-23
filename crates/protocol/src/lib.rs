@@ -1,6 +1,7 @@
 //! HTTP DTOs and gateway event types.
 
 mod auth;
+mod category;
 mod community;
 mod error;
 mod gateway;
@@ -13,6 +14,10 @@ mod space;
 pub use auth::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, LoginRequest,
     RegisterRequest,
+};
+pub use category::{
+    CategoryListResponse, CategoryResponse, CreateCategoryRequest, ListCategoriesQuery,
+    ReorderCategoriesRequest, UpdateCategoryRequest,
 };
 pub use community::{
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,

@@ -165,3 +165,15 @@ pub struct SpaceMember {
     pub account_id: Uuid,
     pub joined_at: DateTime<Utc>,
 }
+
+/// Sidebar category grouping channels (F026). Scoped to a community or a Space.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChannelCategory {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub space_id: Option<Uuid>,
+    pub name: String,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
