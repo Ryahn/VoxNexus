@@ -7,6 +7,7 @@ mod oidc;
 mod password;
 mod profile;
 mod session;
+mod space;
 
 use chrono::{DateTime, Duration, Utc};
 use sqlx::postgres::Postgres;
@@ -38,6 +39,9 @@ pub use profile::{
 pub use session::{
     clear_session_cookie, hash_session_token, new_session_token, session_cookie,
     session_cookie_name, SessionCookieOptions, SESSION_TTL,
+};
+pub use space::{
+    create_space, delete_space, get_space, list_spaces, update_space, CreateSpaceInput, SpacePatch,
 };
 
 /// Product crate name.

@@ -1,15 +1,16 @@
 //! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
 
 use utoipa::OpenApi;
-use voxnexus_domain::{CommunityMemberRole, JoinMode};
+use voxnexus_domain::{CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
-    CreateCommunityRequest, CreateInviteRequest, ErrorBody, InstanceSettingsResponse,
-    InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
-    LoginRequest, MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse,
-    RegisterRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
-    UpdateNicknameRequest, UpdateProfileRequest,
+    CreateCommunityRequest, CreateInviteRequest, CreateSpaceRequest, ErrorBody,
+    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
+    InvitePreviewResponse, InviteResponse, LoginRequest, MetaResponse, PresenceEntry,
+    PresenceListResponse, ProfileResponse, RegisterRequest, SpaceListResponse, SpaceResponse,
+    UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
+    UpdateNicknameRequest, UpdateProfileRequest, UpdateSpaceRequest,
 };
 
 use crate::auth;
@@ -20,6 +21,7 @@ use crate::invites;
 use crate::oidc;
 use crate::presence;
 use crate::profile;
+use crate::spaces;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
 #[derive(OpenApi)]
@@ -58,6 +60,11 @@ use crate::profile;
         invites::update_community_invite,
         invites::get_invite_preview,
         invites::accept_invite,
+        spaces::create_space,
+        spaces::list_spaces,
+        spaces::get_space_by_id,
+        spaces::update_space,
+        spaces::delete_space,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -87,6 +94,11 @@ use crate::profile;
         CommunityMemberListResponse,
         CommunityMemberRole,
         JoinMode,
+        SpaceVisibility,
+        CreateSpaceRequest,
+        UpdateSpaceRequest,
+        SpaceResponse,
+        SpaceListResponse,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -104,6 +116,7 @@ use crate::profile;
         (name = "instance", description = "Instance settings (instance admin)"),
         (name = "communities", description = "Communities and settings"),
         (name = "invites", description = "Community invite links"),
+        (name = "spaces", description = "Spaces (groups) within a community"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

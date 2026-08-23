@@ -15,6 +15,7 @@ pub mod oidc;
 pub mod openapi;
 pub mod presence;
 pub mod profile;
+pub mod spaces;
 pub mod telemetry;
 
 /// Product name.

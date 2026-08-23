@@ -18,7 +18,7 @@ export function ChannelSidebar() {
       <CommunityHeader />
       <GroupSelector />
 
-      {/* active group label */}
+      {/* Channels stay mock until F027; label falls back when live Space is selected. */}
       <div className="flex items-center justify-between px-3 pb-1 pt-2">
         <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-3">
           {group?.name ?? 'Channels'}
@@ -26,13 +26,17 @@ export function ChannelSidebar() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-        {groupCats.map((cat) => (
-          <ChannelCategory
-            key={cat.id}
-            category={cat}
-            channels={channels.filter((c) => c.categoryId === cat.id)}
-          />
-        ))}
+        {groupCats.length === 0 ? (
+          <p className="px-2 py-2 text-[12px] text-ink-4">Channels arrive in a later milestone.</p>
+        ) : (
+          groupCats.map((cat) => (
+            <ChannelCategory
+              key={cat.id}
+              category={cat}
+              channels={channels.filter((c) => c.categoryId === cat.id)}
+            />
+          ))
+        )}
       </div>
 
       {voiceChannel && <VoicePanel />}

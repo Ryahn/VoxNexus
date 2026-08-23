@@ -1,4 +1,4 @@
-//! Community and membership domain types (F019 / F020 / F021).
+//! Community and membership domain types (F019 / F020 / F021 / F022).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,33 @@ impl JoinMode {
             "open" => Some(Self::Open),
             "invite" => Some(Self::Invite),
             "application" => Some(Self::Application),
+            _ => None,
+        }
+    }
+}
+
+/// Who can see / enter a Space (F023 membership expands access rules).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SpaceVisibility {
+    Open,
+    Restricted,
+}
+
+impl SpaceVisibility {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Open => "open",
+            Self::Restricted => "restricted",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "open" => Some(Self::Open),
+            "restricted" => Some(Self::Restricted),
             _ => None,
         }
     }
@@ -113,4 +140,20 @@ impl CommunityInvite {
             && self.expires_at.is_none_or(|expires| expires > now)
             && self.max_uses.is_none_or(|max| self.uses < max)
     }
+}
+
+/// A Space within a community (Guilded-style group). Spaces are flat — never nested.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Space {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub topic: String,
+    pub game: String,
+    pub visibility: SpaceVisibility,
+    pub icon_object_id: Option<Uuid>,
+    pub position: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

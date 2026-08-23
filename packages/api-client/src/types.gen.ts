@@ -122,6 +122,17 @@ export type CreateInviteRequest = {
 };
 
 /**
+ * Create a Space in a community.
+ */
+export type CreateSpaceRequest = {
+    description?: string | null;
+    game?: string | null;
+    name: string;
+    topic?: string | null;
+    visibility?: null | SpaceVisibility;
+};
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -288,6 +299,35 @@ export type RegisterRequest = {
 export type RegistrationMode = 'open' | 'invite' | 'closed';
 
 /**
+ * Spaces in a community, ordered by position.
+ */
+export type SpaceListResponse = {
+    spaces: Array<SpaceResponse>;
+};
+
+/**
+ * Public Space representation.
+ */
+export type SpaceResponse = {
+    community_id: string;
+    created_at: string;
+    description: string;
+    game: string;
+    icon_url?: string | null;
+    id: string;
+    name: string;
+    position: number;
+    topic: string;
+    updated_at: string;
+    visibility: SpaceVisibility;
+};
+
+/**
+ * Who can see / enter a Space (F023 membership expands access rules).
+ */
+export type SpaceVisibility = 'open' | 'restricted';
+
+/**
  * Update community settings (owner).
  */
 export type UpdateCommunityRequest = {
@@ -336,6 +376,18 @@ export type UpdateProfileRequest = {
      */
     display_name?: string | null;
     presence_status?: null | PresenceStatus;
+};
+
+/**
+ * Update Space settings.
+ */
+export type UpdateSpaceRequest = {
+    description?: string | null;
+    game?: string | null;
+    name?: string | null;
+    position?: number | null;
+    topic?: string | null;
+    visibility?: null | SpaceVisibility;
 };
 
 export type LoginData = {
@@ -1168,6 +1220,82 @@ export type UpdateMyCommunityNicknameResponses = {
 
 export type UpdateMyCommunityNicknameResponse = UpdateMyCommunityNicknameResponses[keyof UpdateMyCommunityNicknameResponses];
 
+export type ListSpacesData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/spaces';
+};
+
+export type ListSpacesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Community not found
+     */
+    404: ErrorBody;
+};
+
+export type ListSpacesError = ListSpacesErrors[keyof ListSpacesErrors];
+
+export type ListSpacesResponses = {
+    /**
+     * Space list
+     */
+    200: SpaceListResponse;
+};
+
+export type ListSpacesResponse = ListSpacesResponses[keyof ListSpacesResponses];
+
+export type CreateSpaceData = {
+    body: CreateSpaceRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/spaces';
+};
+
+export type CreateSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Community not found
+     */
+    404: ErrorBody;
+};
+
+export type CreateSpaceError = CreateSpaceErrors[keyof CreateSpaceErrors];
+
+export type CreateSpaceResponses = {
+    /**
+     * Space created
+     */
+    201: SpaceResponse;
+};
+
+export type CreateSpaceResponse = CreateSpaceResponses[keyof CreateSpaceResponses];
+
 export type GetInstanceSettingsData = {
     body?: never;
     path?: never;
@@ -1556,3 +1684,117 @@ export type GetProfileBannerResponses = {
      */
     200: unknown;
 };
+
+export type DeleteSpaceData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}';
+};
+
+export type DeleteSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteSpaceError = DeleteSpaceErrors[keyof DeleteSpaceErrors];
+
+export type DeleteSpaceResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteSpaceResponse = DeleteSpaceResponses[keyof DeleteSpaceResponses];
+
+export type GetSpaceData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}';
+};
+
+export type GetSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetSpaceError = GetSpaceErrors[keyof GetSpaceErrors];
+
+export type GetSpaceResponses = {
+    /**
+     * Space
+     */
+    200: SpaceResponse;
+};
+
+export type GetSpaceResponse = GetSpaceResponses[keyof GetSpaceResponses];
+
+export type UpdateSpaceData = {
+    body: UpdateSpaceRequest;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}';
+};
+
+export type UpdateSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateSpaceError = UpdateSpaceErrors[keyof UpdateSpaceErrors];
+
+export type UpdateSpaceResponses = {
+    /**
+     * Updated space
+     */
+    200: SpaceResponse;
+};
+
+export type UpdateSpaceResponse = UpdateSpaceResponses[keyof UpdateSpaceResponses];

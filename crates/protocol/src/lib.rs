@@ -8,6 +8,7 @@ mod instance;
 mod meta;
 mod pagination;
 mod profile;
+mod space;
 
 pub use auth::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, LoginRequest,
@@ -32,3 +33,4 @@ pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
+pub use space::{CreateSpaceRequest, SpaceListResponse, SpaceResponse, UpdateSpaceRequest};

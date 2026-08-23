@@ -8,7 +8,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-pub use community::{Community, CommunityInvite, CommunityMember, CommunityMemberRole, JoinMode};
+pub use community::{
+    Community, CommunityInvite, CommunityMember, CommunityMemberRole, JoinMode, Space,
+    SpaceVisibility,
+};
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
 pub use presence::{PresenceStatus, PublicPresenceStatus};
 
