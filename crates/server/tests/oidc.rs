@@ -149,7 +149,7 @@ async fn follow_oidc_login(
         .expect("callback")
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn oidc_jit_login_creates_account_once() {
     let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
@@ -168,7 +168,8 @@ async fn oidc_jit_login_creates_account_once() {
         subject: "oidc-subject-1".to_owned(),
         email: "oidc-user@example.com".to_owned(),
         wrong_issuer: false,
-    });
+    })
+    .await;
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(
@@ -206,7 +207,7 @@ async fn oidc_jit_login_creates_account_once() {
     assert_eq!(count_after, 1);
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn replayed_oidc_code_fails() {
     let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
@@ -225,7 +226,8 @@ async fn replayed_oidc_code_fails() {
         subject: "oidc-subject-replay".to_owned(),
         email: "oidc-replay@example.com".to_owned(),
         wrong_issuer: false,
-    });
+    })
+    .await;
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(
@@ -277,7 +279,7 @@ async fn replayed_oidc_code_fails() {
     assert!(replay_location.contains("oidc_error=invalid_state"));
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn oidc_wrong_issuer_is_rejected() {
     let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
@@ -296,7 +298,8 @@ async fn oidc_wrong_issuer_is_rejected() {
         subject: "oidc-subject-wrong-issuer".to_owned(),
         email: "oidc-wrong@example.com".to_owned(),
         wrong_issuer: true,
-    });
+    })
+    .await;
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(

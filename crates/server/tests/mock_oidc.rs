@@ -86,49 +86,34 @@ pub struct MockOidcServer {
 }
 
 impl MockOidcServer {
-    #[must_use]
-    pub fn start(mut config: MockOidcConfig) -> Self {
+    pub async fn start(mut config: MockOidcConfig) -> Self {
         let private_key = test_rsa_key();
-        let (addr_tx, addr_rx) = std::sync::mpsc::channel();
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind mock oidc");
+        let base_url = format!("http://{}", listener.local_addr().expect("addr"));
+        config.issuer.clone_from(&base_url);
+        let state = MockOidcState {
+            config: config.clone(),
+            private_key,
+            codes: Arc::new(Mutex::new(HashMap::new())),
+        };
+        let router = Router::new()
+            .route("/.well-known/openid-configuration", get(discovery))
+            .route("/authorize", get(authorize))
+            .route("/token", post(token))
+            .route("/jwks", get(jwks))
+            .with_state(state);
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
-        let cfg_for_server = config.clone();
-        // Own OS thread + runtime so oneshot tests on current_thread cannot stall the IdP.
-        std::thread::spawn(move || {
-            let runtime = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .expect("mock oidc runtime");
-            runtime.block_on(async move {
-                let listener = TcpListener::bind("127.0.0.1:0")
-                    .await
-                    .expect("bind mock oidc");
-                let base_url = format!("http://{}", listener.local_addr().expect("addr"));
-                let mut config = cfg_for_server;
-                config.issuer.clone_from(&base_url);
-                let state = MockOidcState {
-                    config: config.clone(),
-                    private_key,
-                    codes: Arc::new(Mutex::new(HashMap::new())),
-                };
-                addr_tx
-                    .send((base_url, config))
-                    .expect("send mock oidc addr");
-                let router = Router::new()
-                    .route("/.well-known/openid-configuration", get(discovery))
-                    .route("/authorize", get(authorize))
-                    .route("/token", post(token))
-                    .route("/jwks", get(jwks))
-                    .with_state(state);
-                axum::serve(listener, router)
-                    .with_graceful_shutdown(async {
-                        let _ = shutdown_rx.await;
-                    })
-                    .await
-                    .expect("mock oidc serve");
-            });
+        // Task is aborted when the test runtime shuts down (unlike an OS thread, which
+        // can keep `cargo test` alive after the suite finishes).
+        tokio::spawn(async move {
+            let _ = axum::serve(listener, router)
+                .with_graceful_shutdown(async {
+                    let _ = shutdown_rx.await;
+                })
+                .await;
         });
-        let (base_url, started_config) = addr_rx.recv().expect("mock oidc ready");
-        config = started_config;
         Self {
             base_url,
             config,

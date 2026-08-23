@@ -109,7 +109,7 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: cargo test
-        run: cargo test --workspace
+        run: timeout 10m cargo test --workspace -- --nocapture
 
       - name: pnpm build
         run: pnpm build
