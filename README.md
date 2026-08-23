@@ -1,4 +1,5 @@
 # VoxNexus
+[![Build](https://github.com/Ryahn/VoxNexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Ryahn/VoxNexus/actions/workflows/ci.yml)
 
 Self-hostable community chat: Discord-class chat and voice, Guilded-class Spaces, and a first-class app/workflow platform. **Source-available** for inspection, contribution, and one private personal instance — not OSI open source, and not free for commercial use, public hosting, or reuse in other projects.
 
