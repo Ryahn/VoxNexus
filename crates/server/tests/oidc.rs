@@ -112,8 +112,7 @@ async fn follow_oidc_login(
     let body = axum::body::to_bytes(start.into_body(), usize::MAX)
         .await
         .expect("start body");
-    let body = String::from_utf8(body.to_vec()).expect("utf8");
-    let authorize_url = html_bounce_target(&body);
+    let authorize_url = html_bounce_target(std::str::from_utf8(&body).expect("utf8"));
     let authorize = reqwest::get(&authorize_url).await.expect("authorize");
     assert_eq!(authorize.status(), StatusCode::SEE_OTHER);
     let callback_url = authorize
@@ -234,7 +233,7 @@ async fn replayed_oidc_code_fails() {
     let start_body = axum::body::to_bytes(start.into_body(), usize::MAX)
         .await
         .expect("start body");
-    let authorize_url = html_bounce_target(&String::from_utf8(start_body.to_vec()).expect("utf8"));
+    let authorize_url = html_bounce_target(std::str::from_utf8(&start_body).expect("utf8"));
     let authorize = reqwest::get(&authorize_url).await.expect("authorize");
     let callback_url = authorize
         .headers()

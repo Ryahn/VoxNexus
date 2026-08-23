@@ -372,16 +372,12 @@ fn oidc_outbound_host() -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-fn oidc_http_call(
+async fn oidc_http_call(
     request: HttpRequest,
-) -> impl std::future::Future<
-    Output = Result<HttpResponse, openidconnect::HttpClientError<reqwest::Error>>,
-> {
-    async move {
-        let outbound = oidc_outbound_host();
-        let request = rewrite_oidc_outbound(request, outbound.as_deref());
-        AsyncHttpClient::call(oidc_http_client(), request).await
-    }
+) -> Result<HttpResponse, openidconnect::HttpClientError<reqwest::Error>> {
+    let outbound = oidc_outbound_host();
+    let request = rewrite_oidc_outbound(request, outbound.as_deref());
+    AsyncHttpClient::call(oidc_http_client(), request).await
 }
 
 fn rewrite_oidc_outbound(mut request: HttpRequest, outbound_host: Option<&str>) -> HttpRequest {
