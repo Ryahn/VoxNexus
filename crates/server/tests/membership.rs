@@ -470,3 +470,178 @@ async fn join_mode_matrix_via_http_settings() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)]
+async fn owner_transfers_then_deletes_community() {
+    let _guard = membership_test_lock().lock().await;
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open create");
+    let router = app(state(pool.clone(), redis));
+
+    let owner = register(
+        &router,
+        &format!("xfer-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_open_community(&router, &owner, "Transfer Me").await;
+    let member = register(
+        &router,
+        &format!("xfer-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join");
+    assert_eq!(join.status(), StatusCode::CREATED);
+    let member_row: CommunityMemberResponse =
+        serde_json::from_slice(&json_body(join).await).expect("member");
+
+    let denied = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/transfer", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::from(format!(
+                    r#"{{"account_id":"{}"}}"#,
+                    member_row.account_id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("denied transfer");
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+    let me = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/v1/auth/me")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("me");
+    let session: voxnexus_protocol::AuthSessionResponse =
+        serde_json::from_slice(&json_body(me).await).expect("session");
+
+    let transferred = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/transfer", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"account_id":"{}"}}"#,
+                    session.account.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("transfer");
+    assert_eq!(transferred.status(), StatusCode::OK);
+    let updated: CommunityResponse =
+        serde_json::from_slice(&json_body(transferred).await).expect("community");
+    assert_eq!(updated.owner_account_id, session.account.id);
+
+    let owner_leave = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/leave", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("owner leave");
+    assert_eq!(owner_leave.status(), StatusCode::NO_CONTENT);
+
+    let deleted = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/delete", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::from(r#"{"confirm_name":"Transfer Me"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("delete");
+    assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
+
+    let get = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("get");
+    assert_eq!(get.status(), StatusCode::NOT_FOUND);
+
+    let other = create_open_community(&router, &owner, "Still Here").await;
+    let other_get = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}", other.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("other get");
+    assert_eq!(other_get.status(), StatusCode::OK);
+
+    unlock_instance_mode(&pool).await;
+}

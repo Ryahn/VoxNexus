@@ -322,6 +322,7 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         | AuthError::SpaceJoinNotAllowed
         | AuthError::JoinNotAllowed
         | AuthError::OwnerCannotLeave
+        | AuthError::NotCommunityOwner
         | AuthError::InviteNotFound
         | AuthError::InviteExpired
         | AuthError::InviteExhausted

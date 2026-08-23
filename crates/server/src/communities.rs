@@ -10,19 +10,20 @@ use axum::Json;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use voxnexus_auth::{
-    create_community as persist_community, delete_object_meta, get_community, get_instance,
-    get_membership, get_object, get_profile, insert_object, join_community as persist_join,
-    leave_community as persist_leave, list_communities_for_account, list_member_account_ids,
-    list_members, set_community_banner, set_community_icon, set_nickname, slugify, unique_slug,
-    update_community, CommunityPatch, CreateCommunityInput, MemberListItem,
+    create_community as persist_community, delete_community as persist_delete, delete_object_meta,
+    get_community, get_instance, get_membership, get_object, get_profile, insert_object,
+    join_community as persist_join, leave_community as persist_leave, list_communities_for_account,
+    list_member_account_ids, list_members, set_community_banner, set_community_icon, set_nickname,
+    slugify, transfer_community as persist_transfer, unique_slug, update_community, CommunityPatch,
+    CreateCommunityInput, MemberListItem,
 };
 use voxnexus_domain::{Community, CommunityMemberRole, JoinMode};
 use voxnexus_media::{sniff_image, AVATAR_MAX_BYTES, BANNER_MAX_BYTES};
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
-    CreateCommunityRequest, CursorQuery, MemberJoinPayload, MemberLeavePayload,
-    UpdateCommunityRequest, UpdateNicknameRequest,
+    CreateCommunityRequest, CursorQuery, DeleteCommunityRequest, MemberJoinPayload,
+    MemberLeavePayload, TransferCommunityRequest, UpdateCommunityRequest, UpdateNicknameRequest,
 };
 use voxnexus_realtime::PresenceHubMessage;
 use voxnexus_storage::ObjectKey;
@@ -217,6 +218,92 @@ pub async fn update_community_settings(
     .await
     .map_err(|error| map_auth(error, request_id))?;
     Ok(Json(to_response(&community)))
+}
+
+/// Transfer community ownership to an existing member (owner only).
+#[utoipa::path(
+    post,
+    path = "/api/v1/communities/{community_id}/transfer",
+    operation_id = "transferCommunity",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    request_body = TransferCommunityRequest,
+    responses(
+        (status = 200, description = "Ownership transferred", body = CommunityResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not the owner", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn transfer_community(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<TransferCommunityRequest>,
+) -> Result<Json<CommunityResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    require_owner(&state, community_id, user.account_id, &request_id).await?;
+    let community = persist_transfer(&state.pool, community_id, user.account_id, body.account_id)
+        .await
+        .map_err(|error| map_membership_auth(error, request_id))?;
+    tracing::info!(
+        community_id = %community_id,
+        from = %user.account_id,
+        to = %body.account_id,
+        "community ownership transferred"
+    );
+    Ok(Json(to_response(&community)))
+}
+
+/// Delete a community (owner only, typed name confirm).
+#[utoipa::path(
+    post,
+    path = "/api/v1/communities/{community_id}/delete",
+    operation_id = "deleteCommunity",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    request_body = DeleteCommunityRequest,
+    responses(
+        (status = 204, description = "Deleted"),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not the owner", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody),
+        (status = 422, description = "Validation error", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn delete_community(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<DeleteCommunityRequest>,
+) -> Result<StatusCode, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    require_owner(&state, community_id, user.account_id, &request_id).await?;
+    let community = get_community(&state.pool, community_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "get community failed");
+            internal(request_id.clone())
+        })?
+        .ok_or_else(|| not_found(request_id.clone()))?;
+    let confirm = body.confirm_name.trim();
+    if confirm != community.name {
+        return Err(validation(
+            request_id,
+            "Type the community name exactly to confirm deletion.",
+        ));
+    }
+    persist_delete(&state.pool, community_id, user.account_id)
+        .await
+        .map_err(|error| map_membership_auth(error, request_id.clone()))?;
+    tracing::info!(
+        community_id = %community_id,
+        owner_account_id = %user.account_id,
+        "community deleted"
+    );
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// Upload community icon (owner).
@@ -776,6 +863,10 @@ fn map_membership_auth(error: voxnexus_auth::AuthError, request_id: String) -> A
             "You are not a member of this community.",
             None,
             request_id,
+        ),
+        voxnexus_auth::AuthError::NotCommunityOwner => ApiError::permission_denied(
+            request_id,
+            "Only the community owner can perform this action.",
         ),
         other => {
             let message = other.to_string();

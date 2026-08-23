@@ -692,6 +692,82 @@
         }
       }
     },
+    "/api/v1/communities/{community_id}/delete": {
+      "post": {
+        "tags": [
+          "communities"
+        ],
+        "summary": "Delete a community (owner only, typed name confirm).",
+        "operationId": "deleteCommunity",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCommunityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/communities/{community_id}/icon": {
       "get": {
         "tags": [
@@ -1507,6 +1583,79 @@
           },
           "404": {
             "description": "Community not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/communities/{community_id}/transfer": {
+      "post": {
+        "tags": [
+          "communities"
+        ],
+        "summary": "Transfer community ownership to an existing member (owner only).",
+        "operationId": "transferCommunity",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferCommunityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ownership transferred",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -2993,6 +3142,18 @@
           }
         }
       },
+      "DeleteCommunityRequest": {
+        "type": "object",
+        "description": "Confirm community deletion by typing the community name (F025).",
+        "required": [
+          "confirm_name"
+        ],
+        "properties": {
+          "confirm_name": {
+            "type": "string"
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "description": "JSON error envelope for `/api/v1` and unknown routes.",
@@ -3547,6 +3708,19 @@
           "open",
           "restricted"
         ]
+      },
+      "TransferCommunityRequest": {
+        "type": "object",
+        "description": "Transfer community ownership to another member (F025).",
+        "required": [
+          "account_id"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "UpdateCommunityRequest": {
         "type": "object",

@@ -154,3 +154,16 @@ pub struct InvitePreviewResponse {
     pub expired: bool,
     pub exhausted: bool,
 }
+
+/// Transfer community ownership to another member (F025).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct TransferCommunityRequest {
+    pub account_id: uuid::Uuid,
+}
+
+/// Confirm community deletion by typing the community name (F025).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct DeleteCommunityRequest {
+    #[validate(length(min = 1, max = 100))]
+    pub confirm_name: String,
+}

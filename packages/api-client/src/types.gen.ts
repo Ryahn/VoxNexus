@@ -140,6 +140,13 @@ export type CreateSpaceRequest = {
 };
 
 /**
+ * Confirm community deletion by typing the community name (F025).
+ */
+export type DeleteCommunityRequest = {
+    confirm_name: string;
+};
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -356,6 +363,13 @@ export type SpaceResponse = {
  * Who can see / enter a Space (F023 membership expands access rules).
  */
 export type SpaceVisibility = 'open' | 'restricted';
+
+/**
+ * Transfer community ownership to another member (F025).
+ */
+export type TransferCommunityRequest = {
+    account_id: string;
+};
 
 /**
  * Update community settings (owner).
@@ -849,6 +863,48 @@ export type UploadCommunityBannerResponses = {
 
 export type UploadCommunityBannerResponse = UploadCommunityBannerResponses[keyof UploadCommunityBannerResponses];
 
+export type DeleteCommunityData = {
+    body: DeleteCommunityRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/delete';
+};
+
+export type DeleteCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type DeleteCommunityError = DeleteCommunityErrors[keyof DeleteCommunityErrors];
+
+export type DeleteCommunityResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteCommunityResponse = DeleteCommunityResponses[keyof DeleteCommunityResponses];
+
 export type GetCommunityIconData = {
     body?: never;
     path: {
@@ -1325,6 +1381,44 @@ export type CreateSpaceResponses = {
 };
 
 export type CreateSpaceResponse = CreateSpaceResponses[keyof CreateSpaceResponses];
+
+export type TransferCommunityData = {
+    body: TransferCommunityRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/transfer';
+};
+
+export type TransferCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type TransferCommunityError = TransferCommunityErrors[keyof TransferCommunityErrors];
+
+export type TransferCommunityResponses = {
+    /**
+     * Ownership transferred
+     */
+    200: CommunityResponse;
+};
+
+export type TransferCommunityResponse = TransferCommunityResponses[keyof TransferCommunityResponses];
 
 export type GetInstanceSettingsData = {
     body?: never;

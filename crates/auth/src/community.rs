@@ -498,6 +498,102 @@ pub async fn update_community(
         .ok_or(AuthError::Db(sqlx::Error::RowNotFound))
 }
 
+/// Transfer community ownership to an existing member (F025).
+///
+/// # Errors
+///
+/// Returns [`AuthError::NotCommunityOwner`], [`AuthError::NotMember`], or database errors.
+pub async fn transfer_community(
+    pool: &PgPool,
+    community_id: Uuid,
+    current_owner_id: Uuid,
+    new_owner_id: Uuid,
+) -> Result<Community, AuthError> {
+    if current_owner_id == new_owner_id {
+        return Err(AuthError::NotMember);
+    }
+    let community = get_community(pool, community_id)
+        .await?
+        .ok_or(AuthError::Db(sqlx::Error::RowNotFound))?;
+    if community.owner_account_id != current_owner_id {
+        return Err(AuthError::NotCommunityOwner);
+    }
+    if get_membership(pool, community_id, new_owner_id)
+        .await?
+        .is_none()
+    {
+        return Err(AuthError::NotMember);
+    }
+    let now = Utc::now();
+    let mut tx = pool.begin().await?;
+    sqlx::query(
+        r"
+        UPDATE communities
+        SET owner_account_id = $2, updated_at = $3
+        WHERE id = $1
+        ",
+    )
+    .bind(community_id)
+    .bind(new_owner_id)
+    .bind(now)
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query(
+        r"
+        UPDATE community_members
+        SET role = $3
+        WHERE community_id = $1 AND account_id = $2
+        ",
+    )
+    .bind(community_id)
+    .bind(current_owner_id)
+    .bind(CommunityMemberRole::Member.as_str())
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query(
+        r"
+        UPDATE community_members
+        SET role = $3
+        WHERE community_id = $1 AND account_id = $2
+        ",
+    )
+    .bind(community_id)
+    .bind(new_owner_id)
+    .bind(CommunityMemberRole::Owner.as_str())
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    get_community(pool, community_id)
+        .await?
+        .ok_or(AuthError::Db(sqlx::Error::RowNotFound))
+}
+
+/// Delete a community and cascaded rows (members, invites, spaces) (F025).
+///
+/// # Errors
+///
+/// Returns [`AuthError::NotCommunityOwner`] or database errors.
+pub async fn delete_community(
+    pool: &PgPool,
+    community_id: Uuid,
+    owner_account_id: Uuid,
+) -> Result<(), AuthError> {
+    let community = get_community(pool, community_id)
+        .await?
+        .ok_or(AuthError::Db(sqlx::Error::RowNotFound))?;
+    if community.owner_account_id != owner_account_id {
+        return Err(AuthError::NotCommunityOwner);
+    }
+    let result = sqlx::query("DELETE FROM communities WHERE id = $1")
+        .bind(community_id)
+        .execute(pool)
+        .await?;
+    if result.rows_affected() == 0 {
+        return Err(AuthError::Db(sqlx::Error::RowNotFound));
+    }
+    Ok(())
+}
+
 /// Set community icon object; returns previous object id.
 ///
 /// # Errors

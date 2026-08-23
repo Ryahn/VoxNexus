@@ -16,11 +16,11 @@ use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
 pub use community::{
-    count_communities, create_community, ensure_bootstrap_community, first_instance_admin_id,
-    get_community, get_membership, join_community, leave_community, list_communities_for_account,
-    list_member_account_ids, list_members, set_community_banner, set_community_icon, set_nickname,
-    slug_taken, slugify, unique_slug, update_community, CommunityPatch, CreateCommunityInput,
-    MemberListItem, MembersPage,
+    count_communities, create_community, delete_community, ensure_bootstrap_community,
+    first_instance_admin_id, get_community, get_membership, join_community, leave_community,
+    list_communities_for_account, list_member_account_ids, list_members, set_community_banner,
+    set_community_icon, set_nickname, slug_taken, slugify, transfer_community, unique_slug,
+    update_community, CommunityPatch, CreateCommunityInput, MemberListItem, MembersPage,
 };
 pub use instance::{
     ensure_instance, get_instance, sync_locked_community_creation_mode, sync_oidc_from_config,
@@ -84,6 +84,8 @@ pub enum AuthError {
     JoinNotAllowed,
     #[error("community owner cannot leave")]
     OwnerCannotLeave,
+    #[error("not the community owner")]
+    NotCommunityOwner,
     #[error("invite not found")]
     InviteNotFound,
     #[error("invite expired")]

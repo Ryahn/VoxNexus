@@ -169,6 +169,8 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::communities::list_communities))
         .routes(routes!(crate::communities::get_community_by_id))
         .routes(routes!(crate::communities::update_community_settings))
+        .routes(routes!(crate::communities::transfer_community))
+        .routes(routes!(crate::communities::delete_community))
         .routes(routes!(crate::communities::upload_community_icon))
         .routes(routes!(crate::communities::upload_community_banner))
         .routes(routes!(crate::communities::get_community_icon))

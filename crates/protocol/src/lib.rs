@@ -16,9 +16,9 @@ pub use auth::{
 };
 pub use community::{
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
-    CreateCommunityRequest, CreateInviteRequest, InviteExpireAfter, InviteExpireUnit,
-    InviteListResponse, InvitePreviewResponse, InviteResponse, UpdateCommunityRequest,
-    UpdateInviteRequest, UpdateNicknameRequest,
+    CreateCommunityRequest, CreateInviteRequest, DeleteCommunityRequest, InviteExpireAfter,
+    InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
+    TransferCommunityRequest, UpdateCommunityRequest, UpdateInviteRequest, UpdateNicknameRequest,
 };
 pub use error::{error_codes, ErrorBody};
 pub use gateway::{
