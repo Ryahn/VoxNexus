@@ -21,7 +21,7 @@ export function MessageComposer({ placeholder }: { placeholder?: string } = {}) 
     const el = ref.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   };
 
   const send = () => {
