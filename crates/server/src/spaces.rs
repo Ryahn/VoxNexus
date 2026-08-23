@@ -13,9 +13,7 @@ use voxnexus_auth::{
 };
 use voxnexus_domain::{CommunityMemberRole, Space, SpaceVisibility};
 use voxnexus_protocol::error_codes;
-use voxnexus_protocol::{
-    CreateSpaceRequest, SpaceListResponse, SpaceResponse, UpdateSpaceRequest,
-};
+use voxnexus_protocol::{CreateSpaceRequest, SpaceListResponse, SpaceResponse, UpdateSpaceRequest};
 
 use crate::error::ApiError;
 use crate::extract::ValidatedJson;
@@ -62,7 +60,7 @@ pub async fn create_space(
         },
     )
     .await
-    .map_err(|error| map_auth(error, request_id))?;
+    .map_err(|error| map_auth(&error, request_id))?;
     Ok((StatusCode::CREATED, Json(to_response(&space))))
 }
 
@@ -169,7 +167,10 @@ pub async fn update_space(
         && body.visibility.is_none()
         && body.position.is_none()
     {
-        return Err(validation(request_id, "Provide at least one field to update."));
+        return Err(validation(
+            request_id,
+            "Provide at least one field to update.",
+        ));
     }
     let space = persist_update(
         &state.pool,
@@ -184,7 +185,7 @@ pub async fn update_space(
         },
     )
     .await
-    .map_err(|error| map_auth(error, request_id))?;
+    .map_err(|error| map_auth(&error, request_id))?;
     Ok(Json(to_response(&space)))
 }
 
@@ -219,7 +220,7 @@ pub async fn delete_space(
     require_manage_spaces(&state, current.community_id, user.account_id, &request_id).await?;
     let deleted = persist_delete(&state.pool, space_id)
         .await
-        .map_err(|error| map_auth(error, request_id.clone()))?;
+        .map_err(|error| map_auth(&error, request_id.clone()))?;
     if !deleted {
         return Err(not_found(request_id));
     }
@@ -309,7 +310,7 @@ fn to_response(space: &Space) -> SpaceResponse {
     }
 }
 
-fn map_auth(error: voxnexus_auth::AuthError, request_id: String) -> ApiError {
+fn map_auth(error: &voxnexus_auth::AuthError, request_id: String) -> ApiError {
     tracing::error!(error = %error, "space auth error");
     internal(request_id)
 }

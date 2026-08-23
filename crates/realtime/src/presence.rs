@@ -234,7 +234,7 @@ impl PresenceHub {
                 entry.stored_status = status;
             }
             if let Some(custom) = custom_status {
-                entry.custom_status = custom.to_owned();
+                custom.clone_into(&mut entry.custom_status);
             }
             let stored = entry.stored_status;
             let custom = entry.custom_status.clone();

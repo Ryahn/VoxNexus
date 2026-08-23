@@ -29,7 +29,7 @@ pub async fn ensure_profile_with_name(
     account_id: Uuid,
     display_name: Option<&str>,
 ) -> Result<Profile, AuthError> {
-    let name = display_name.map(str::trim).unwrap_or("");
+    let name = display_name.map_or("", str::trim);
     sqlx::query(
         r"
         INSERT INTO profiles (account_id, display_name)

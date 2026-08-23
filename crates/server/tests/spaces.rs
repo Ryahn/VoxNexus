@@ -142,85 +142,84 @@ async fn owner_creates_two_spaces_in_one_community() {
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
     lock_instance_mode(&pool).await;
-    let _result = async {
-        update_instance(
-            &pool,
-            InstancePatch {
-                community_creation_mode: Some(CommunityCreationMode::Open),
-                ..InstancePatch::default()
-            },
-        )
-        .await
-        .expect("open mode");
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
 
-        let email = format!("spaces-owner-{}@example.com", uuid::Uuid::now_v7());
-        let router = app(state(pool.clone(), redis));
-        let cookie = register(&router, &email).await;
-        let community = create_community(&router, &cookie, "Space Hub").await;
+    let email = format!("spaces-owner-{}@example.com", uuid::Uuid::now_v7());
+    let router = app(state(pool.clone(), redis));
+    let cookie = register(&router, &email).await;
+    let community = create_community(&router, &cookie, "Space Hub").await;
 
-        let mut created = Vec::new();
-        for name in ["Lobby", "Dev"] {
-            let response = router
-                .clone()
-                .oneshot(
-                    Request::builder()
-                        .method("POST")
-                        .uri(format!("/api/v1/communities/{}/spaces", community.id))
-                        .header(header::CONTENT_TYPE, "application/json")
-                        .header(header::ORIGIN, "http://127.0.0.1:8080")
-                        .header(header::COOKIE, &cookie)
-                        .body(Body::from(format!(
-                            r#"{{"name":"{name}","description":"{name} space","topic":"chat","game":"","visibility":"open"}}"#
-                        )))
-                        .expect("request"),
-                )
-                .await
-                .expect("oneshot");
-            assert_eq!(response.status(), StatusCode::CREATED);
-            let space: SpaceResponse =
-                serde_json::from_slice(&json_body(response).await).expect("space");
-            assert_eq!(space.community_id, community.id);
-            assert_eq!(space.name, name);
-            created.push(space);
-        }
-
-        assert_eq!(created.len(), 2);
-        assert_ne!(created[0].id, created[1].id);
-        assert_eq!(created[0].community_id, created[1].community_id);
-
-        let list = router
+    let mut created = Vec::new();
+    for name in ["Lobby", "Dev"] {
+        let response = router
             .clone()
             .oneshot(
                 Request::builder()
-                    .method("GET")
+                    .method("POST")
                     .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                    .header(header::CONTENT_TYPE, "application/json")
                     .header(header::ORIGIN, "http://127.0.0.1:8080")
                     .header(header::COOKIE, &cookie)
-                    .body(Body::empty())
+                    .body(Body::from(format!(
+                        r#"{{"name":"{name}","description":"{name} space","topic":"chat","game":"","visibility":"open"}}"#
+                    )))
                     .expect("request"),
             )
             .await
             .expect("oneshot");
-        assert_eq!(list.status(), StatusCode::OK);
-        let listed: SpaceListResponse =
-            serde_json::from_slice(&json_body(list).await).expect("list");
-        assert_eq!(listed.spaces.len(), 2);
-        assert!(listed.spaces.iter().all(|s| s.community_id == community.id));
-
-        // Schema has no parent — belonging is only community_id (cannot nest).
-        let cols: i64 = sqlx::query_scalar(
-            r"
-            SELECT COUNT(*)::bigint
-            FROM information_schema.columns
-            WHERE table_name = 'spaces' AND column_name = 'parent_space_id'
-            ",
-        )
-        .fetch_one(&pool)
-        .await
-        .expect("column check");
-        assert_eq!(cols, 0, "spaces must not support nesting via parent_space_id");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let space: SpaceResponse =
+            serde_json::from_slice(&json_body(response).await).expect("space");
+        assert_eq!(space.community_id, community.id);
+        assert_eq!(space.name, name);
+        created.push(space);
     }
-    .await;
+
+    assert_eq!(created.len(), 2);
+    assert_ne!(created[0].id, created[1].id);
+    assert_eq!(created[0].community_id, created[1].community_id);
+
+    let list = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &cookie)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(list.status(), StatusCode::OK);
+    let listed: SpaceListResponse = serde_json::from_slice(&json_body(list).await).expect("list");
+    assert_eq!(listed.spaces.len(), 2);
+    assert!(listed.spaces.iter().all(|s| s.community_id == community.id));
+
+    let cols: i64 = sqlx::query_scalar(
+        r"
+        SELECT COUNT(*)::bigint
+        FROM information_schema.columns
+        WHERE table_name = 'spaces' AND column_name = 'parent_space_id'
+        ",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("column check");
+    assert_eq!(
+        cols, 0,
+        "spaces must not support nesting via parent_space_id"
+    );
+
     unlock_instance_mode(&pool).await;
 }
 
@@ -236,62 +235,59 @@ async fn non_owner_cannot_create_space() {
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
     lock_instance_mode(&pool).await;
-    let _result = async {
-        update_instance(
-            &pool,
-            InstancePatch {
-                community_creation_mode: Some(CommunityCreationMode::Open),
-                ..InstancePatch::default()
-            },
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("space-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Gated").await;
+    let member = register(
+        &router,
+        &format!("space-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
         )
         .await
-        .expect("open mode");
+        .expect("oneshot");
+    assert_eq!(join.status(), StatusCode::CREATED);
 
-        let router = app(state(pool.clone(), redis));
-        let owner = register(
-            &router,
-            &format!("space-owner-{}@example.com", uuid::Uuid::now_v7()),
+    let denied = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::from(r#"{"name":"Nope"}"#))
+                .expect("request"),
         )
-        .await;
-        let community = create_community(&router, &owner, "Gated").await;
-        let member = register(
-            &router,
-            &format!("space-member-{}@example.com", uuid::Uuid::now_v7()),
-        )
-        .await;
+        .await
+        .expect("oneshot");
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
 
-        let join = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(format!("/api/v1/communities/{}/join", community.id))
-                    .header(header::ORIGIN, "http://127.0.0.1:8080")
-                    .header(header::COOKIE, &member)
-                    .body(Body::empty())
-                    .expect("request"),
-            )
-            .await
-            .expect("oneshot");
-        assert_eq!(join.status(), StatusCode::CREATED);
-
-        let denied = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(format!("/api/v1/communities/{}/spaces", community.id))
-                    .header(header::CONTENT_TYPE, "application/json")
-                    .header(header::ORIGIN, "http://127.0.0.1:8080")
-                    .header(header::COOKIE, &member)
-                    .body(Body::from(r#"{"name":"Nope"}"#))
-                    .expect("request"),
-            )
-            .await
-            .expect("oneshot");
-        assert_eq!(denied.status(), StatusCode::FORBIDDEN);
-    }
-    .await;
     unlock_instance_mode(&pool).await;
-    let _ = _result;
 }

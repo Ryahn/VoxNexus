@@ -50,7 +50,8 @@ pub async fn register(
                 &body.display_name,
                 true,
             )
-            .await {
+            .await
+            {
                 Ok(account) => account,
                 Err(error) => return map_auth_error(&error, request_id).into_response(),
             }
