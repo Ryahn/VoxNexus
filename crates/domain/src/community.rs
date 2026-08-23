@@ -157,3 +157,11 @@ pub struct Space {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// Membership in a Space (F023).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SpaceMember {
+    pub space_id: Uuid,
+    pub account_id: Uuid,
+    pub joined_at: DateTime<Utc>,
+}

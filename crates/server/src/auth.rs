@@ -317,6 +317,9 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         AuthError::InvalidCredentials => ApiError::unauthenticated(request_id),
         AuthError::AlreadyMember
         | AuthError::NotMember
+        | AuthError::AlreadySpaceMember
+        | AuthError::NotSpaceMember
+        | AuthError::SpaceJoinNotAllowed
         | AuthError::JoinNotAllowed
         | AuthError::OwnerCannotLeave
         | AuthError::InviteNotFound

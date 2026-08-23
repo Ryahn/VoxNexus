@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, AddSpaceMemberData, AddSpaceMemberErrors, AddSpaceMemberResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, JoinSpaceData, JoinSpaceErrors, JoinSpaceResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, LeaveSpaceData, LeaveSpaceErrors, LeaveSpaceResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListSpaceMembersData, ListSpaceMembersErrors, ListSpaceMembersResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveSpaceMemberData, RemoveSpaceMemberErrors, RemoveSpaceMemberResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -218,7 +218,7 @@ export const updateMyCommunityNickname = <ThrowOnError extends boolean = false>(
 });
 
 /**
- * List Spaces in a community (members).
+ * List Spaces visible to the caller in a community.
  */
 export const listSpaces = <ThrowOnError extends boolean = false>(options: Options<ListSpacesData, ThrowOnError>): RequestResult<ListSpacesResponses, ListSpacesErrors, ThrowOnError> => (options.client ?? client).get<ListSpacesResponses, ListSpacesErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/spaces', ...options });
 
@@ -335,7 +335,7 @@ export const getProfileBanner = <ThrowOnError extends boolean = false>(options: 
 export const deleteSpace = <ThrowOnError extends boolean = false>(options: Options<DeleteSpaceData, ThrowOnError>): RequestResult<DeleteSpaceResponses, DeleteSpaceErrors, ThrowOnError> => (options.client ?? client).delete<DeleteSpaceResponses, DeleteSpaceErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}', ...options });
 
 /**
- * Get one Space (community members).
+ * Get one Space (404 if restricted and not a member).
  */
 export const getSpace = <ThrowOnError extends boolean = false>(options: Options<GetSpaceData, ThrowOnError>): RequestResult<GetSpaceResponses, GetSpaceErrors, ThrowOnError> => (options.client ?? client).get<GetSpaceResponses, GetSpaceErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}', ...options });
 
@@ -350,3 +350,35 @@ export const updateSpace = <ThrowOnError extends boolean = false>(options: Optio
         ...options.headers
     }
 });
+
+/**
+ * Join an open space (community members). Restricted spaces require an admin add.
+ */
+export const joinSpace = <ThrowOnError extends boolean = false>(options: Options<JoinSpaceData, ThrowOnError>): RequestResult<JoinSpaceResponses, JoinSpaceErrors, ThrowOnError> => (options.client ?? client).post<JoinSpaceResponses, JoinSpaceErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}/join', ...options });
+
+/**
+ * Leave a space.
+ */
+export const leaveSpace = <ThrowOnError extends boolean = false>(options: Options<LeaveSpaceData, ThrowOnError>): RequestResult<LeaveSpaceResponses, LeaveSpaceErrors, ThrowOnError> => (options.client ?? client).post<LeaveSpaceResponses, LeaveSpaceErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}/leave', ...options });
+
+/**
+ * List members of a space (space members or community owner).
+ */
+export const listSpaceMembers = <ThrowOnError extends boolean = false>(options: Options<ListSpaceMembersData, ThrowOnError>): RequestResult<ListSpaceMembersResponses, ListSpaceMembersErrors, ThrowOnError> => (options.client ?? client).get<ListSpaceMembersResponses, ListSpaceMembersErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}/members', ...options });
+
+/**
+ * Add a community member to a space (owner until F029).
+ */
+export const addSpaceMember = <ThrowOnError extends boolean = false>(options: Options<AddSpaceMemberData, ThrowOnError>): RequestResult<AddSpaceMemberResponses, AddSpaceMemberErrors, ThrowOnError> => (options.client ?? client).post<AddSpaceMemberResponses, AddSpaceMemberErrors, ThrowOnError>({
+    url: '/api/v1/spaces/{space_id}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove a member from a space (owner until F029).
+ */
+export const removeSpaceMember = <ThrowOnError extends boolean = false>(options: Options<RemoveSpaceMemberData, ThrowOnError>): RequestResult<RemoveSpaceMemberResponses, RemoveSpaceMemberErrors, ThrowOnError> => (options.client ?? client).delete<RemoveSpaceMemberResponses, RemoveSpaceMemberErrors, ThrowOnError>({ url: '/api/v1/spaces/{space_id}/members/{account_id}', ...options });

@@ -15,6 +15,13 @@ export type AccountResponse = {
 };
 
 /**
+ * Add a community member to a space (restricted / manual).
+ */
+export type AddSpaceMemberRequest = {
+    account_id: string;
+};
+
+/**
  * Authenticated session payload.
  */
 export type AuthSessionResponse = {
@@ -306,6 +313,25 @@ export type SpaceListResponse = {
 };
 
 /**
+ * Space members list.
+ */
+export type SpaceMemberListResponse = {
+    members: Array<SpaceMemberResponse>;
+};
+
+/**
+ * One space member with profile display fields.
+ */
+export type SpaceMemberResponse = {
+    account_id: string;
+    avatar_url?: string | null;
+    display_name: string;
+    has_avatar: boolean;
+    joined_at: string;
+    space_id: string;
+};
+
+/**
  * Public Space representation.
  */
 export type SpaceResponse = {
@@ -315,6 +341,10 @@ export type SpaceResponse = {
     game: string;
     icon_url?: string | null;
     id: string;
+    /**
+     * Whether the caller is a member of this space.
+     */
+    is_member: boolean;
     name: string;
     position: number;
     topic: string;
@@ -1798,3 +1828,201 @@ export type UpdateSpaceResponses = {
 };
 
 export type UpdateSpaceResponse = UpdateSpaceResponses[keyof UpdateSpaceResponses];
+
+export type JoinSpaceData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}/join';
+};
+
+export type JoinSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Join not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Already a member
+     */
+    409: ErrorBody;
+};
+
+export type JoinSpaceError = JoinSpaceErrors[keyof JoinSpaceErrors];
+
+export type JoinSpaceResponses = {
+    /**
+     * Joined
+     */
+    201: SpaceMemberResponse;
+};
+
+export type JoinSpaceResponse = JoinSpaceResponses[keyof JoinSpaceResponses];
+
+export type LeaveSpaceData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}/leave';
+};
+
+export type LeaveSpaceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member or not found
+     */
+    404: ErrorBody;
+};
+
+export type LeaveSpaceError = LeaveSpaceErrors[keyof LeaveSpaceErrors];
+
+export type LeaveSpaceResponses = {
+    /**
+     * Left
+     */
+    204: void;
+};
+
+export type LeaveSpaceResponse = LeaveSpaceResponses[keyof LeaveSpaceResponses];
+
+export type ListSpaceMembersData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}/members';
+};
+
+export type ListSpaceMembersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListSpaceMembersError = ListSpaceMembersErrors[keyof ListSpaceMembersErrors];
+
+export type ListSpaceMembersResponses = {
+    /**
+     * Members
+     */
+    200: SpaceMemberListResponse;
+};
+
+export type ListSpaceMembersResponse = ListSpaceMembersResponses[keyof ListSpaceMembersResponses];
+
+export type AddSpaceMemberData = {
+    body: AddSpaceMemberRequest;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}/members';
+};
+
+export type AddSpaceMemberErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Already a member
+     */
+    409: ErrorBody;
+};
+
+export type AddSpaceMemberError = AddSpaceMemberErrors[keyof AddSpaceMemberErrors];
+
+export type AddSpaceMemberResponses = {
+    /**
+     * Member added
+     */
+    201: SpaceMemberResponse;
+};
+
+export type AddSpaceMemberResponse = AddSpaceMemberResponses[keyof AddSpaceMemberResponses];
+
+export type RemoveSpaceMemberData = {
+    body?: never;
+    path: {
+        /**
+         * Space id
+         */
+        space_id: string;
+        /**
+         * Account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/spaces/{space_id}/members/{account_id}';
+};
+
+export type RemoveSpaceMemberErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type RemoveSpaceMemberError = RemoveSpaceMemberErrors[keyof RemoveSpaceMemberErrors];
+
+export type RemoveSpaceMemberResponses = {
+    /**
+     * Removed
+     */
+    204: void;
+};
+
+export type RemoveSpaceMemberResponse = RemoveSpaceMemberResponses[keyof RemoveSpaceMemberResponses];

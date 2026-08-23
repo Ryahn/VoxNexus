@@ -3,14 +3,15 @@
 use utoipa::OpenApi;
 use voxnexus_domain::{CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
-    AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
-    CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
-    CreateCommunityRequest, CreateInviteRequest, CreateSpaceRequest, ErrorBody,
-    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
-    InvitePreviewResponse, InviteResponse, LoginRequest, MetaResponse, PresenceEntry,
-    PresenceListResponse, ProfileResponse, RegisterRequest, SpaceListResponse, SpaceResponse,
-    UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
-    UpdateNicknameRequest, UpdateProfileRequest, UpdateSpaceRequest,
+    AccountResponse, AddSpaceMemberRequest, AuthSessionResponse, ChangeEmailRequest,
+    ChangePasswordRequest, CommunityListResponse, CommunityMemberListResponse,
+    CommunityMemberResponse, CommunityResponse, CreateCommunityRequest, CreateInviteRequest,
+    CreateSpaceRequest, ErrorBody, InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit,
+    InviteListResponse, InvitePreviewResponse, InviteResponse, LoginRequest, MetaResponse,
+    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest, SpaceListResponse,
+    SpaceMemberListResponse, SpaceMemberResponse, SpaceResponse, UpdateCommunityRequest,
+    UpdateInstanceSettingsRequest, UpdateInviteRequest, UpdateNicknameRequest,
+    UpdateProfileRequest, UpdateSpaceRequest,
 };
 
 use crate::auth;
@@ -65,6 +66,11 @@ use crate::spaces;
         spaces::get_space_by_id,
         spaces::update_space,
         spaces::delete_space,
+        spaces::join_space,
+        spaces::leave_space,
+        spaces::list_space_members,
+        spaces::add_space_member,
+        spaces::remove_space_member,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -97,8 +103,11 @@ use crate::spaces;
         SpaceVisibility,
         CreateSpaceRequest,
         UpdateSpaceRequest,
+        AddSpaceMemberRequest,
         SpaceResponse,
         SpaceListResponse,
+        SpaceMemberResponse,
+        SpaceMemberListResponse,
         ErrorBody,
         RegisterRequest,
         LoginRequest,

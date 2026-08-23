@@ -33,4 +33,7 @@ pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
-pub use space::{CreateSpaceRequest, SpaceListResponse, SpaceResponse, UpdateSpaceRequest};
+pub use space::{
+    AddSpaceMemberRequest, CreateSpaceRequest, SpaceListResponse, SpaceMemberListResponse,
+    SpaceMemberResponse, SpaceResponse, UpdateSpaceRequest,
+};

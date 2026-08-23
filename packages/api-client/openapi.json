@@ -1389,7 +1389,7 @@
         "tags": [
           "spaces"
         ],
-        "summary": "List Spaces in a community (members).",
+        "summary": "List Spaces visible to the caller in a community.",
         "operationId": "listSpaces",
         "parameters": [
           {
@@ -2116,7 +2116,7 @@
         "tags": [
           "spaces"
         ],
-        "summary": "Get one Space (community members).",
+        "summary": "Get one Space (404 if restricted and not a member).",
         "operationId": "getSpace",
         "parameters": [
           {
@@ -2298,6 +2298,335 @@
           }
         }
       }
+    },
+    "/api/v1/spaces/{space_id}/join": {
+      "post": {
+        "tags": [
+          "spaces"
+        ],
+        "summary": "Join an open space (community members). Restricted spaces require an admin add.",
+        "operationId": "joinSpace",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Space id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Joined",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceMemberResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Join not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already a member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{space_id}/leave": {
+      "post": {
+        "tags": [
+          "spaces"
+        ],
+        "summary": "Leave a space.",
+        "operationId": "leaveSpace",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Space id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Left"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not a member or not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{space_id}/members": {
+      "get": {
+        "tags": [
+          "spaces"
+        ],
+        "summary": "List members of a space (space members or community owner).",
+        "operationId": "listSpaceMembers",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Space id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceMemberListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "spaces"
+        ],
+        "summary": "Add a community member to a space (owner until F029).",
+        "operationId": "addSpaceMember",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Space id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSpaceMemberRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Member added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceMemberResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already a member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spaces/{space_id}/members/{account_id}": {
+      "delete": {
+        "tags": [
+          "spaces"
+        ],
+        "summary": "Remove a member from a space (owner until F029).",
+        "operationId": "removeSpaceMember",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Space id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "path",
+            "description": "Account id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2326,6 +2655,19 @@
           },
           "is_instance_admin": {
             "type": "boolean"
+          }
+        }
+      },
+      "AddSpaceMemberRequest": {
+        "type": "object",
+        "description": "Add a community member to a space (restricted / manual).",
+        "required": [
+          "account_id"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -3082,6 +3424,58 @@
           }
         }
       },
+      "SpaceMemberListResponse": {
+        "type": "object",
+        "description": "Space members list.",
+        "required": [
+          "members"
+        ],
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpaceMemberResponse"
+            }
+          }
+        }
+      },
+      "SpaceMemberResponse": {
+        "type": "object",
+        "description": "One space member with profile display fields.",
+        "required": [
+          "space_id",
+          "account_id",
+          "display_name",
+          "has_avatar",
+          "joined_at"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "avatar_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "has_avatar": {
+            "type": "boolean"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "space_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "SpaceResponse": {
         "type": "object",
         "description": "Public Space representation.",
@@ -3094,6 +3488,7 @@
           "game",
           "visibility",
           "position",
+          "is_member",
           "created_at",
           "updated_at"
         ],
@@ -3121,6 +3516,10 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "is_member": {
+            "type": "boolean",
+            "description": "Whether the caller is a member of this space."
           },
           "name": {
             "type": "string"

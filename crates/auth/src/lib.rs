@@ -41,7 +41,9 @@ pub use session::{
     session_cookie_name, SessionCookieOptions, SESSION_TTL,
 };
 pub use space::{
-    create_space, delete_space, get_space, list_spaces, update_space, CreateSpaceInput, SpacePatch,
+    add_space_member, can_view_space, create_space, delete_space, get_space, is_space_member,
+    join_space, leave_space, list_space_members, list_spaces, list_spaces_visible_to,
+    remove_space_member, update_space, CreateSpaceInput, SpaceMemberListItem, SpacePatch,
 };
 
 /// Product crate name.
@@ -72,6 +74,12 @@ pub enum AuthError {
     AlreadyMember,
     #[error("not a community member")]
     NotMember,
+    #[error("already a space member")]
+    AlreadySpaceMember,
+    #[error("not a space member")]
+    NotSpaceMember,
+    #[error("space join not allowed")]
+    SpaceJoinNotAllowed,
     #[error("community join not allowed")]
     JoinNotAllowed,
     #[error("community owner cannot leave")]

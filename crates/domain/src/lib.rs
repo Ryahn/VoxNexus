@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub use community::{
-    Community, CommunityInvite, CommunityMember, CommunityMemberRole, JoinMode, Space,
+    Community, CommunityInvite, CommunityMember, CommunityMemberRole, JoinMode, Space, SpaceMember,
     SpaceVisibility,
 };
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};

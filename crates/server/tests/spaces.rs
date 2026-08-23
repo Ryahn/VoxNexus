@@ -291,3 +291,329 @@ async fn non_owner_cannot_create_space() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)]
+async fn restricted_space_hidden_from_non_member() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("space-vis-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Private Hub").await;
+    let member = register(
+        &router,
+        &format!("space-vis-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(join.status(), StatusCode::CREATED);
+
+    let create = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"name":"Staff","visibility":"restricted"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let space: SpaceResponse = serde_json::from_slice(&json_body(create).await).expect("space");
+    assert!(space.is_member);
+
+    let listed = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(listed.status(), StatusCode::OK);
+    let list: SpaceListResponse = serde_json::from_slice(&json_body(listed).await).expect("list");
+    assert!(
+        list.spaces.iter().all(|s| s.id != space.id),
+        "restricted space must be hidden from non-members"
+    );
+
+    let get = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/spaces/{}", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(get.status(), StatusCode::NOT_FOUND);
+
+    let self_join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/spaces/{}/join", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(self_join.status(), StatusCode::FORBIDDEN);
+
+    let me = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/v1/auth/me")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(me.status(), StatusCode::OK);
+    let session: voxnexus_protocol::AuthSessionResponse =
+        serde_json::from_slice(&json_body(me).await).expect("me");
+
+    let add = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/spaces/{}/members", space.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"account_id":"{}"}}"#,
+                    session.account.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(add.status(), StatusCode::CREATED);
+
+    let get_ok = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/spaces/{}", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(get_ok.status(), StatusCode::OK);
+
+    let leave = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/spaces/{}/leave", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(leave.status(), StatusCode::NO_CONTENT);
+
+    let get_again = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/spaces/{}", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(get_again.status(), StatusCode::NOT_FOUND);
+
+    unlock_instance_mode(&pool).await;
+}
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)]
+async fn open_space_join_and_leave() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("space-open-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Open Hub").await;
+    let member = register(
+        &router,
+        &format!("space-open-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+
+    let join_community = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(join_community.status(), StatusCode::CREATED);
+
+    let create = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"name":"Lobby","visibility":"open"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let space: SpaceResponse = serde_json::from_slice(&json_body(create).await).expect("space");
+
+    let listed = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/spaces", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(listed.status(), StatusCode::OK);
+    let list: SpaceListResponse = serde_json::from_slice(&json_body(listed).await).expect("list");
+    let listed_space = list
+        .spaces
+        .iter()
+        .find(|s| s.id == space.id)
+        .expect("open space visible");
+    assert!(!listed_space.is_member);
+
+    let join_space = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/spaces/{}/join", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(join_space.status(), StatusCode::CREATED);
+
+    let leave = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/spaces/{}/leave", space.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("oneshot");
+    assert_eq!(leave.status(), StatusCode::NO_CONTENT);
+
+    unlock_instance_mode(&pool).await;
+}
