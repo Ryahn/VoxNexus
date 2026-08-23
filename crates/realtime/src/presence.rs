@@ -273,3 +273,71 @@ impl PresenceHub {
         (PublicPresenceStatus::offline(), custom_fallback.to_owned())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use tokio::sync::mpsc;
+    use uuid::Uuid;
+    use voxnexus_domain::PresenceStatus;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn disconnect_drops_from_public_list() {
+        let hub = PresenceHub::new(Duration::from_millis(40));
+        let (tx, _rx) = mpsc::unbounded_channel();
+        let account_id = Uuid::now_v7();
+        let conn_id = Uuid::now_v7();
+
+        hub.connect(
+            account_id,
+            conn_id,
+            tx,
+            PresenceStatus::Online,
+            String::new(),
+        )
+        .await;
+        assert!(hub.is_visible_online(account_id).await);
+
+        hub.disconnect(account_id, conn_id).await;
+        assert!(!hub.is_visible_online(account_id).await);
+        assert!(!hub
+            .list_public()
+            .await
+            .iter()
+            .any(|entry| entry.account_id == account_id));
+    }
+
+    #[tokio::test]
+    async fn reconnect_during_grace_keeps_online() {
+        let hub = PresenceHub::new(Duration::from_millis(80));
+        let (tx1, _rx1) = mpsc::unbounded_channel();
+        let account_id = Uuid::now_v7();
+        let conn1 = Uuid::now_v7();
+        let conn2 = Uuid::now_v7();
+
+        hub.connect(
+            account_id,
+            conn1,
+            tx1,
+            PresenceStatus::Online,
+            String::new(),
+        )
+        .await;
+        hub.disconnect(account_id, conn1).await;
+
+        let (tx2, _rx2) = mpsc::unbounded_channel();
+        hub.connect(
+            account_id,
+            conn2,
+            tx2,
+            PresenceStatus::Online,
+            String::new(),
+        )
+        .await;
+        tokio::time::sleep(Duration::from_millis(120)).await;
+        assert!(hub.is_visible_online(account_id).await);
+    }
+}

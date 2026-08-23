@@ -13,7 +13,7 @@ use tower::ServiceExt;
 use voxnexus::http::{app, AppState};
 use voxnexus_auth::{session_cookie_name, update_profile};
 use voxnexus_db::{connect_and_migrate, test_database_url, PgPool};
-use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
+use voxnexus_domain::PresenceStatus;
 use voxnexus_jobs::{connect, RedisConn};
 use voxnexus_protocol::{
     Envelope, EventType, IdentifyPayload, PresenceListResponse, GATEWAY_SUBPROTOCOL,
@@ -30,7 +30,12 @@ async fn test_redis() -> Option<RedisConn> {
     connect(&url).await.ok()
 }
 
-fn state(pool: PgPool, redis: RedisConn, heartbeat: Duration) -> AppState {
+fn state(
+    pool: PgPool,
+    redis: RedisConn,
+    gateway_heartbeat: Duration,
+    presence_grace: Duration,
+) -> AppState {
     AppState {
         pool,
         metrics_enabled: false,
@@ -38,15 +43,13 @@ fn state(pool: PgPool, redis: RedisConn, heartbeat: Duration) -> AppState {
         cookie_secure: false,
         community_creation_mode_locked: false,
         gateway_allow_unauth: false,
-        gateway_heartbeat_interval: heartbeat,
+        gateway_heartbeat_interval: gateway_heartbeat,
         storage: Arc::new(MemoryObjectStore::new_ready()) as Arc<dyn ObjectStore>,
         redis,
         search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
         web_dist: None,
         resume_store: Arc::new(ResumeStore::new()),
-        presence_hub: Arc::new(PresenceHub::new(
-            heartbeat * voxnexus_realtime::HEARTBEAT_TIMEOUT_FACTOR,
-        )),
+        presence_hub: Arc::new(PresenceHub::new(presence_grace)),
         oidc_client_secret: None,
         oidc_only: false,
         oidc_link_by_email: true,
@@ -127,10 +130,14 @@ async fn connect_gateway(
     request
         .headers_mut()
         .insert(header::COOKIE, cookie.parse().expect("cookie"));
-    let (ws, _) = tokio_tungstenite::connect_async(request)
-        .await
-        .expect("connect");
-    ws
+    tokio::time::timeout(
+        Duration::from_secs(5),
+        tokio_tungstenite::connect_async(request),
+    )
+    .await
+    .expect("connect timeout")
+    .expect("connect")
+    .0
 }
 
 async fn identify(
@@ -138,7 +145,12 @@ async fn identify(
         tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
     >,
 ) {
-    let _hello = ws.next().await.expect("hello").expect("ok");
+    let hello = tokio::time::timeout(Duration::from_secs(5), ws.next())
+        .await
+        .expect("hello timeout")
+        .expect("hello")
+        .expect("ok");
+    let _ = hello;
     ws.send(Message::Text(
         serde_json::to_string(&Envelope::new(0, EventType::Identify, IdentifyPayload {}))
             .expect("ser")
@@ -146,8 +158,16 @@ async fn identify(
     ))
     .await
     .expect("identify");
-    let _ready = ws.next().await.expect("ready").expect("ok");
-    let sync_msg = ws.next().await.expect("sync").expect("ok");
+    let _ready = tokio::time::timeout(Duration::from_secs(5), ws.next())
+        .await
+        .expect("ready timeout")
+        .expect("ready")
+        .expect("ok");
+    let sync_msg = tokio::time::timeout(Duration::from_secs(5), ws.next())
+        .await
+        .expect("sync timeout")
+        .expect("sync")
+        .expect("ok");
     let Message::Text(sync_text) = sync_msg else {
         panic!("sync");
     };
@@ -155,7 +175,15 @@ async fn identify(
     assert_eq!(sync.event_type, EventType::PresenceSync);
 }
 
-#[tokio::test]
+async fn close_ws(
+    ws: &mut tokio_tungstenite::WebSocketStream<
+        tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+    >,
+) {
+    let _ = tokio::time::timeout(Duration::from_secs(2), ws.close(None)).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn invisible_not_listed_online() {
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
@@ -166,10 +194,15 @@ async fn invisible_not_listed_online() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
-    let heartbeat = Duration::from_millis(200);
+    let gateway_heartbeat = Duration::from_secs(15);
     let invisible_email = format!("invis-{}@example.com", uuid::Uuid::now_v7());
     let viewer_email = format!("viewer-{}@example.com", uuid::Uuid::now_v7());
-    let shared_state = state(pool.clone(), redis, heartbeat);
+    let shared_state = state(
+        pool.clone(),
+        redis,
+        gateway_heartbeat,
+        gateway_heartbeat * voxnexus_realtime::HEARTBEAT_TIMEOUT_FACTOR,
+    );
     let router = app(shared_state.clone());
     let invisible_cookie = register_cookie(router.clone(), &invisible_email).await;
     let viewer_cookie = register_cookie(router.clone(), &viewer_email).await;
@@ -209,58 +242,5 @@ async fn invisible_not_listed_online() {
         .iter()
         .any(|entry| entry.account_id == invisible_id));
 
-    invisible_ws.close(None).await.ok();
-}
-
-#[tokio::test]
-async fn disconnect_marks_offline_after_grace() {
-    let Some(url) = test_database_url() else {
-        eprintln!("skipping: DATABASE_URL_TEST required");
-        return;
-    };
-    let Some(redis) = test_redis().await else {
-        eprintln!("skipping: Redis not reachable");
-        return;
-    };
-    let pool = connect_and_migrate(&url).await.expect("migrate");
-    let heartbeat = Duration::from_millis(50);
-    let email = format!("grace-{}@example.com", uuid::Uuid::now_v7());
-    let shared_state = state(pool.clone(), redis, heartbeat);
-    let router = app(shared_state.clone());
-    let cookie = register_cookie(router.clone(), &email).await;
-    let account_id = sqlx::query_scalar::<_, uuid::Uuid>(
-        "SELECT id FROM accounts WHERE email = $1 AND deleted_at IS NULL",
-    )
-    .bind(email.trim().to_ascii_lowercase())
-    .fetch_one(&pool)
-    .await
-    .expect("id");
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("bind");
-    let addr = listener.local_addr().expect("addr");
-    tokio::spawn(async move {
-        axum::serve(listener, router).await.expect("serve");
-    });
-
-    let mut ws = connect_gateway(addr, &cookie).await;
-    identify(&mut ws).await;
-
-    let online = list_presence_http(&app(shared_state.clone()), &cookie).await;
-    assert!(online.presences.iter().any(
-        |entry| entry.account_id == account_id && entry.status == PublicPresenceStatus::Online
-    ));
-
-    ws.close(None).await.ok();
-    tokio::time::sleep(
-        heartbeat * voxnexus_realtime::HEARTBEAT_TIMEOUT_FACTOR + Duration::from_millis(50),
-    )
-    .await;
-
-    let offline = list_presence_http(&app(shared_state.clone()), &cookie).await;
-    assert!(!offline
-        .presences
-        .iter()
-        .any(|entry| entry.account_id == account_id));
+    close_ws(&mut invisible_ws).await;
 }
