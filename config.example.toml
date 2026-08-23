@@ -28,8 +28,13 @@ LOG_LEVEL = "info"
 # LIVEKIT_URL = "http://127.0.0.1:7880"
 # LIVEKIT_API_KEY = ""
 # LIVEKIT_API_SECRET = ""
+# When OIDC_ISSUER is set, issuer + client ID are synced into Settings → Instance on every startup.
+# Leave them empty to configure issuer/client ID only in the UI. Secret is always config-only.
 # OIDC_ISSUER = ""
 # OIDC_CLIENT_ID = ""
 # OIDC_CLIENT_SECRET = ""
+# OIDC_ONLY = "false"
+# When true, verified OIDC emails link to existing local accounts (default true).
+# OIDC_LINK_BY_EMAIL = "true"
 # SMTP_URL = ""
 # SMTP_FROM = ""

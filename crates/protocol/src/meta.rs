@@ -9,4 +9,8 @@ pub struct MetaResponse {
     pub version: String,
     pub registration_mode: RegistrationMode,
     pub community_creation_mode: CommunityCreationMode,
+    /// Whether SSO sign-in is configured and enabled for this instance.
+    pub oidc_enabled: bool,
+    /// Whether email/password login and registration are offered.
+    pub password_login_enabled: bool,
 }

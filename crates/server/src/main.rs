@@ -113,6 +113,23 @@ async fn run() -> Result<(), i32> {
         );
     }
 
+    if let Some(issuer) = config.oidc_issuer.as_ref() {
+        voxnexus_auth::sync_oidc_from_config(
+            &pool,
+            issuer.as_str(),
+            config.oidc_client_id.as_deref(),
+        )
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "oidc config sync failed");
+            1
+        })?;
+        tracing::info!(
+            issuer = %issuer,
+            "synced OIDC issuer and client id from config into instance settings"
+        );
+    }
+
     let redis = start_redis(config.redis_url.as_str()).await?;
     let storage = start_storage(&config).await?;
     let search = start_typesense(&config).await?;
@@ -152,6 +169,9 @@ async fn run() -> Result<(), i32> {
         web_dist: config.web_dist.clone(),
         resume_store: std::sync::Arc::new(voxnexus_realtime::ResumeStore::new()),
         presence_hub: std::sync::Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
+        oidc_client_secret: config.oidc_client_secret.clone(),
+        oidc_only: config.oidc_only,
+        oidc_link_by_email: config.oidc_link_by_email,
     });
     let serve = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

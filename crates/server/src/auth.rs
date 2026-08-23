@@ -42,7 +42,7 @@ pub async fn register(
 ) -> Response {
     let request_id = request_id_from_headers(&headers);
     let account = match voxnexus_auth::get_instance(&state.pool).await {
-        Ok(instance) if instance.registration_mode.allows_registration() => {
+        Ok(instance) if !state.oidc_only && instance.registration_mode.allows_registration() => {
             match create_local_account(&state.pool, &body.email, &body.password, true).await {
                 Ok(account) => account,
                 Err(error) => return map_auth_error(&error, request_id).into_response(),
@@ -85,6 +85,16 @@ pub async fn login(
     ValidatedJson(body): ValidatedJson<LoginRequest>,
 ) -> Response {
     let request_id = request_id_from_headers(&headers);
+    if state.oidc_only {
+        return ApiError::new(
+            StatusCode::FORBIDDEN,
+            error_codes::PERMISSION_DENIED,
+            "Password sign-in is disabled on this instance.",
+            None,
+            request_id,
+        )
+        .into_response();
+    }
     let account = match authenticate_local(&state.pool, &body.email, &body.password).await {
         Ok(account) => account,
         Err(error) => return map_auth_error(&error, request_id).into_response(),

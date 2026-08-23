@@ -47,6 +47,9 @@ fn state(pool: PgPool, redis: RedisConn, heartbeat: Duration) -> AppState {
         presence_hub: Arc::new(PresenceHub::new(
             heartbeat * voxnexus_realtime::HEARTBEAT_TIMEOUT_FACTOR,
         )),
+        oidc_client_secret: None,
+        oidc_only: false,
+        oidc_link_by_email: true,
     }
 }
 

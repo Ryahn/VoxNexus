@@ -91,8 +91,19 @@ services:
       WEB_DIST: /app/web
       GATEWAY_ALLOW_UNAUTH: ${GATEWAY_ALLOW_UNAUTH:-false}
       METRICS_ENABLED: ${METRICS_ENABLED:-false}
+      # OIDC — set in deploy/docker/.env (root config.toml is not mounted into the container)
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_ONLY: ${OIDC_ONLY:-false}
+      OIDC_LINK_BY_EMAIL: ${OIDC_LINK_BY_EMAIL:-true}
+      # When issuer is http://127.0.0.1:9000/... rewrite outbound OIDC HTTP to this host.
+      OIDC_OUTBOUND_HOST: ${OIDC_OUTBOUND_HOST:-}
     ports:
       - "8080:8080"
+    extra_hosts:
+      # So OIDC discovery to host-published Authentik (:9000) works from the app container
+      - "host.docker.internal:host-gateway"
 
 volumes:
   postgres-data:

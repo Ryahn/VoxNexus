@@ -381,10 +381,10 @@ function InstancePanel() {
             </p>
           ) : null}
         </label>
-        <SectionLabel>OIDC (placeholder)</SectionLabel>
+        <SectionLabel>OIDC / SSO</SectionLabel>
         <ToggleRow
           label="Enable SSO"
-          desc="Sign-in with an external IdP (configured in F018O)."
+          desc="If OIDC_ISSUER is set in config, issuer/client ID sync here on restart. Or set them only here and leave config empty. Secret is always OIDC_CLIENT_SECRET."
           on={oidcEnabled}
           onClick={() => setOidcEnabled(!oidcEnabled)}
         />

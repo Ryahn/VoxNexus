@@ -48,6 +48,9 @@ fn state(pool: PgPool, redis: RedisConn) -> AppState {
         web_dist: None,
         resume_store: Arc::new(ResumeStore::new()),
         presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
+        oidc_client_secret: None,
+        oidc_only: false,
+        oidc_link_by_email: true,
     }
 }
 

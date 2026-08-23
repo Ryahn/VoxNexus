@@ -12,6 +12,7 @@ use crate::auth;
 use crate::communities;
 use crate::http;
 use crate::instance;
+use crate::oidc;
 use crate::presence;
 use crate::profile;
 
@@ -30,6 +31,8 @@ use crate::profile;
         auth::me,
         auth::change_my_password,
         auth::change_my_email,
+        oidc::oidc_start,
+        oidc::oidc_callback,
         instance::get_instance_settings,
         instance::update_instance_settings,
         communities::create_community,

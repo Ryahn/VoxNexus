@@ -211,6 +211,74 @@
         }
       }
     },
+    "/api/v1/auth/oidc/callback": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "OIDC provider callback: exchange code, resolve account, set session cookie, redirect home.",
+        "operationId": "oidcCallback",
+        "responses": {
+          "302": {
+            "description": "Redirect to SPA with session cookie or login error"
+          },
+          "400": {
+            "description": "Invalid callback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OIDC not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oidc/start": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Redirect the browser to the configured OIDC provider (authorization code + PKCE).",
+        "operationId": "startOidcLogin",
+        "responses": {
+          "302": {
+            "description": "Redirect to OIDC provider"
+          },
+          "404": {
+            "description": "OIDC not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "tags": [
@@ -988,7 +1056,9 @@
           "name",
           "version",
           "registration_mode",
-          "community_creation_mode"
+          "community_creation_mode",
+          "oidc_enabled",
+          "password_login_enabled"
         ],
         "properties": {
           "community_creation_mode": {
@@ -996,6 +1066,14 @@
           },
           "name": {
             "type": "string"
+          },
+          "oidc_enabled": {
+            "type": "boolean",
+            "description": "Whether SSO sign-in is configured and enabled for this instance."
+          },
+          "password_login_enabled": {
+            "type": "boolean",
+            "description": "Whether email/password login and registration are offered."
           },
           "registration_mode": {
             "$ref": "#/components/schemas/RegistrationMode"

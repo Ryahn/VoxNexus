@@ -120,13 +120,27 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [oidcEnabled, setOidcEnabled] = useState(false);
+  const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    const params = new URLSearchParams(window.location.search);
+    const oidcMessage = params.get('oidc_message');
+    if (oidcMessage) {
+      setError(oidcMessage);
+      params.delete('oidc_error');
+      params.delete('oidc_message');
+      const query = params.toString();
+      const next = `${window.location.pathname}${query ? `?${query}` : ''}`;
+      window.history.replaceState({}, '', next);
+    }
     getMeta()
       .then((result) => {
         if (!cancelled && result.data) {
           setRegistrationOpen(result.data.registration_mode === 'open');
+          setOidcEnabled(result.data.oidc_enabled);
+          setPasswordLoginEnabled(result.data.password_login_enabled);
         }
       })
       .catch(() => {
@@ -187,56 +201,71 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
           </div>
         </div>
 
-        <form className="space-y-3" onSubmit={onSubmit}>
-          <label className="block">
-            <span className="kicker">Email</span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
-            />
-          </label>
-          <label className="block">
-            <span className="kicker">Password</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-              required
-              minLength={8}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
-            />
-          </label>
-          {error ? <p className="text-[13px] text-dnd">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="mt-2 w-full rounded-lg bg-accent px-3 py-2.5 text-[13.5px] font-semibold text-app transition hover:brightness-110 disabled:opacity-60"
+        {oidcEnabled ? (
+          <a
+            href="/api/v1/auth/oidc/start"
+            className="mb-4 flex w-full items-center justify-center rounded-lg border border-line-2/60 bg-input px-3 py-2.5 text-[13.5px] font-semibold text-ink transition hover:border-accent/50"
           >
-            {busy ? 'Working…' : mode === 'register' ? 'Register' : 'Sign in'}
-          </button>
-        </form>
+            Sign in with SSO
+          </a>
+        ) : null}
 
-        <p className="mt-4 text-center text-[13px] text-ink-3">
-          {mode === 'register' ? 'Already have an account?' : 'Need an account?'}{' '}
-          {registrationOpen ? (
+        {passwordLoginEnabled ? (
+          <form className="space-y-3" onSubmit={onSubmit}>
+            <label className="block">
+              <span className="kicker">Email</span>
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+              />
+            </label>
+            <label className="block">
+              <span className="kicker">Password</span>
+              <input
+                type="password"
+                name="password"
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                required
+                minLength={8}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+              />
+            </label>
+            {error ? <p className="text-[13px] text-dnd">{error}</p> : null}
             <button
-              type="button"
-              className="font-medium text-accent hover:underline"
-              onClick={() => onModeChange(mode === 'register' ? 'login' : 'register')}
+              type="submit"
+              disabled={busy}
+              className="mt-2 w-full rounded-lg bg-accent px-3 py-2.5 text-[13.5px] font-semibold text-app transition hover:brightness-110 disabled:opacity-60"
             >
-              {mode === 'register' ? 'Sign in' : 'Register'}
+              {busy ? 'Working…' : mode === 'register' ? 'Register' : 'Sign in'}
             </button>
-          ) : (
-            <span className="text-ink-4">Registration is closed on this instance.</span>
-          )}
-        </p>
+          </form>
+        ) : error ? (
+          <p className="text-[13px] text-dnd">{error}</p>
+        ) : null}
+
+        {passwordLoginEnabled ? (
+          <p className="mt-4 text-center text-[13px] text-ink-3">
+            {mode === 'register' ? 'Already have an account?' : 'Need an account?'}{' '}
+            {registrationOpen ? (
+              <button
+                type="button"
+                className="font-medium text-accent hover:underline"
+                onClick={() => onModeChange(mode === 'register' ? 'login' : 'register')}
+              >
+                {mode === 'register' ? 'Sign in' : 'Register'}
+              </button>
+            ) : (
+              <span className="text-ink-4">Registration is closed on this instance.</span>
+            )}
+          </p>
+        ) : null}
       </div>
     </div>
   );

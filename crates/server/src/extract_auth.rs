@@ -83,6 +83,8 @@ pub fn is_public_api_path(path: &str) -> bool {
             | "/api/v1/auth/register"
             | "/api/v1/auth/login"
             | "/api/v1/auth/logout"
+            | "/api/v1/auth/oidc/start"
+            | "/api/v1/auth/oidc/callback"
             | "/api/v1/gateway"
     )
 }

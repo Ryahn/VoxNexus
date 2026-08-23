@@ -100,6 +100,48 @@ pub async fn sync_locked_community_creation_mode(
     Ok(())
 }
 
+/// Copy OIDC issuer / client ID from operator config into the instance row.
+///
+/// Call when `OIDC_ISSUER` is set so Settings → Instance reflects config on every restart.
+/// When config OIDC keys are unset, skip this and leave the DB (UI) as the source of truth.
+/// The client secret is never written to the database.
+///
+/// # Errors
+///
+/// Returns database errors if the singleton row is missing or the update fails.
+pub async fn sync_oidc_from_config(
+    pool: &PgPool,
+    issuer: &str,
+    client_id: Option<&str>,
+) -> Result<(), InstanceError> {
+    let now = Utc::now();
+    let client_id = client_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned);
+    let result = sqlx::query(
+        r"
+        UPDATE instances
+        SET oidc_enabled = TRUE,
+            oidc_issuer = $2,
+            oidc_client_id = $3,
+            updated_at = $4
+        WHERE id = $1
+        ",
+    )
+    .bind(DEFAULT_INSTANCE_ID)
+    .bind(issuer)
+    .bind(&client_id)
+    .bind(now)
+    .execute(pool)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(InstanceError::Db(sqlx::Error::RowNotFound));
+    }
+    Ok(())
+}
+
 /// Load the singleton instance row.
 ///
 /// # Errors

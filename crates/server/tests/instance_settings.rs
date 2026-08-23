@@ -42,6 +42,9 @@ fn state(pool: PgPool, redis: RedisConn) -> AppState {
         web_dist: None,
         resume_store: Arc::new(voxnexus_realtime::ResumeStore::new()),
         presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
+        oidc_client_secret: None,
+        oidc_only: false,
+        oidc_link_by_email: true,
     }
 }
 
@@ -324,4 +327,30 @@ async fn locked_config_sync_updates_community_creation_mode() {
         instance.community_creation_mode,
         CommunityCreationMode::Single
     );
+}
+
+#[tokio::test]
+async fn oidc_config_sync_updates_instance_row() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    reset_instance(&pool).await;
+
+    voxnexus_auth::sync_oidc_from_config(
+        &pool,
+        "http://127.0.0.1:9000/application/o/voxnexus/",
+        Some("test-client-id"),
+    )
+    .await
+    .expect("sync");
+
+    let instance = voxnexus_auth::get_instance(&pool).await.expect("instance");
+    assert!(instance.oidc_enabled);
+    assert_eq!(
+        instance.oidc_issuer.as_deref(),
+        Some("http://127.0.0.1:9000/application/o/voxnexus/")
+    );
+    assert_eq!(instance.oidc_client_id.as_deref(), Some("test-client-id"));
 }

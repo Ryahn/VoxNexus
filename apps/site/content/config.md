@@ -55,7 +55,7 @@ These may be omitted. Invalid URLs still fail parse if they are set.
 | Key | Later task |
 |---|---|
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | F061 |
-| `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | F018O |
+| `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_ONLY`, `OIDC_LINK_BY_EMAIL` | F018O — see `apps/site/content/oidc.md` |
 | `SMTP_URL`, `SMTP_FROM` | F117 |
 
 ## Secrets

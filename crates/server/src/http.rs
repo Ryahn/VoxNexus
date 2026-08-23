@@ -26,7 +26,7 @@ use tracing::Span;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use uuid::Uuid;
-use voxnexus_config::Url;
+use voxnexus_config::{Secret, Url};
 use voxnexus_db::PgPool;
 use voxnexus_jobs::RedisConn;
 use voxnexus_protocol::MetaResponse;
@@ -74,6 +74,12 @@ pub struct AppState {
     pub resume_store: Arc<ResumeStore>,
     /// Live instance presence (F018).
     pub presence_hub: Arc<PresenceHub>,
+    /// OIDC client secret from config (never stored in the DB).
+    pub oidc_client_secret: Option<Secret>,
+    /// When true, password login and registration are disabled.
+    pub oidc_only: bool,
+    /// Link OIDC logins to existing accounts by verified email.
+    pub oidc_link_by_email: bool,
 }
 
 #[derive(Serialize)]
@@ -155,6 +161,8 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::auth::me))
         .routes(routes!(crate::auth::change_my_password))
         .routes(routes!(crate::auth::change_my_email))
+        .routes(routes!(crate::oidc::oidc_start))
+        .routes(routes!(crate::oidc::oidc_callback))
         .routes(routes!(crate::instance::get_instance_settings))
         .routes(routes!(crate::instance::update_instance_settings))
         .routes(routes!(crate::communities::create_community))
@@ -349,11 +357,14 @@ pub async fn meta(
                 request_id,
             )
         })?;
+    let oidc_enabled = crate::oidc::oidc_ready(&state, &instance);
     Ok(Json(MetaResponse {
         name: instance.name,
         version: env!("CARGO_PKG_VERSION").to_owned(),
         registration_mode: instance.registration_mode,
         community_creation_mode: instance.community_creation_mode,
+        oidc_enabled,
+        password_login_enabled: !state.oidc_only,
     }))
 }
 

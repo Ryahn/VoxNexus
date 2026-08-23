@@ -67,6 +67,8 @@ const ENV_KEYS: &[&str] = &[
     "OIDC_ISSUER",
     "OIDC_CLIENT_ID",
     "OIDC_CLIENT_SECRET",
+    "OIDC_ONLY",
+    "OIDC_LINK_BY_EMAIL",
     "SMTP_URL",
     "SMTP_FROM",
 ];
@@ -109,6 +111,10 @@ pub struct Config {
     pub oidc_issuer: Option<Url>,
     pub oidc_client_id: Option<String>,
     pub oidc_client_secret: Option<Secret>,
+    /// When true, password login and registration are disabled (SSO only).
+    pub oidc_only: bool,
+    /// When true, verified OIDC emails link to existing local accounts.
+    pub oidc_link_by_email: bool,
     pub smtp_url: Option<Url>,
     pub smtp_from: Option<String>,
 }
@@ -188,6 +194,10 @@ struct RawConfig {
     oidc_client_id: Option<String>,
     #[serde(rename = "OIDC_CLIENT_SECRET")]
     oidc_client_secret: Option<String>,
+    #[serde(rename = "OIDC_ONLY")]
+    oidc_only: Option<FlexString>,
+    #[serde(rename = "OIDC_LINK_BY_EMAIL")]
+    oidc_link_by_email: Option<FlexString>,
     #[serde(rename = "SMTP_URL")]
     smtp_url: Option<String>,
     #[serde(rename = "SMTP_FROM")]
@@ -289,6 +299,16 @@ impl Config {
             oidc_issuer: optional_url("OIDC_ISSUER", raw.oidc_issuer)?,
             oidc_client_id: optional_nonempty(raw.oidc_client_id),
             oidc_client_secret: optional_secret(raw.oidc_client_secret),
+            oidc_only: parse_bool(
+                "OIDC_ONLY",
+                raw.oidc_only.map(FlexString::into_string),
+                false,
+            )?,
+            oidc_link_by_email: parse_bool(
+                "OIDC_LINK_BY_EMAIL",
+                raw.oidc_link_by_email.map(FlexString::into_string),
+                true,
+            )?,
             smtp_url: optional_url("SMTP_URL", raw.smtp_url)?,
             smtp_from: optional_nonempty(raw.smtp_from),
         })

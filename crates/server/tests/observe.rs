@@ -33,6 +33,9 @@ fn test_state(pool: PgPool, redis: RedisConn, metrics_enabled: bool) -> AppState
         web_dist: None,
         resume_store: Arc::new(voxnexus_realtime::ResumeStore::new()),
         presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
+        oidc_client_secret: None,
+        oidc_only: false,
+        oidc_link_by_email: true,
     }
 }
 

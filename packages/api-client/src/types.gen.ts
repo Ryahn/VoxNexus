@@ -98,6 +98,14 @@ export type LoginRequest = {
 export type MetaResponse = {
     community_creation_mode: CommunityCreationMode;
     name: string;
+    /**
+     * Whether SSO sign-in is configured and enabled for this instance.
+     */
+    oidc_enabled: boolean;
+    /**
+     * Whether email/password login and registration are offered.
+     */
+    password_login_enabled: boolean;
     registration_mode: RegistrationMode;
     version: string;
 };
@@ -310,6 +318,46 @@ export type ChangeMyPasswordResponses = {
 };
 
 export type ChangeMyPasswordResponse = ChangeMyPasswordResponses[keyof ChangeMyPasswordResponses];
+
+export type OidcCallbackData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/oidc/callback';
+};
+
+export type OidcCallbackErrors = {
+    /**
+     * Invalid callback
+     */
+    400: ErrorBody;
+    /**
+     * OIDC not configured
+     */
+    404: ErrorBody;
+};
+
+export type OidcCallbackError = OidcCallbackErrors[keyof OidcCallbackErrors];
+
+export type StartOidcLoginData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/oidc/start';
+};
+
+export type StartOidcLoginErrors = {
+    /**
+     * OIDC not configured
+     */
+    404: ErrorBody;
+    /**
+     * Internal error
+     */
+    500: ErrorBody;
+};
+
+export type StartOidcLoginError = StartOidcLoginErrors[keyof StartOidcLoginErrors];
 
 export type RegisterData = {
     body: RegisterRequest;
