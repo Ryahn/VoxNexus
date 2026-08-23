@@ -32,6 +32,29 @@ impl AuthUser {
     }
 }
 
+/// Authenticated account that is also the instance admin.
+#[derive(Debug, Clone)]
+pub struct InstanceAdmin(pub AuthUser);
+
+impl FromRequestParts<AppState> for InstanceAdmin {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let user = AuthUser::from_request_parts(parts, state).await?;
+        if !user.is_instance_admin {
+            let request_id = request_id_from_headers(&parts.headers);
+            return Err(ApiError::permission_denied(
+                request_id,
+                "Instance administrator access required.",
+            ));
+        }
+        Ok(InstanceAdmin(user))
+    }
+}
+
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = ApiError;
 

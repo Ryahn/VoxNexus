@@ -58,6 +58,8 @@ const ENV_KEYS: &[&str] = &[
     "REGISTRATION_OPEN",
     "BOOTSTRAP_ADMIN_EMAIL",
     "BOOTSTRAP_ADMIN_PASSWORD",
+    "COMMUNITY_CREATION_MODE",
+    "COMMUNITY_CREATION_MODE_LOCKED",
     "WEB_DIST",
     "LIVEKIT_URL",
     "LIVEKIT_API_KEY",
@@ -95,6 +97,10 @@ pub struct Config {
     pub bootstrap_admin_email: Option<String>,
     /// Password for [`Self::bootstrap_admin_email`]. Secret; both must be set to bootstrap.
     pub bootstrap_admin_password: Option<Secret>,
+    /// Seeds the singleton instance row when missing. `open`, `admin_only`, or `single`.
+    pub community_creation_mode: String,
+    /// When true, instance admins cannot PATCH `community_creation_mode`.
+    pub community_creation_mode_locked: bool,
     /// Directory of built SPA assets (`apps/web/dist`). When set, Axum serves them in production.
     pub web_dist: Option<PathBuf>,
     pub livekit_url: Option<Url>,
@@ -164,6 +170,10 @@ struct RawConfig {
     bootstrap_admin_email: Option<String>,
     #[serde(rename = "BOOTSTRAP_ADMIN_PASSWORD")]
     bootstrap_admin_password: Option<String>,
+    #[serde(rename = "COMMUNITY_CREATION_MODE")]
+    community_creation_mode: Option<String>,
+    #[serde(rename = "COMMUNITY_CREATION_MODE_LOCKED")]
+    community_creation_mode_locked: Option<FlexString>,
     #[serde(rename = "WEB_DIST")]
     web_dist: Option<String>,
     #[serde(rename = "LIVEKIT_URL")]
@@ -265,6 +275,13 @@ impl Config {
             )?,
             bootstrap_admin_email: optional_nonempty(raw.bootstrap_admin_email),
             bootstrap_admin_password: optional_secret(raw.bootstrap_admin_password),
+            community_creation_mode: parse_community_creation_mode(raw.community_creation_mode)?,
+            community_creation_mode_locked: parse_bool(
+                "COMMUNITY_CREATION_MODE_LOCKED",
+                raw.community_creation_mode_locked
+                    .map(FlexString::into_string),
+                false,
+            )?,
             web_dist: optional_path(raw.web_dist),
             livekit_url: optional_url("LIVEKIT_URL", raw.livekit_url)?,
             livekit_api_key: optional_secret(raw.livekit_api_key),
@@ -382,6 +399,17 @@ fn parse_bool(
         _ => Err(ConfigError::InvalidValue {
             key,
             message: format!("expected a boolean, got {value}"),
+        }),
+    }
+}
+
+fn parse_community_creation_mode(value: Option<String>) -> Result<String, ConfigError> {
+    let value = optional_nonempty(value).unwrap_or_else(|| "open".to_owned());
+    match value.to_ascii_lowercase().as_str() {
+        "open" | "admin_only" | "single" => Ok(value.to_ascii_lowercase()),
+        _ => Err(ConfigError::InvalidValue {
+            key: "COMMUNITY_CREATION_MODE",
+            message: format!("expected open, admin_only, or single, got {value}"),
         }),
     }
 }

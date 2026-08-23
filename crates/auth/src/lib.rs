@@ -1,5 +1,6 @@
 //! Passwords, sessions, and account persistence.
 
+mod instance;
 mod password;
 mod profile;
 mod session;
@@ -10,6 +11,9 @@ use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
+pub use instance::{
+    ensure_instance, get_instance, update_instance, InstanceError, InstancePatch, InstanceSeed,
+};
 pub use password::{hash_password, verify_password, PasswordError};
 pub use profile::{
     delete_object_meta, ensure_profile, get_object, get_profile, insert_object, set_avatar_object,

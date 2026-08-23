@@ -24,7 +24,7 @@ fn test_state(pool: PgPool, redis: RedisConn, metrics_enabled: bool) -> AppState
         metrics_enabled,
         public_url: "http://127.0.0.1:8080".parse().expect("public url"),
         cookie_secure: false,
-        registration_open: true,
+        community_creation_mode_locked: false,
         gateway_allow_unauth: false,
         gateway_heartbeat_interval: std::time::Duration::from_secs(15),
         storage: Arc::new(MemoryObjectStore::new_ready()) as Arc<dyn ObjectStore>,

@@ -3,6 +3,7 @@
 mod auth;
 mod error;
 mod gateway;
+mod instance;
 mod meta;
 mod pagination;
 mod profile;
@@ -17,6 +18,9 @@ pub use gateway::{
     EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload, HelloPayload,
     IdentifyPayload, InvalidSessionPayload, ReadyPayload, ResumePayload, ResumedPayload,
     DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
+};
+pub use instance::{
+    CommunityCreateAcceptedResponse, InstanceSettingsResponse, UpdateInstanceSettingsRequest,
 };
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};

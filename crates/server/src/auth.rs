@@ -41,16 +41,27 @@ pub async fn register(
     ValidatedJson(body): ValidatedJson<RegisterRequest>,
 ) -> Response {
     let request_id = request_id_from_headers(&headers);
-    let account = match create_local_account(
-        &state.pool,
-        &body.email,
-        &body.password,
-        state.registration_open,
-    )
-    .await
-    {
-        Ok(account) => account,
-        Err(error) => return map_auth_error(&error, request_id).into_response(),
+    let account = match voxnexus_auth::get_instance(&state.pool).await {
+        Ok(instance) if instance.registration_mode.allows_registration() => {
+            match create_local_account(&state.pool, &body.email, &body.password, true).await {
+                Ok(account) => account,
+                Err(error) => return map_auth_error(&error, request_id).into_response(),
+            }
+        }
+        Ok(_) => {
+            return map_auth_error(&AuthError::RegistrationClosed, request_id).into_response();
+        }
+        Err(error) => {
+            tracing::error!(error = %error, "instance lookup failed");
+            return ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                error_codes::INTERNAL,
+                "Unexpected server error.",
+                None,
+                request_id,
+            )
+            .into_response();
+        }
     };
     issue_session(state, headers, account, StatusCode::CREATED, request_id).await
 }

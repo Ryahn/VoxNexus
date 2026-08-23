@@ -1,6 +1,8 @@
 import { Bell, Compass, Home, Plus } from 'lucide-react';
+import { useAuth } from '../auth';
 import { communities } from '../data/communities';
 import { notifications } from '../data/notifications';
+import { useMeta } from '../meta';
 import { useUI } from '../store';
 import { CommunityIcon } from './CommunityIcon';
 import { Tooltip } from './ui/Tooltip';
@@ -11,6 +13,11 @@ export function CommunityRail() {
   const setNotifOpen = useUI((s) => s.setNotifOpen);
   const notifOpen = useUI((s) => s.notifOpen);
   const unreadNotifs = notifications.filter((n) => n.unread).length;
+  const meta = useMeta();
+  const { session } = useAuth();
+  const mode = meta?.community_creation_mode;
+  const hideCreateDiscover =
+    mode === 'single' || (mode === 'admin_only' && !session.account.is_instance_admin);
 
   return (
     <nav
@@ -55,26 +62,28 @@ export function CommunityRail() {
         ))}
 
         {/* Add + Discover */}
-        <div className="mt-1 flex flex-col items-center gap-2.5">
-          <Tooltip label="Create a community" side="right">
-            <button
-              type="button"
-              aria-label="Create a community"
-              className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent/60 hover:bg-accent/10 hover:text-accent"
-            >
-              <Plus size={20} strokeWidth={2} />
-            </button>
-          </Tooltip>
-          <Tooltip label="Discover communities" side="right">
-            <button
-              type="button"
-              aria-label="Discover communities"
-              className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent-2/60 hover:bg-accent-2/10 hover:text-accent-2"
-            >
-              <Compass size={19} strokeWidth={1.9} />
-            </button>
-          </Tooltip>
-        </div>
+        {!hideCreateDiscover ? (
+          <div className="mt-1 flex flex-col items-center gap-2.5">
+            <Tooltip label="Create a community" side="right">
+              <button
+                type="button"
+                aria-label="Create a community"
+                className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent/60 hover:bg-accent/10 hover:text-accent"
+              >
+                <Plus size={20} strokeWidth={2} />
+              </button>
+            </Tooltip>
+            <Tooltip label="Discover communities" side="right">
+              <button
+                type="button"
+                aria-label="Discover communities"
+                className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent-2/60 hover:bg-accent-2/10 hover:text-accent-2"
+              >
+                <Compass size={19} strokeWidth={1.9} />
+              </button>
+            </Tooltip>
+          </div>
+        ) : null}
       </div>
 
       {/* Notifications */}

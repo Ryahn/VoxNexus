@@ -100,6 +100,17 @@ impl ApiError {
     }
 
     #[must_use]
+    pub fn permission_denied(request_id: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(
+            StatusCode::FORBIDDEN,
+            error_codes::PERMISSION_DENIED,
+            message,
+            None,
+            request_id,
+        )
+    }
+
+    #[must_use]
     pub fn body(&self) -> &ErrorBody {
         &self.body
     }

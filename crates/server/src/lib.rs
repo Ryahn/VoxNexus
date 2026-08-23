@@ -2,12 +2,14 @@
 
 pub mod auth;
 pub mod auth_middleware;
+pub mod communities;
 pub mod csrf;
 pub mod error;
 pub mod extract;
 pub mod extract_auth;
 pub mod gateway;
 pub mod http;
+pub mod instance;
 pub mod openapi;
 pub mod profile;
 pub mod telemetry;

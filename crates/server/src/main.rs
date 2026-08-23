@@ -2,7 +2,9 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use tokio::net::TcpListener;
+use voxnexus_auth::{ensure_instance, InstanceSeed};
 use voxnexus_config::Config;
+use voxnexus_domain::{CommunityCreationMode, RegistrationMode};
 use voxnexus_jobs::{connect, health_ping_storage, ping, run_health_ping_workers, RedisConn};
 use voxnexus_search::{SearchEngine, TypesenseClient, TypesenseConfig};
 use voxnexus_storage::{ObjectStore, S3ObjectStore, S3ObjectStoreConfig};
@@ -14,6 +16,7 @@ async fn main() {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 async fn run() -> Result<(), i32> {
     let config = Config::load().map_err(|error| {
         eprintln!("voxnexus: {error}");
@@ -69,6 +72,34 @@ async fn run() -> Result<(), i32> {
         );
     }
 
+    let registration_mode = if config.registration_open {
+        RegistrationMode::Open
+    } else {
+        RegistrationMode::Closed
+    };
+    let community_creation_mode = CommunityCreationMode::parse(&config.community_creation_mode)
+        .unwrap_or(CommunityCreationMode::Open);
+    ensure_instance(
+        &pool,
+        &InstanceSeed {
+            name: "VoxNexus".to_owned(),
+            public_url: config.public_url.as_str().to_owned(),
+            registration_mode,
+            community_creation_mode,
+            oidc_enabled: config.oidc_issuer.is_some(),
+            oidc_issuer: config
+                .oidc_issuer
+                .as_ref()
+                .map(|url| url.as_str().to_owned()),
+            oidc_client_id: config.oidc_client_id.clone(),
+        },
+    )
+    .await
+    .map_err(|error| {
+        tracing::error!(error = %error, "instance seed failed");
+        1
+    })?;
+
     let redis = start_redis(config.redis_url.as_str()).await?;
     let storage = start_storage(&config).await?;
     let search = start_typesense(&config).await?;
@@ -97,7 +128,7 @@ async fn run() -> Result<(), i32> {
         metrics_enabled: config.metrics_enabled,
         public_url: config.public_url.clone(),
         cookie_secure: config.cookie_secure,
-        registration_open: config.registration_open,
+        community_creation_mode_locked: config.community_creation_mode_locked,
         gateway_allow_unauth: config.gateway_allow_unauth,
         gateway_heartbeat_interval: std::time::Duration::from_millis(
             voxnexus_protocol::DEFAULT_HEARTBEAT_INTERVAL_MS,

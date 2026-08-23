@@ -1,7 +1,9 @@
 import {
   changeMyEmail,
   changeMyPassword,
+  getInstanceSettings,
   getMyProfile,
+  updateInstanceSettings,
   updateMyProfile,
   uploadMyAvatar,
   uploadMyBanner,
@@ -16,6 +18,7 @@ import {
   type LucideIcon,
   Mic2,
   Palette,
+  Server,
   SlidersHorizontal,
   UserCircle,
   X,
@@ -35,6 +38,7 @@ const credentials = { credentials: 'include' as const };
 type Section =
   | 'account'
   | 'profile'
+  | 'instance'
   | 'appearance'
   | 'voice'
   | 'notifications'
@@ -65,8 +69,13 @@ const ACCENTS: { name: string; rgb: string }[] = [
 export function SettingsModal() {
   const open = useUI((s) => s.settingsOpen);
   const setOpen = useUI((s) => s.setSettingsOpen);
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
   const [section, setSection] = useState<Section>('account');
+
+  const adminNav = session.account.is_instance_admin
+    ? [{ id: 'instance' as Section, label: 'Instance', Icon: Server, group: 'INSTANCE' }]
+    : [];
+  const allNav = [...nav, ...adminNav];
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +86,7 @@ export function SettingsModal() {
 
   if (!open) return null;
 
-  const groups = Array.from(new Set(nav.map((n) => n.group)));
+  const groups = Array.from(new Set(allNav.map((n) => n.group)));
 
   return (
     <Portal>
@@ -96,7 +105,7 @@ export function SettingsModal() {
                 <div className="px-2 pb-1">
                   <span className="kicker">{g}</span>
                 </div>
-                {nav
+                {allNav
                   .filter((n) => n.group === g)
                   .map((n) => (
                     <button
@@ -150,6 +159,7 @@ export function SettingsModal() {
           <div className="mx-auto max-w-2xl px-6 py-8 md:px-10">
             {section === 'account' && <AccountPanel />}
             {section === 'profile' && <ProfilePanel />}
+            {section === 'instance' && <InstancePanel />}
             {section === 'appearance' && <AppearancePanel />}
             {section === 'voice' && <VoicePanelSettings />}
             {section === 'notifications' && <NotificationsPanel />}
@@ -246,6 +256,168 @@ function Select({ label, options }: { label: string; options: string[] }) {
 }
 
 /* ---------- panels ---------- */
+
+function InstancePanel() {
+  const [name, setName] = useState('');
+  const [publicUrl, setPublicUrl] = useState('');
+  const [registrationMode, setRegistrationMode] = useState<'open' | 'invite' | 'closed'>('open');
+  const [communityMode, setCommunityMode] = useState<'open' | 'admin_only' | 'single'>('open');
+  const [modeLocked, setModeLocked] = useState(false);
+  const [oidcEnabled, setOidcEnabled] = useState(false);
+  const [oidcIssuer, setOidcIssuer] = useState('');
+  const [oidcClientId, setOidcClientId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getInstanceSettings(credentials)
+      .then((result) => {
+        if (cancelled || !result.data) {
+          return;
+        }
+        const data = result.data;
+        setName(data.name);
+        setPublicUrl(data.public_url);
+        setRegistrationMode(data.registration_mode);
+        setCommunityMode(data.community_creation_mode);
+        setModeLocked(data.community_creation_mode_locked);
+        setOidcEnabled(data.oidc_enabled);
+        setOidcIssuer(data.oidc_issuer ?? '');
+        setOidcClientId(data.oidc_client_id ?? '');
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError('Failed to load instance settings.');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function onSave() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await updateInstanceSettings({
+        body: {
+          name,
+          public_url: publicUrl,
+          registration_mode: registrationMode,
+          community_creation_mode: modeLocked ? undefined : communityMode,
+          oidc_enabled: oidcEnabled,
+          oidc_issuer: oidcIssuer.trim() ? oidcIssuer.trim() : null,
+          oidc_client_id: oidcClientId.trim() ? oidcClientId.trim() : null,
+        },
+        ...credentials,
+      });
+      if (result.data) {
+        setNotice('Instance settings saved.');
+        setModeLocked(result.data.community_creation_mode_locked);
+        return;
+      }
+      setError(readApiErrorMessage(result.error, 'Save failed.'));
+    } catch {
+      setError('Save failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <H>Instance</H>
+      <p className="mb-4 text-[13px] text-ink-3">
+        Registration and community creation policy for this server.
+      </p>
+      <div className="space-y-3 rounded-xl border border-line-2/60 bg-panel-2 p-4">
+        <label className="block">
+          <span className="kicker">Instance name</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          />
+        </label>
+        <label className="block">
+          <span className="kicker">Public URL</span>
+          <input
+            value={publicUrl}
+            onChange={(e) => setPublicUrl(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          />
+        </label>
+        <label className="block">
+          <span className="kicker">Registration</span>
+          <select
+            value={registrationMode}
+            onChange={(e) => setRegistrationMode(e.target.value as 'open' | 'invite' | 'closed')}
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          >
+            <option value="open">Open — anyone can register</option>
+            <option value="invite">Invite only (registration blocked until invites ship)</option>
+            <option value="closed">Closed — no new registrations</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="kicker">Community creation</span>
+          <select
+            value={communityMode}
+            disabled={modeLocked}
+            onChange={(e) => setCommunityMode(e.target.value as 'open' | 'admin_only' | 'single')}
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60 disabled:opacity-60"
+          >
+            <option value="open">Open — any member can create</option>
+            <option value="admin_only">Admin only</option>
+            <option value="single">Single — one community per instance (personal install)</option>
+          </select>
+          {modeLocked ? (
+            <p className="mt-1 text-[12px] text-ink-3">
+              Locked by operator env (`COMMUNITY_CREATION_MODE_LOCKED`).
+            </p>
+          ) : null}
+        </label>
+        <SectionLabel>OIDC (placeholder)</SectionLabel>
+        <ToggleRow
+          label="Enable SSO"
+          desc="Sign-in with an external IdP (configured in F018O)."
+          on={oidcEnabled}
+          onClick={() => setOidcEnabled(!oidcEnabled)}
+        />
+        <label className="block">
+          <span className="kicker">Issuer URL</span>
+          <input
+            value={oidcIssuer}
+            onChange={(e) => setOidcIssuer(e.target.value)}
+            placeholder="https://idp.example.com"
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          />
+        </label>
+        <label className="block">
+          <span className="kicker">Client ID</span>
+          <input
+            value={oidcClientId}
+            onChange={(e) => setOidcClientId(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          />
+        </label>
+        {error ? <p className="text-[13px] text-dnd">{error}</p> : null}
+        {notice ? <p className="text-[13px] text-online">{notice}</p> : null}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void onSave()}
+          className="rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-app hover:brightness-110 disabled:opacity-60"
+        >
+          {busy ? 'Saving…' : 'Save instance settings'}
+        </button>
+      </div>
+    </>
+  );
+}
 
 function AccountPanel() {
   const { session, refresh } = useAuth();

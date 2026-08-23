@@ -62,7 +62,7 @@ pub struct AppState {
     pub metrics_enabled: bool,
     pub public_url: Url,
     pub cookie_secure: bool,
-    pub registration_open: bool,
+    pub community_creation_mode_locked: bool,
     pub gateway_allow_unauth: bool,
     pub gateway_heartbeat_interval: Duration,
     pub storage: Arc<dyn ObjectStore>,
@@ -153,6 +153,9 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::auth::me))
         .routes(routes!(crate::auth::change_my_password))
         .routes(routes!(crate::auth::change_my_email))
+        .routes(routes!(crate::instance::get_instance_settings))
+        .routes(routes!(crate::instance::update_instance_settings))
+        .routes(routes!(crate::communities::create_community))
         .routes(routes!(crate::profile::get_my_profile))
         .routes(routes!(crate::profile::update_my_profile))
         .routes(routes!(crate::profile::upload_my_avatar))
@@ -315,7 +318,7 @@ async fn metrics() -> Response {
         .into_response()
 }
 
-/// Instance name and crate version.
+/// Instance name, version, and public policy flags.
 #[utoipa::path(
     get,
     path = "/api/v1/meta",
@@ -325,11 +328,30 @@ async fn metrics() -> Response {
         (status = 200, description = "Instance name and version", body = MetaResponse)
     )
 )]
-pub async fn meta() -> Json<MetaResponse> {
-    Json(MetaResponse {
-        name: "voxnexus".to_owned(),
+#[allow(clippy::missing_errors_doc)]
+pub async fn meta(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<MetaResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let instance = voxnexus_auth::get_instance(&state.pool)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "instance lookup failed");
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                voxnexus_protocol::error_codes::INTERNAL,
+                "Unexpected server error.",
+                None,
+                request_id,
+            )
+        })?;
+    Ok(Json(MetaResponse {
+        name: instance.name,
         version: env!("CARGO_PKG_VERSION").to_owned(),
-    })
+        registration_mode: instance.registration_mode,
+        community_creation_mode: instance.community_creation_mode,
+    }))
 }
 
 /// JSON [`voxnexus_protocol::ErrorBody`] for unknown routes (including hidden resources later).

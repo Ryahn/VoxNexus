@@ -1,13 +1,17 @@
 //! Shared domain types with no I/O.
 
+mod instance;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
+
 /// Product crate name (workspace placeholder until modules grow).
 pub const CRATE_NAME: &str = "voxnexus-domain";
 
-/// Singleton instance id until F017 persists instance settings.
+/// Singleton instance id (matches the seeded `instances` row).
 pub const DEFAULT_INSTANCE_ID: Uuid = Uuid::from_u128(0x0190_0000_0000_7000_8000_0000_0000_0001);
 
 /// Human or bot account.

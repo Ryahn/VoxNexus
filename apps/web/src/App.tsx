@@ -1,7 +1,15 @@
-import { type AuthSessionResponse, getMe, login, logout, register } from '@voxnexus/api-client';
+import {
+  type AuthSessionResponse,
+  getMe,
+  getMeta,
+  login,
+  logout,
+  register,
+} from '@voxnexus/api-client';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { AuthContext } from './auth';
+import { MetaProvider } from './meta';
 import { Shell } from './Shell';
 
 const credentials = { credentials: 'include' as const };
@@ -72,24 +80,28 @@ export function App() {
 
   if (!session) {
     return (
-      <AuthScreen
-        mode={authView}
-        onModeChange={(mode) => {
-          navigate(mode === 'register' ? '/register' : '/login');
-          setAuthView(mode);
-        }}
-        onAuthenticated={(next) => {
-          setSession(next);
-          navigate('/');
-        }}
-      />
+      <MetaProvider>
+        <AuthScreen
+          mode={authView}
+          onModeChange={(mode) => {
+            navigate(mode === 'register' ? '/register' : '/login');
+            setAuthView(mode);
+          }}
+          onAuthenticated={(next) => {
+            setSession(next);
+            navigate('/');
+          }}
+        />
+      </MetaProvider>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ session, refresh, signOut }}>
-      <Shell />
-    </AuthContext.Provider>
+    <MetaProvider>
+      <AuthContext.Provider value={{ session, refresh, signOut }}>
+        <Shell />
+      </AuthContext.Provider>
+    </MetaProvider>
   );
 }
 
@@ -104,6 +116,25 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMeta()
+      .then((result) => {
+        if (!cancelled && result.data) {
+          setRegistrationOpen(result.data.registration_mode === 'open');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRegistrationOpen(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -191,13 +222,17 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
 
         <p className="mt-4 text-center text-[13px] text-ink-3">
           {mode === 'register' ? 'Already have an account?' : 'Need an account?'}{' '}
-          <button
-            type="button"
-            className="font-medium text-accent hover:underline"
-            onClick={() => onModeChange(mode === 'register' ? 'login' : 'register')}
-          >
-            {mode === 'register' ? 'Sign in' : 'Register'}
-          </button>
+          {registrationOpen ? (
+            <button
+              type="button"
+              className="font-medium text-accent hover:underline"
+              onClick={() => onModeChange(mode === 'register' ? 'login' : 'register')}
+            >
+              {mode === 'register' ? 'Sign in' : 'Register'}
+            </button>
+          ) : (
+            <span className="text-ink-4">Registration is closed on this instance.</span>
+          )}
         </p>
       </div>
     </div>

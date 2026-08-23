@@ -2,12 +2,16 @@
 
 use utoipa::OpenApi;
 use voxnexus_protocol::{
-    AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, ErrorBody,
-    LoginRequest, MetaResponse, ProfileResponse, RegisterRequest, UpdateProfileRequest,
+    AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
+    CommunityCreateAcceptedResponse, ErrorBody, InstanceSettingsResponse, LoginRequest,
+    MetaResponse, ProfileResponse, RegisterRequest, UpdateInstanceSettingsRequest,
+    UpdateProfileRequest,
 };
 
 use crate::auth;
+use crate::communities;
 use crate::http;
+use crate::instance;
 use crate::profile;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
@@ -25,6 +29,9 @@ use crate::profile;
         auth::me,
         auth::change_my_password,
         auth::change_my_email,
+        instance::get_instance_settings,
+        instance::update_instance_settings,
+        communities::create_community,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -35,6 +42,9 @@ use crate::profile;
     ),
     components(schemas(
         MetaResponse,
+        InstanceSettingsResponse,
+        UpdateInstanceSettingsRequest,
+        CommunityCreateAcceptedResponse,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -47,6 +57,8 @@ use crate::profile;
     )),
     tags(
         (name = "meta", description = "Unauthenticated instance identity"),
+        (name = "instance", description = "Instance settings (instance admin)"),
+        (name = "communities", description = "Community creation policy"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners")
     )

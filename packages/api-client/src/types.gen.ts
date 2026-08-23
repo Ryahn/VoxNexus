@@ -42,6 +42,18 @@ export type ChangePasswordRequest = {
 };
 
 /**
+ * Stub acceptance body until F019 implements community persistence.
+ */
+export type CommunityCreateAcceptedResponse = {
+    accepted: boolean;
+};
+
+/**
+ * Who may create communities on this instance.
+ */
+export type CommunityCreationMode = 'open' | 'admin_only' | 'single';
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -54,6 +66,25 @@ export type ErrorBody = {
 };
 
 /**
+ * Instance settings visible to instance admins.
+ */
+export type InstanceSettingsResponse = {
+    community_creation_mode: CommunityCreationMode;
+    /**
+     * When true, [`UpdateInstanceSettingsRequest::community_creation_mode`] is ignored.
+     */
+    community_creation_mode_locked: boolean;
+    id: string;
+    name: string;
+    oidc_client_id?: string | null;
+    oidc_enabled: boolean;
+    oidc_issuer?: string | null;
+    public_url: string;
+    registration_mode: RegistrationMode;
+    updated_at: string;
+};
+
+/**
  * Login with email and password.
  */
 export type LoginRequest = {
@@ -62,10 +93,12 @@ export type LoginRequest = {
 };
 
 /**
- * Build and version of this instance.
+ * Build, version, and public instance policy flags for the SPA.
  */
 export type MetaResponse = {
+    community_creation_mode: CommunityCreationMode;
     name: string;
+    registration_mode: RegistrationMode;
     version: string;
 };
 
@@ -88,6 +121,24 @@ export type ProfileResponse = {
 export type RegisterRequest = {
     email: string;
     password: string;
+};
+
+/**
+ * Who may register new local accounts on this instance.
+ */
+export type RegistrationMode = 'open' | 'invite' | 'closed';
+
+/**
+ * Partial update of instance settings (instance admin only).
+ */
+export type UpdateInstanceSettingsRequest = {
+    community_creation_mode?: null | CommunityCreationMode;
+    name?: string | null;
+    oidc_client_id?: string | null;
+    oidc_enabled?: boolean | null;
+    oidc_issuer?: string | null;
+    public_url?: string | null;
+    registration_mode?: null | RegistrationMode;
 };
 
 /**
@@ -262,6 +313,97 @@ export type RegisterResponses = {
 };
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+
+export type CreateCommunityData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/communities';
+};
+
+export type CreateCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Creation disallowed by instance policy
+     */
+    403: ErrorBody;
+};
+
+export type CreateCommunityError = CreateCommunityErrors[keyof CreateCommunityErrors];
+
+export type CreateCommunityResponses = {
+    /**
+     * Creation allowed (stub)
+     */
+    202: CommunityCreateAcceptedResponse;
+};
+
+export type CreateCommunityResponse = CreateCommunityResponses[keyof CreateCommunityResponses];
+
+export type GetInstanceSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/instance/settings';
+};
+
+export type GetInstanceSettingsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not instance admin
+     */
+    403: ErrorBody;
+};
+
+export type GetInstanceSettingsError = GetInstanceSettingsErrors[keyof GetInstanceSettingsErrors];
+
+export type GetInstanceSettingsResponses = {
+    /**
+     * Instance settings
+     */
+    200: InstanceSettingsResponse;
+};
+
+export type GetInstanceSettingsResponse = GetInstanceSettingsResponses[keyof GetInstanceSettingsResponses];
+
+export type UpdateInstanceSettingsData = {
+    body: UpdateInstanceSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/instance/settings';
+};
+
+export type UpdateInstanceSettingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not instance admin
+     */
+    403: ErrorBody;
+};
+
+export type UpdateInstanceSettingsError = UpdateInstanceSettingsErrors[keyof UpdateInstanceSettingsErrors];
+
+export type UpdateInstanceSettingsResponses = {
+    /**
+     * Updated instance settings
+     */
+    200: InstanceSettingsResponse;
+};
+
+export type UpdateInstanceSettingsResponse = UpdateInstanceSettingsResponses[keyof UpdateInstanceSettingsResponses];
 
 export type GetMyProfileData = {
     body?: never;

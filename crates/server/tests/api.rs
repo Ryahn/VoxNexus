@@ -7,10 +7,9 @@ use serde::Deserialize;
 use tower::ServiceExt;
 use validator::Validate;
 use voxnexus::extract::ValidatedJson;
-use voxnexus::http::{meta, not_found, with_middleware};
+use voxnexus::http::{not_found, with_middleware};
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::ErrorBody;
-use voxnexus_protocol::MetaResponse;
 
 #[derive(Debug, Deserialize, Validate)]
 struct NameBody {
@@ -26,7 +25,6 @@ fn api_test_router() -> Router {
     let public_url = "http://127.0.0.1:8080".parse().expect("public url");
     with_middleware(
         Router::new()
-            .route("/api/v1/meta", axum::routing::get(meta))
             .route("/api/v1/validate", post(accept_name))
             .fallback(not_found),
         &public_url,
@@ -42,23 +40,6 @@ async fn json_body(response: axum::response::Response) -> Vec<u8> {
         .expect("body")
         .to_bytes()
         .to_vec()
-}
-
-#[tokio::test]
-async fn meta_returns_name_and_version() {
-    let response = api_test_router()
-        .oneshot(
-            Request::builder()
-                .uri("/api/v1/meta")
-                .body(Body::empty())
-                .expect("request"),
-        )
-        .await
-        .expect("oneshot");
-    assert_eq!(response.status(), StatusCode::OK);
-    let body: MetaResponse = serde_json::from_slice(&json_body(response).await).expect("meta");
-    assert_eq!(body.name, "voxnexus");
-    assert_eq!(body.version, env!("CARGO_PKG_VERSION"));
 }
 
 #[tokio::test]

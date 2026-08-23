@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RegisterData, RegisterErrors, RegisterResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, RegisterData, RegisterErrors, RegisterResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -77,6 +77,28 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 });
 
 /**
+ * Policy check for user-driven community creation (F017 stub; F019 persists communities).
+ */
+export const createCommunity = <ThrowOnError extends boolean = false>(options?: Options<CreateCommunityData, ThrowOnError>): RequestResult<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError> => (options?.client ?? client).post<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError>({ url: '/api/v1/communities', ...options });
+
+/**
+ * Read instance settings (instance admin only).
+ */
+export const getInstanceSettings = <ThrowOnError extends boolean = false>(options?: Options<GetInstanceSettingsData, ThrowOnError>): RequestResult<GetInstanceSettingsResponses, GetInstanceSettingsErrors, ThrowOnError> => (options?.client ?? client).get<GetInstanceSettingsResponses, GetInstanceSettingsErrors, ThrowOnError>({ url: '/api/v1/instance/settings', ...options });
+
+/**
+ * Update instance settings (instance admin only).
+ */
+export const updateInstanceSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateInstanceSettingsData, ThrowOnError>): RequestResult<UpdateInstanceSettingsResponses, UpdateInstanceSettingsErrors, ThrowOnError> => (options.client ?? client).patch<UpdateInstanceSettingsResponses, UpdateInstanceSettingsErrors, ThrowOnError>({
+    url: '/api/v1/instance/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Current user's profile.
  */
 export const getMyProfile = <ThrowOnError extends boolean = false>(options?: Options<GetMyProfileData, ThrowOnError>): RequestResult<GetMyProfileResponses, GetMyProfileErrors, ThrowOnError> => (options?.client ?? client).get<GetMyProfileResponses, GetMyProfileErrors, ThrowOnError>({ url: '/api/v1/me/profile', ...options });
@@ -120,7 +142,7 @@ export const uploadMyBanner = <ThrowOnError extends boolean = false>(options?: O
 });
 
 /**
- * Instance name and crate version.
+ * Instance name, version, and public policy flags.
  */
 export const getMeta = <ThrowOnError extends boolean = false>(options?: Options<GetMetaData, ThrowOnError>): RequestResult<GetMetaResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMetaResponses, unknown, ThrowOnError>({ url: '/api/v1/meta', ...options });
 

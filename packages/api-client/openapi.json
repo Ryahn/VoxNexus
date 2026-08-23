@@ -272,6 +272,147 @@
         }
       }
     },
+    "/api/v1/communities": {
+      "post": {
+        "tags": [
+          "communities"
+        ],
+        "summary": "Policy check for user-driven community creation (F017 stub; F019 persists communities).",
+        "operationId": "createCommunity",
+        "responses": {
+          "202": {
+            "description": "Creation allowed (stub)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityCreateAcceptedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Creation disallowed by instance policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instance/settings": {
+      "get": {
+        "tags": [
+          "instance"
+        ],
+        "summary": "Read instance settings (instance admin only).",
+        "operationId": "getInstanceSettings",
+        "responses": {
+          "200": {
+            "description": "Instance settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not instance admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "instance"
+        ],
+        "summary": "Update instance settings (instance admin only).",
+        "operationId": "updateInstanceSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInstanceSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated instance settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not instance admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/profile": {
       "get": {
         "tags": [
@@ -449,7 +590,7 @@
         "tags": [
           "meta"
         ],
-        "summary": "Instance name and crate version.",
+        "summary": "Instance name, version, and public policy flags.",
         "operationId": "getMeta",
         "responses": {
           "200": {
@@ -691,6 +832,27 @@
           }
         }
       },
+      "CommunityCreateAcceptedResponse": {
+        "type": "object",
+        "description": "Stub acceptance body until F019 implements community persistence.",
+        "required": [
+          "accepted"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommunityCreationMode": {
+        "type": "string",
+        "description": "Who may create communities on this instance.",
+        "enum": [
+          "open",
+          "admin_only",
+          "single"
+        ]
+      },
       "ErrorBody": {
         "type": "object",
         "description": "JSON error envelope for `/api/v1` and unknown routes.",
@@ -717,6 +879,61 @@
           }
         }
       },
+      "InstanceSettingsResponse": {
+        "type": "object",
+        "description": "Instance settings visible to instance admins.",
+        "required": [
+          "id",
+          "name",
+          "public_url",
+          "registration_mode",
+          "community_creation_mode",
+          "community_creation_mode_locked",
+          "oidc_enabled",
+          "updated_at"
+        ],
+        "properties": {
+          "community_creation_mode": {
+            "$ref": "#/components/schemas/CommunityCreationMode"
+          },
+          "community_creation_mode_locked": {
+            "type": "boolean",
+            "description": "When true, [`UpdateInstanceSettingsRequest::community_creation_mode`] is ignored."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "oidc_client_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "oidc_enabled": {
+            "type": "boolean"
+          },
+          "oidc_issuer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "public_url": {
+            "type": "string"
+          },
+          "registration_mode": {
+            "$ref": "#/components/schemas/RegistrationMode"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "description": "Login with email and password.",
@@ -735,14 +952,22 @@
       },
       "MetaResponse": {
         "type": "object",
-        "description": "Build and version of this instance.",
+        "description": "Build, version, and public instance policy flags for the SPA.",
         "required": [
           "name",
-          "version"
+          "version",
+          "registration_mode",
+          "community_creation_mode"
         ],
         "properties": {
+          "community_creation_mode": {
+            "$ref": "#/components/schemas/CommunityCreationMode"
+          },
           "name": {
             "type": "string"
+          },
+          "registration_mode": {
+            "$ref": "#/components/schemas/RegistrationMode"
           },
           "version": {
             "type": "string"
@@ -806,6 +1031,71 @@
           }
         }
       },
+      "RegistrationMode": {
+        "type": "string",
+        "description": "Who may register new local accounts on this instance.",
+        "enum": [
+          "open",
+          "invite",
+          "closed"
+        ]
+      },
+      "UpdateInstanceSettingsRequest": {
+        "type": "object",
+        "description": "Partial update of instance settings (instance admin only).",
+        "properties": {
+          "community_creation_mode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CommunityCreationMode"
+              }
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "oidc_client_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "oidc_enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "oidc_issuer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "public_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registration_mode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationMode"
+              }
+            ]
+          }
+        }
+      },
       "UpdateProfileRequest": {
         "type": "object",
         "description": "Patch display name and/or bio.",
@@ -830,6 +1120,14 @@
     {
       "name": "meta",
       "description": "Unauthenticated instance identity"
+    },
+    {
+      "name": "instance",
+      "description": "Instance settings (instance admin)"
+    },
+    {
+      "name": "communities",
+      "description": "Community creation policy"
     },
     {
       "name": "auth",
