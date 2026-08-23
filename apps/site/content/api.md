@@ -1,16 +1,14 @@
 # HTTP API conventions
 
-Feature Task F005. Product routes live under `/api/v1`. Probes stay at `/health`, `/ready`, and optional `/metrics` (see [`observability.md`](observability.md)).
+Product routes live under `/api/v1`. Probes: `/health`, `/ready`, optional `/metrics` — [Observability](/docs/guides/observability).
 
-## Sample route
+Interactive OpenAPI: [/docs/api](/docs/api). Generated client: `@voxnexus/api-client` — [Codegen](/docs/guides/codegen).
 
-`GET /api/v1/meta` returns `{ "name": "voxnexus", "version": "<crate version>" }`. No authentication.
+## Sample public route
 
-The OpenAPI document and generated TypeScript client live in `packages/api-client`. See [`codegen.md`](codegen.md).
+`GET /api/v1/meta` → `{ "name": "voxnexus", "version": "…", … }` (login-mode hints for the SPA). No auth.
 
 ## Errors
-
-Every API and unknown-route error uses this JSON body (never a stack trace):
 
 ```json
 {
@@ -21,30 +19,40 @@ Every API and unknown-route error uses this JSON body (never a stack trace):
 }
 ```
 
-`details` is omitted when empty. `request_id` matches `x-request-id` (UUIDv7).
+`details` omitted when empty. `request_id` matches `x-request-id` (UUIDv7).
 
 | HTTP | `code` | When |
 |---|---|---|
-| 400 | `invalid_json` | Body is not JSON or the `Content-Type` is wrong |
-| 400 | `validation_error` | JSON parsed but failed field rules (`details.fields`) |
-| 401 | `unauthenticated` | Missing/invalid session, or wrong password |
-| 403 | `permission_denied` | CSRF failure, registration closed, or later authz |
-| 404 | `not_found` | Unknown path, or a resource the caller must not see |
-| 409 | `conflict` | Duplicate email (or identity) |
-| 429 | `rate_limited` | (F116) |
-| 500 | `internal` | Unexpected server failure |
+| 400 | `invalid_json` | Body not JSON / wrong Content-Type |
+| 400 | `validation_error` | Field rules failed (`details.fields`) |
+| 401 | `unauthenticated` | Missing/invalid session or bad password |
+| 403 | `permission_denied` | CSRF, policy, or authz |
+| 404 | `not_found` | Unknown path or hidden resource |
+| 409 | `conflict` | Duplicate email / slug / etc. |
+| 429 | `rate_limited` | Reserved for future rate limiting |
+| 500 | `internal` | Unexpected failure |
 
 ## Pagination
 
-List endpoints use cursor query params in `crates/protocol`: `before`, `after`, and `limit` (default **50**, max **100**). Responses include `items` and `has_more`.
+Cursor params in `crates/protocol`: `before`, `after`, `limit` (default **50**, max **100**). List payloads use `items` + `has_more` (or domain wrappers like `communities` / `spaces` — see OpenAPI).
 
 ## Limits and middleware
 
-- Request body cap: **1 MiB**.
-- Responses may be gzip-compressed.
-- CORS allows the origin derived from `PUBLIC_URL` (credentials on).
-- CSRF Origin/Referer checks run on mutating methods (see [`auth.md`](auth.md)).
+- JSON body cap: **6 MiB** (uploads use their own limits)
+- Optional gzip responses
+- CORS origin from `PUBLIC_URL` (credentials on)
+- CSRF Origin/Referer checks on mutating `/api` methods — [Authentication](/docs/guides/auth)
 
-Handlers that accept JSON should use `ValidatedJson<T>` (or `AppJson<T>` when there are no field rules) so clients always see the error schema.
+Prefer validated JSON extractors so clients always see this error shape.
 
-Auth routes: [`auth.md`](auth.md).
+## Surface map
+
+| Area | Doc |
+|---|---|
+| Auth / OIDC | [Authentication](/docs/guides/auth), [OIDC](/docs/guides/oidc) |
+| Profiles / presence | [Profiles](/docs/guides/profiles) |
+| Instance | [Instance](/docs/guides/instance) |
+| Communities / members | [Communities](/docs/guides/communities) |
+| Invites | [Invites](/docs/guides/invites) |
+| Spaces | [Spaces](/docs/guides/spaces) |
+| Gateway | [Gateway](/docs/guides/gateway) |

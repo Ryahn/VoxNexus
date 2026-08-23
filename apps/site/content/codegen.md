@@ -1,6 +1,6 @@
 # Codegen
 
-Feature Tasks F006–F007. Rust is the source of truth for HTTP and gateway contracts. Committed TypeScript artifacts must match.
+Rust is the source of truth for HTTP and gateway contracts. Committed TypeScript artifacts must match.
 
 ## Generate
 
@@ -10,10 +10,10 @@ pnpm codegen
 
 That runs:
 
-1. `export-openapi` — writes [`packages/api-client/openapi.json`](../packages/api-client/openapi.json) from utoipa.
-2. `export-events` — writes [`packages/protocol/gateway.schema.json`](../packages/protocol/gateway.schema.json) from schemars.
-3. `@hey-api/openapi-ts` — fetch client under `packages/api-client/src/`.
-4. `json-schema-to-typescript` — gateway types under `packages/protocol/src/generated/`.
+1. `export-openapi` — writes `packages/api-client/openapi.json` from utoipa
+2. `export-events` — writes `packages/protocol/gateway.schema.json` from schemars
+3. OpenAPI → `@voxnexus/api-client`
+4. JSON Schema → `@voxnexus/protocol` generated types
 
 Do not hand-edit generated files. Change Rust handlers/DTOs, then regenerate.
 
@@ -23,6 +23,6 @@ Do not hand-edit generated files. Change Rust handlers/DTOs, then regenerate.
 pnpm check-codegen
 ```
 
-Regenerates and fails if `git diff` is non-empty under `packages/api-client` or the committed gateway schema/generated types.
+Regenerates and fails if `git diff` is non-empty under the generated packages.
 
-The web app imports `@voxnexus/api-client` (`getMeta`) and `@voxnexus/protocol` (`createGatewayClient`). Vite proxies `/api` (including WebSocket) to `http://127.0.0.1:8080`.
+`apps/web` imports `@voxnexus/api-client` and `@voxnexus/protocol`. Vite proxies `/api` (including WebSocket) to `http://127.0.0.1:8080`.

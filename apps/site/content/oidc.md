@@ -1,12 +1,12 @@
-# OIDC / SSO (F018O)
+# OIDC / SSO
 
 VoxNexus acts as an OIDC relying party (authorization code + PKCE).
 
-**Two ways to configure issuer / client ID** (pick one):
+**Two ways to set issuer / client ID** (pick one):
 
-1. **Config** — set `OIDC_ISSUER` and `OIDC_CLIENT_ID`. On every startup they are copied into the instance row and show up in **Settings → Instance** (SSO enabled automatically).
+1. **Config** — set `OIDC_ISSUER` and `OIDC_CLIENT_ID`. On every startup they are copied into the instance row and appear under **Settings → Instance** (SSO enabled automatically).
    - Host `cargo run`: use repo-root `config.toml`.
-   - Compose `app` container: use `deploy/docker/.env` (root `config.toml` is **not** mounted). Then `docker compose up -d` (rebuild only needed if you change code).
+   - Compose `app` container: use `deploy/docker/.env` (root `config.toml` is **not** mounted).
 2. **UI only** — leave those config keys empty and set issuer / client ID under **Settings → Instance**.
 
 `OIDC_CLIENT_SECRET` always lives in config/env only (never stored in the DB). SSO will not work until the secret is set, even if the UI fields are filled.
@@ -87,7 +87,7 @@ Confirm discovery works:
 http://127.0.0.1:9000/application/o/voxnexus/.well-known/openid-configuration
 ```
 
-Include **groups** in the ID token when you wire community permissions later (F090).
+Include **groups** in the ID token if you plan to map IdP groups to community roles later.
 
 ## HTTP
 

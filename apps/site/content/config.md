@@ -1,65 +1,52 @@
 # Configuration
 
-VoxNexus loads process configuration from an optional file, then overlays environment variables. **Environment always wins.** The server refuses to start if a required value is missing or invalid, and the error names the key.
+VoxNexus loads an optional file, then overlays environment variables. **Environment always wins.** Missing or invalid required keys fail startup and name the key.
 
-This is Feature Task F002–F009. The process connects to PostgreSQL, migrates, connects to Redis (Apalis workers), ensures the S3 bucket, ensures Typesense collections, and listens for `/health`, `/ready`, `/api/v1`, the gateway WebSocket (when allowed), and optionally the built SPA via `WEB_DIST`. CORS uses the origin from `PUBLIC_URL`.
+After load the process migrates Postgres, connects Redis, ensures the S3 bucket and Typesense collections, then serves HTTP/gateway (and optional SPA via `WEB_DIST`).
 
 ## File search order
 
-1. `VOXNEXUS_CONFIG` — absolute or relative path to a file. If set and the file is missing, startup fails.
+1. `VOXNEXUS_CONFIG` — path to a file (fail if set and missing)
 2. `./config.toml`
-3. `./config.yaml`
-4. `./config.yml`
+3. `./config.yaml` / `./config.yml`
 
-If none of those exist, environment variables alone are enough.
-
-On Unix, a config file must be mode **0600** (not group- or world-readable) because it may contain secrets. Windows does not enforce a POSIX mode; keep the file private anyway.
-
-File keys use the same names as environment variables. See [`config.example.toml`](../config.example.toml).
+Unix: config files must be mode **0600**. Keys match environment names — see [`config.example.toml`](/config.example.toml) and [`config.README.md`](/config.README.md).
 
 ## Required keys
 
 | Key | Meaning | Example |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL URL | `postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable` |
-| `REDIS_URL` | Redis URL (jobs) | `redis://127.0.0.1:6379` |
+| `DATABASE_URL` | PostgreSQL | `postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable` |
+| `REDIS_URL` | Redis (jobs) | `redis://127.0.0.1:6379` |
 | `S3_ENDPOINT` | SeaweedFS S3 API | `http://127.0.0.1:8333` |
-| `S3_ACCESS_KEY` | S3 access key | |
-| `S3_SECRET_KEY` | S3 secret key | |
-| `S3_BUCKET` | Bucket name | `voxnexus` |
-| `TYPESENSE_URL` | Typesense HTTP API | `http://127.0.0.1:8108` |
-| `TYPESENSE_API_KEY` | Typesense API key | |
-| `PUBLIC_URL` | Public origin of this instance | `http://127.0.0.1:8080` |
+| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | S3 credentials | |
+| `S3_BUCKET` | Bucket (created if missing) | `voxnexus` |
+| `TYPESENSE_URL` / `TYPESENSE_API_KEY` | Typesense | `http://127.0.0.1:8108` |
+| `PUBLIC_URL` | Public origin | `http://127.0.0.1:8080` |
 
-URL values must parse as URLs. Empty strings are treated as missing.
-
-## Optional keys (defaults)
+## Common optional keys
 
 | Key | Default | Meaning |
 |---|---|---|
-| `COOKIE_SECURE` | `false` | Set `true` behind TLS (`true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`) |
-| `REGISTRATION_OPEN` | `true` | Allow `POST /api/v1/auth/register` until instance settings (F017) |
-| `LOG_LEVEL` | `info` | `error`, `warn`, `info`, `debug`, or `trace` |
-| `LOG_FORMAT` | `auto` | `auto`, `pretty`, or `json`. Auto is pretty in debug+TTY, JSON otherwise |
-| `LISTEN_ADDR` | `127.0.0.1:8080` | HTTP bind address (`host:port`) |
-| `METRICS_ENABLED` | `false` | Serve Prometheus `GET /metrics` |
-| `GATEWAY_ALLOW_UNAUTH` | `false` | Allow unauthenticated WebSocket gateway (dev only; see [`gateway.md`](gateway.md)) |
-| `WEB_DIST` | _(unset)_ | Directory of built SPA assets. When set to an existing dir, Axum serves the SPA (Compose sets `/app/web`) |
+| `COOKIE_SECURE` | `false` | Secure / `__Host-` cookies behind TLS |
+| `REGISTRATION_OPEN` | `true` | Early registration gate (prefer instance settings) |
+| `COMMUNITY_CREATION_MODE` | `open` | `open` \| `admin_only` \| `single` |
+| `COMMUNITY_CREATION_MODE_LOCKED` | `false` | Force-sync mode from config; block API overrides |
+| `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | unset | First instance admin |
+| `BOOTSTRAP_COMMUNITY_NAME` | unset | Seed community (useful with `single`) |
+| `LOG_LEVEL` / `LOG_FORMAT` | `info` / `auto` | Tracing |
+| `LISTEN_ADDR` | `127.0.0.1:8080` | Bind address |
+| `METRICS_ENABLED` | `false` | `GET /metrics` |
+| `GATEWAY_ALLOW_UNAUTH` | `false` | Dev-only unauthenticated gateway |
+| `WEB_DIST` | unset | Built SPA directory (Compose sets this) |
+| `OIDC_*` | unset | [OIDC](/docs/guides/oidc) |
+| `LIVEKIT_*` / `SMTP_*` | unset | Later tasks |
 
-HTTP probes are documented in [`observability.md`](observability.md). API errors and `GET /api/v1/meta` are in [`api.md`](api.md). Auth cookies/sessions: [`auth.md`](auth.md). Gateway: [`gateway.md`](gateway.md). Object storage: [`storage.md`](storage.md). Jobs: [`jobs.md`](jobs.md). Search: [`search.md`](search.md). Compose: [`compose.md`](compose.md).
+Booleans accept `true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`.
 
-## Optional keys (unused until later Feature Tasks)
+## Two config places
 
-These may be omitted. Invalid URLs still fail parse if they are set.
+1. **App** — `config.toml` for host `cargo run`
+2. **Compose** — `deploy/docker/.env` for the `app` container (root `config.toml` is not mounted)
 
-| Key | Later task |
-|---|---|
-| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | F061 |
-| `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_ONLY`, `OIDC_LINK_BY_EMAIL` | F018O — see `apps/site/content/oidc.md` |
-| `SMTP_URL`, `SMTP_FROM` | F117 |
-
-## Secrets
-
-Do not put secrets in the repository. Prefer environment variables in production. If you use a file, keep it 0600 and out of git (`config.toml` is gitignored).
-
-Live database tests use `DATABASE_URL_TEST` (not loaded by the server). See [`database.md`](database.md).
+Keep overlapping secrets (S3, Typesense, `PUBLIC_URL`, cookie flags) aligned. Full key reference: `config.README.md`.

@@ -33,8 +33,8 @@ export function LandingPage() {
           Discord-class chat and voice, Guilded-class Spaces, built to self-host.
         </h1>
         <p className="mb-8 max-w-2xl text-lg leading-relaxed text-ink-2">
-          VoxNexus is a Rust + React stack for private community instances — sessions, profiles,
-          gateway realtime, and operator docs to get you running with Docker Compose.
+          VoxNexus is a Rust + React stack for private community instances — auth, profiles,
+          communities, Spaces, and gateway realtime.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link

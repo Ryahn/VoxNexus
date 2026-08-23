@@ -1,26 +1,23 @@
 # Gateway
 
-Feature Task F007. Realtime chat does **not** use this socket until F035. Until F013, production-style configs refuse the gateway.
+Authenticated WebSocket for presence and session resume. Chat event fanout is not implemented yet.
 
 ## Endpoint
 
 `GET /api/v1/gateway` — WebSocket upgrade. Subprotocol: `voxnexus.gateway.v1`.
 
-## Config
+Requires a valid session cookie. Set `GATEWAY_ALLOW_UNAUTH=true` only for local protocol work; that also enables `DEV_PING` / `DEV_PONG` after identify.
 
-| Key | Default | Meaning |
-|---|---|---|
-| `GATEWAY_ALLOW_UNAUTH` | `false` | When `false`, the upgrade returns **503** `gateway_unavailable` (auth arrives in F013). Set `true` only for local protocol work. Enables the unauthenticated `DEV_PING` / `DEV_PONG` events. |
+## Lifecycle
 
-## Lifecycle (F007)
+1. Server → `HELLO` `{ heartbeat_interval_ms, protocol_version, session_id }`
+2. Client → `IDENTIFY` `{}` (account comes from the cookie on the handshake)
+3. Server → `READY` `{ account_id, session_id, resume_token }`, then `PRESENCE_SYNC`
+4. Client → `HEARTBEAT`; server → `HEARTBEAT_ACK`
+5. Missing heartbeats for `2 × interval` closes the socket
+6. Reconnect: `RESUME` `{ session_id, last_sequence, resume_token }` → `RESUMED` or `INVALID_SESSION`
 
-1. Client connects with subprotocol `voxnexus.gateway.v1`.
-2. Server sends `HELLO` `{ heartbeat_interval_ms, protocol_version, session_id }`.
-3. Client must send `HEARTBEAT` at least every `heartbeat_interval_ms`; server replies `HEARTBEAT_ACK`.
-4. Missed heartbeats for `2 × interval` close the socket.
-5. Optional (unauth only): client `DEV_PING` `{ nonce }` → server `DEV_PONG` `{ nonce }`.
-
-Envelope shape (all events):
+Envelope:
 
 ```json
 {
@@ -32,14 +29,17 @@ Envelope shape (all events):
 }
 ```
 
-`IDENTIFY` / `READY` / chat events land in later Feature Tasks.
+`event_type` is `SCREAMING_SNAKE_CASE`.
 
-## Types and client
+## Presence
 
-Rust types live in `crates/protocol` (schemars). Committed schema: `packages/protocol/gateway.schema.json`. Generated TS + `createGatewayClient` stub: `@voxnexus/protocol`.
+- Client `STATUS_UPDATE` — `{ status?, custom_status? }`
+- Server `PRESENCE_UPDATE` / `PRESENCE_SYNC` — see [Profiles](/docs/guides/profiles)
 
-```powershell
-pnpm codegen
-```
+`MEMBER_JOIN` / `MEMBER_LEAVE` exist on the enum for membership fanout where wired.
 
-Web debug stub: set `VITE_GATEWAY_DEBUG=true` and run the SPA with the API listening and `GATEWAY_ALLOW_UNAUTH=true`.
+## Types
+
+Rust: `crates/protocol`. Schema: `packages/protocol/gateway.schema.json`. Client helper: `createGatewayClient` in `@voxnexus/protocol`. Regenerate with `pnpm codegen`.
+
+SPA debug UI: `$env:VITE_GATEWAY_DEBUG="true"; pnpm dev` (API must be up; use `GATEWAY_ALLOW_UNAUTH=true` only for the unauth path).

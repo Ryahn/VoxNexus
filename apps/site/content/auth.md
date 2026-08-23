@@ -1,34 +1,34 @@
 # Authentication
 
-Feature Tasks F011–F012. Local email/password accounts, Postgres sessions, and browser cookies.
+Local email/password accounts, Postgres sessions, and cookie-based API auth. OIDC: [OIDC](/docs/guides/oidc).
 
-## Schema
-
-Migration `20260822140000_accounts`:
+## Model
 
 | Table | Purpose |
 |---|---|
-| `accounts` | UUIDv7 id, nullable unique email, nullable `password_hash`, `is_bot`, `is_instance_admin`, timestamps |
-| `auth_identities` | OIDC (and later) links: unique `(issuer, subject)` |
-| `sessions` | Hashed session secret, sliding expiry (30 days), optional user-agent / IP |
+| `accounts` | UUIDv7 id, email, password hash (nullable for OIDC-only), flags |
+| `auth_identities` | External IdP links `(issuer, subject)` |
+| `sessions` | Hashed session secret, sliding expiry (~30 days) |
 
-Domain types live in `voxnexus-domain`. Password hashing (Argon2id) and session helpers live in `voxnexus-auth`.
-
-Until F017, every account uses a fixed `DEFAULT_INSTANCE_ID`. Registration is gated by `REGISTRATION_OPEN` (default **true**).
+Passwords: Argon2id in `crates/auth`. Accounts use the single default instance id until multi-instance work exists.
 
 ## HTTP
 
 | Method | Path | Notes |
 |---|---|---|
-| `POST` | `/api/v1/auth/register` | Creates account + session cookie |
+| `POST` | `/api/v1/auth/register` | Account + session cookie when registration allows |
 | `POST` | `/api/v1/auth/login` | Timing-safe verify; session cookie |
 | `POST` | `/api/v1/auth/logout` | Deletes session; clears cookie |
 | `GET` | `/api/v1/auth/me` | Current account or `401` |
+| `POST` | `/api/v1/auth/me/password` | Requires current password |
+| `PATCH` | `/api/v1/auth/me/email` | Immediate until SMTP verification exists |
 
-Cookie name: `vn_session` when `COOKIE_SECURE=false`, `__Host-vn_session` when secure (Secure, Path=/, HttpOnly, SameSite=Lax).
+Cookie: `vn_session` when `COOKIE_SECURE=false`, `__Host-vn_session` when secure (HttpOnly, Path=/, SameSite=Lax; Secure when enabled).
 
-Mutating `/api` requests require `Origin` or `Referer` matching `PUBLIC_URL`. When `COOKIE_SECURE=false`, localhost / `127.0.0.1` (any port) is also accepted so the Vite proxy works.
+Mutating `/api` calls need `Origin` or `Referer` matching `PUBLIC_URL`. With `COOKIE_SECURE=false`, localhost / `127.0.0.1` (any port) is also accepted for the Vite proxy.
+
+Registration follows instance `registration_mode` / config `REGISTRATION_OPEN` — [Instance](/docs/guides/instance).
 
 ## Web UI
 
-`/login` and `/register` pages in `apps/web` call the generated `@voxnexus/api-client` with `credentials: 'include'`.
+`/login` and `/register` in `apps/web` use `@voxnexus/api-client` with `credentials: 'include'`. The gateway reuses the same cookie after upgrade.

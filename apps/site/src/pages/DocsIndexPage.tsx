@@ -6,7 +6,7 @@ export function DocsIndexPage() {
     <div className="mx-auto max-w-3xl">
       <h1 className="mb-2 font-sans text-2xl font-semibold text-ink">Documentation</h1>
       <p className="mb-8 text-ink-2">
-        Setup guides, API reference, and operator documentation for self-hosting VoxNexus.
+        Setup, product behavior, and contributor notes for running and extending VoxNexus.
       </p>
       <div className="space-y-8">
         {docsNav.map((section) => (

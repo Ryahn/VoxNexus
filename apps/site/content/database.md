@@ -1,48 +1,38 @@
 # Database
 
-VoxNexus uses PostgreSQL 16 as the system of record. The `voxnexus` process opens a SQLx pool on startup and applies versioned migrations from `/migrations` before it does anything else.
-
-This is Feature Task F003. There is still no HTTP API.
+PostgreSQL 16 is the system of record. The `voxnexus` binary opens a SQLx pool and runs migrations from `/migrations` before serving traffic.
 
 ## Startup
 
-`sqlx migrate` runs **inside the binary** (`voxnexus_db::connect_and_migrate`). You do not need a separate `sqlx migrate run` for the app to start. Compose (F009) will still need a reachable Postgres; it will not replace in-process migrate.
-
-Pool settings (F003): 10 connections, 5s acquire timeout (also bounds initial connect). Health is `SELECT 1`.
+`connect_and_migrate` runs inside the process — no separate migrate step for normal boots. Pool: 10 connections, 5s acquire timeout. Health: `SELECT 1` (used by `/ready`).
 
 ## Local Postgres
 
-Example (not the production Compose stack — that is F009):
-
 ```powershell
-docker run --name voxnexus-pg -d --rm -e POSTGRES_USER=voxnexus -e POSTGRES_PASSWORD=voxnexus -e POSTGRES_DB=voxnexus -p 5432:5432 postgres:16
+docker run --name voxnexus-pg -d --rm `
+  -e POSTGRES_USER=voxnexus -e POSTGRES_PASSWORD=voxnexus -e POSTGRES_DB=voxnexus `
+  -p 5432:5432 postgres:16
 ```
-
-Then set `DATABASE_URL` (see [`config.md`](config.md)). For local servers without TLS, add `sslmode=disable`:
 
 ```text
-postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable
+DATABASE_URL=postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus?sslmode=disable
 ```
+
+Prefer Compose for the full dependency set — [Docker Compose](/docs/setup/compose).
 
 ## Migrations
 
-Files live in [`migrations/`](../migrations) at the repository root. Naming follows SQLx reversible migrations: `{version}_{name}.up.sql` and `{version}_{name}.down.sql`.
+Reversible SQLx files: `{version}_{name}.up.sql` / `.down.sql` at repo-root `migrations/`. Applied versions live in `_sqlx_migrations`.
 
-F003 ships a baseline only. Product tables start in later Feature Tasks (accounts/sessions: F011–F012; see [`auth.md`](auth.md)). SQLx records applied versions in `_sqlx_migrations`.
+Current product tables include accounts/sessions, profiles/presence columns, instance settings, communities/members, invites, and spaces.
 
 ## Tests
 
-Live database tests **do not use testcontainers** in F003. They read **`DATABASE_URL_TEST`**.
-
-- Unset or empty: tests print a skip message and pass (so `cargo test` still works without Postgres).
-- Set: tests connect, `SELECT 1`, apply migrations, revert to version 0, and apply again.
-
-Use a **throwaway** database. Revert will run against whatever `DATABASE_URL_TEST` points at.
+Live DB tests use **`DATABASE_URL_TEST`** (not loaded by the server). Unset → skip. Set → connect, migrate, and exercise against a **throwaway** database (some tests revert).
 
 ```powershell
 $env:DATABASE_URL_TEST = "postgres://voxnexus:voxnexus@127.0.0.1:5432/voxnexus_test?sslmode=disable"
-createdb voxnexus_test   # or CREATE DATABASE voxnexus_test;
 cargo test --workspace
 ```
 
-F010 CI should set `DATABASE_URL_TEST` against a Postgres 16 service so these tests actually run on every PR.
+CI sets this against a Postgres 16 service — [CI](/docs/guides/ci).
