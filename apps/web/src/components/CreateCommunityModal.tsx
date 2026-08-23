@@ -1,5 +1,6 @@
-import { createCommunity } from '@voxnexus/api-client';
+import { createCommunity, type JoinMode } from '@voxnexus/api-client';
 import { useEffect, useRef, useState } from 'react';
+import { readApiErrorMessage } from '../lib/apiError';
 import { useUI } from '../store';
 import { Portal } from './ui/Portal';
 
@@ -12,6 +13,7 @@ export function CreateCommunityModal({ onCreated }: Props) {
   const setOpen = useUI((s) => s.setCreateCommunityOpen);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [joinMode, setJoinMode] = useState<Exclude<JoinMode, 'application'>>('open');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -20,6 +22,7 @@ export function CreateCommunityModal({ onCreated }: Props) {
     if (open) {
       setName('');
       setDescription('');
+      setJoinMode('open');
       setError(null);
       setPending(false);
       setTimeout(() => inputRef.current?.focus(), 20);
@@ -49,15 +52,12 @@ export function CreateCommunityModal({ onCreated }: Props) {
       body: {
         name: trimmed,
         description: description.trim() || undefined,
+        join_mode: joinMode,
       },
     });
     setPending(false);
     if (result.error || !result.data) {
-      const message =
-        result.error && typeof result.error === 'object' && 'message' in result.error
-          ? String((result.error as { message: string }).message)
-          : 'Could not create community.';
-      setError(message);
+      setError(readApiErrorMessage(result.error, 'Could not create community.'));
       return;
     }
     setOpen(false);
@@ -95,7 +95,7 @@ export function CreateCommunityModal({ onCreated }: Props) {
               className="mt-1 w-full rounded-lg border border-line-2/80 bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent/50"
             />
           </label>
-          <label className="mb-4 block text-xs font-medium uppercase tracking-wide text-ink-3">
+          <label className="mb-3 block text-xs font-medium uppercase tracking-wide text-ink-3">
             Description
             <textarea
               value={description}
@@ -105,6 +105,35 @@ export function CreateCommunityModal({ onCreated }: Props) {
               className="mt-1 w-full resize-none rounded-lg border border-line-2/80 bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-accent/50"
             />
           </label>
+          <fieldset className="mb-4">
+            <legend className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-3">
+              Join mode
+            </legend>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setJoinMode('open')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm ${
+                  joinMode === 'open'
+                    ? 'border-accent/50 bg-accent/10 text-ink'
+                    : 'border-line/60 text-ink-2 hover:bg-surface-hover/40'
+                }`}
+              >
+                Open
+              </button>
+              <button
+                type="button"
+                onClick={() => setJoinMode('invite')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm ${
+                  joinMode === 'invite'
+                    ? 'border-accent/50 bg-accent/10 text-ink'
+                    : 'border-line/60 text-ink-2 hover:bg-surface-hover/40'
+                }`}
+              >
+                Invite only
+              </button>
+            </div>
+          </fieldset>
           {error ? <p className="mb-3 text-sm text-[rgb(var(--danger))]">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <button

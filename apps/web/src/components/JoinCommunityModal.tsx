@@ -1,5 +1,6 @@
 import { acceptInvite, joinCommunity } from '@voxnexus/api-client';
 import { useEffect, useRef, useState } from 'react';
+import { readApiErrorMessage } from '../lib/apiError';
 import { useUI } from '../store';
 import { Portal } from './ui/Portal';
 
@@ -49,11 +50,12 @@ export function JoinCommunityModal({ onJoined }: Props) {
       const result = await joinCommunity({ path: { community_id: trimmed } });
       setPending(false);
       if (result.error || !result.data) {
-        const message =
-          result.error && typeof result.error === 'object' && 'message' in result.error
-            ? String((result.error as { message: string }).message)
-            : 'Could not join community.';
-        setError(message);
+        setError(
+          readApiErrorMessage(
+            result.error,
+            'Could not join. Invite-only communities require an invite code.',
+          ),
+        );
         return;
       }
       setOpen(false);
@@ -64,11 +66,7 @@ export function JoinCommunityModal({ onJoined }: Props) {
     const result = await acceptInvite({ path: { code: trimmed } });
     setPending(false);
     if (result.error || !result.data) {
-      const message =
-        result.error && typeof result.error === 'object' && 'message' in result.error
-          ? String((result.error as { message: string }).message)
-          : 'Could not accept invite.';
-      setError(message);
+      setError(readApiErrorMessage(result.error, 'Could not accept invite.'));
       return;
     }
     setOpen(false);
@@ -94,7 +92,7 @@ export function JoinCommunityModal({ onJoined }: Props) {
             Join a community
           </h2>
           <p className="mb-4 text-sm text-ink-3">
-            Paste an invite code, or a community id for open communities.
+            Prefer an invite code. A community id only works when the community is open.
           </p>
           <label className="mb-3 block text-xs font-medium uppercase tracking-wide text-ink-3">
             Invite code or community id

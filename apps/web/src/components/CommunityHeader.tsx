@@ -3,6 +3,7 @@ import { Bell, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { communities } from '../data/communities';
 import { menuFor } from '../lib/menus';
 import { useUI } from '../store';
+import { CommunitySettingsModal } from './CommunitySettingsModal';
 import { InviteManagerModal } from './InviteManagerModal';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -11,6 +12,7 @@ export function CommunityHeader() {
   const activeId = useUI((s) => s.activeCommunity);
   const setCommunity = useUI((s) => s.setCommunity);
   const setInviteManagerOpen = useUI((s) => s.setInviteManagerOpen);
+  const setCommunitySettingsOpen = useUI((s) => s.setCommunitySettingsOpen);
   const community = communities.find((c) => c.id === activeId) ?? {
     id: activeId,
     name: 'Community',
@@ -23,6 +25,12 @@ export function CommunityHeader() {
   const isLive = UUID_RE.test(activeId);
 
   const items = menuFor('community', community.name).map((item) => {
+    if (item.label === 'Community Settings' && isLive) {
+      return {
+        ...item,
+        onSelect: () => setCommunitySettingsOpen(true),
+      };
+    }
     if (item.label === 'Invite People' && isLive) {
       return {
         ...item,
@@ -108,7 +116,12 @@ export function CommunityHeader() {
           <Bell size={15} strokeWidth={1.9} />
         </button>
       </div>
-      {isLive ? <InviteManagerModal communityId={activeId} /> : null}
+      {isLive ? (
+        <>
+          <InviteManagerModal communityId={activeId} />
+          <CommunitySettingsModal communityId={activeId} />
+        </>
+      ) : null}
     </header>
   );
 }

@@ -329,3 +329,144 @@ async fn invite_mode_blocks_join_and_owner_cannot_leave() {
     assert_eq!(owner_leave.status(), StatusCode::FORBIDDEN);
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+#[allow(clippy::too_many_lines)]
+async fn join_mode_matrix_via_http_settings() {
+    let _guard = membership_test_lock().lock().await;
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open create");
+    let router = app(state(pool.clone(), redis));
+
+    let owner = register(
+        &router,
+        &format!("jm-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_open_community(&router, &owner, "Mode Matrix").await;
+
+    let set_invite = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/api/v1/communities/{}", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"join_mode":"invite"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("patch invite");
+    assert_eq!(set_invite.status(), StatusCode::OK);
+    let updated: CommunityResponse =
+        serde_json::from_slice(&json_body(set_invite).await).expect("community");
+    assert_eq!(updated.join_mode, JoinMode::Invite);
+
+    let outsider = register(
+        &router,
+        &format!("jm-out-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let denied = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &outsider)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("denied");
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+    let reject_app = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/api/v1/communities/{}", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"join_mode":"application"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("patch application");
+    assert_eq!(reject_app.status(), StatusCode::BAD_REQUEST);
+
+    let set_discoverable = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/api/v1/communities/{}", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"discoverable_on_instance":false}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("patch discoverable");
+    assert_eq!(set_discoverable.status(), StatusCode::OK);
+    let toggled: CommunityResponse =
+        serde_json::from_slice(&json_body(set_discoverable).await).expect("community");
+    assert!(!toggled.discoverable_on_instance);
+    assert_eq!(toggled.join_mode, JoinMode::Invite);
+
+    let set_open = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/api/v1/communities/{}", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"join_mode":"open"}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("patch open");
+    assert_eq!(set_open.status(), StatusCode::OK);
+
+    let joined = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &outsider)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join open");
+    assert_eq!(joined.status(), StatusCode::CREATED);
+
+    unlock_instance_mode(&pool).await;
+}

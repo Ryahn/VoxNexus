@@ -82,6 +82,14 @@ pub async fn create_community(
         .await
         .map_err(|error| map_auth(error, request_id.clone()))?;
 
+    let join_mode = body.join_mode.unwrap_or(JoinMode::Open);
+    if join_mode == JoinMode::Application {
+        return Err(validation(
+            request_id,
+            "Application join mode is not available yet.",
+        ));
+    }
+
     let community = persist_community(
         &state.pool,
         user.account_id,
@@ -94,7 +102,7 @@ pub async fn create_community(
                 .unwrap_or_else(|| "UTC".to_owned())
                 .trim()
                 .to_owned(),
-            join_mode: body.join_mode.unwrap_or(JoinMode::Open),
+            join_mode,
             discoverable_on_instance: body.discoverable_on_instance.unwrap_or(true),
         },
     )
@@ -189,6 +197,12 @@ pub async fn update_community_settings(
 ) -> Result<Json<CommunityResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     require_owner(&state, community_id, user.account_id, &request_id).await?;
+    if body.join_mode == Some(JoinMode::Application) {
+        return Err(validation(
+            request_id,
+            "Application join mode is not available yet.",
+        ));
+    }
     let community = update_community(
         &state.pool,
         community_id,
