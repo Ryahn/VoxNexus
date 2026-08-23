@@ -1,4 +1,6 @@
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, OnceLock};
+
+use tokio::sync::Mutex;
 
 use axum::body::Body;
 use axum::http::{header, Request, StatusCode};
@@ -113,7 +115,7 @@ async fn clear_instance_admins(pool: &PgPool) {
 
 #[tokio::test]
 async fn second_registered_user_is_not_instance_admin() {
-    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
+    let _guard = bootstrap_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -148,7 +150,7 @@ async fn second_registered_user_is_not_instance_admin() {
 
 #[tokio::test]
 async fn concurrent_bootstrap_creates_single_instance_admin() {
-    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
+    let _guard = bootstrap_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -179,7 +181,7 @@ async fn concurrent_bootstrap_creates_single_instance_admin() {
 
 #[tokio::test]
 async fn bootstrap_env_creates_instance_admin_once() {
-    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
+    let _guard = bootstrap_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -203,7 +205,7 @@ async fn bootstrap_env_creates_instance_admin_once() {
 
 #[tokio::test]
 async fn bootstrap_env_admin_blocks_registration_bootstrap_for_others() {
-    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
+    let _guard = bootstrap_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
