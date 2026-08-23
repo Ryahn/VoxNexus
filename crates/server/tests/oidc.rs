@@ -5,6 +5,7 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{header, Request, StatusCode};
 use mock_oidc::{MockOidcConfig, MockOidcServer};
+use tokio::sync::Mutex;
 use tower::ServiceExt;
 use url::Url;
 use voxnexus::http::{app, AppState};
@@ -14,6 +15,9 @@ use voxnexus_domain::DEFAULT_INSTANCE_ID;
 use voxnexus_jobs::{connect, RedisConn};
 use voxnexus_search::{MemorySearchEngine, SearchEngine};
 use voxnexus_storage::{MemoryObjectStore, ObjectStore};
+
+/// Instance OIDC columns are shared across tests on one Postgres DB.
+static OIDC_TEST_LOCK: Mutex<()> = Mutex::const_new(());
 
 async fn test_redis() -> Option<RedisConn> {
     let url = std::env::var("REDIS_URL_TEST")
@@ -84,6 +88,7 @@ fn html_bounce_target(body: &str) -> String {
 async fn fetch_authorize_redirect(authorize_url: &str) -> String {
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
+        .timeout(std::time::Duration::from_secs(10))
         .build()
         .expect("reqwest");
     let authorize = client.get(authorize_url).send().await.expect("authorize");
@@ -146,6 +151,7 @@ async fn follow_oidc_login(
 
 #[tokio::test]
 async fn oidc_jit_login_creates_account_once() {
+    let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -162,8 +168,7 @@ async fn oidc_jit_login_creates_account_once() {
         subject: "oidc-subject-1".to_owned(),
         email: "oidc-user@example.com".to_owned(),
         wrong_issuer: false,
-    })
-    .await;
+    });
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(
@@ -203,6 +208,7 @@ async fn oidc_jit_login_creates_account_once() {
 
 #[tokio::test]
 async fn replayed_oidc_code_fails() {
+    let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -219,8 +225,7 @@ async fn replayed_oidc_code_fails() {
         subject: "oidc-subject-replay".to_owned(),
         email: "oidc-replay@example.com".to_owned(),
         wrong_issuer: false,
-    })
-    .await;
+    });
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(
@@ -274,6 +279,7 @@ async fn replayed_oidc_code_fails() {
 
 #[tokio::test]
 async fn oidc_wrong_issuer_is_rejected() {
+    let _guard = OIDC_TEST_LOCK.lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -290,8 +296,7 @@ async fn oidc_wrong_issuer_is_rejected() {
         subject: "oidc-subject-wrong-issuer".to_owned(),
         email: "oidc-wrong@example.com".to_owned(),
         wrong_issuer: true,
-    })
-    .await;
+    });
     let public_url = "http://127.0.0.1:8080";
     enable_oidc(&pool, &mock.config.issuer, &mock.config.client_id).await;
     let router = app(oidc_state(

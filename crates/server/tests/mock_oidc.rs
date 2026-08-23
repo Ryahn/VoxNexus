@@ -13,7 +13,7 @@ use axum::{Json, Router};
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use base64::Engine;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
-use rsa::pkcs1::EncodeRsaPrivateKey;
+use rsa::pkcs1::{DecodeRsaPrivateKey, EncodeRsaPrivateKey};
 use rsa::traits::PublicKeyParts;
 use rsa::RsaPrivateKey;
 use serde::{Deserialize, Serialize};
@@ -21,6 +21,39 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use tokio::net::TcpListener;
 use uuid::Uuid;
+
+/// Fixed key so tests never block on RSA keygen / entropy (CI hang risk).
+const TEST_RSA_PEM: &str = "-----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAo+oW/Ncfq/WWHePYYMArpg0q9aOC9Nu0ZmGKfLo2g+L/N13c
+bmInq8zNS71Bj3d8S4E8oB8HWyC7vZSh0nBYBRvssFldLFyMGMYVHic4cNsCUFSv
+Z9Rlnf2WduKthESTc6BAnsBVT1FCmXFyJtT3Mx5GVnUFUknlBFbjRwgiPnPlnoMs
++1NNwsYN+UJuEVWXuR/X/Sf1ylzOjU0VnuSHUtR0NQ0AHlARQLnVSvc8lt2HgaOQ
+k11UtmOk+Sr8E/LzdAhw+Ay0h5sv9GXjZ2IWSc995+Ta649sYlAkHD7wA8U5egke
+KoLzTPQelkjZnonWuLnkEt8Kv4EQ9KqpBqNR7QIDAQABAoIBAEU775i9PsXx1gXr
+Aq6fDPC22CHn/jzxfenOomGbf8JGQ5l9vkkrkWkZ+M7YchQommoD/Pj/EirWESZ6
+3L0Xsb36tQcpv9aogo5GQI47b7YPc5M9qdcX2hIZFhBCH5tiIcvxcMn9ICt//br1
+NYucYYuIappDFEvVJXQnRRlwIJKy0KBEjI/DpgSsmIbtZSurQswz9hPC9D9Lmkx7
+0AxZ5oiaA/qwg5Hmyh+9QSb+kazcUPAwXf02QNYdLxDgeq3jSqohZdV/xF32Bw2t
+lVDeK1AV7f2LpIRDIP2VScM6sTh3I0GMV7jmNTmbF1Bl6S1zvLkWWWSzhMkX3wYJ
+bktQAwsCgYEA35a52+usgJlojGoXQlat9/iVI94XOBYvtNhjCdnU2RnaVY36Iooc
+qc3lcZ5Zvmy4Na+yZC3DLF0mHxp5sKRPydQjvkt7EvCluWQ91MDxEsSFGsNfPgSM
+OmX7v6xLznY6UGjhhpgLa/9UVmaCQJgVOJxKzcxcnjmJ85IAJ46cd7MCgYEAu6zg
+XBiF7AYja/zqf464+BSi98hdVoQvTiITxdy6PSWHJa3juv3xwH5Aiq4l+Vqembbj
+gf3T2LXQKutaTDbSfAHIjnNPAT19USE00KIXI7X1+ZcZdgGGenE0OEOJT4hjXRrx
+W+bF1wOQFFu6zRj/qRXj6Jp7jFEr3Ce1yjiWP98CgYBiNECkAIp+3WKXMc3PfGTi
+4lMXMuf94XjItLYjUIL1bC6Cn157JzBZwK6DTerbAcOTCP2QlK0B4lPpG2bRmAnX
+ew7L+TkwY3RWzll+BdScyqYv0BoYEkVJLRv63wFYyILqaHaN+GAj6jyvykxxdJr1
+h2gvphAUCu+1hK3+sdu1kwKBgE1zTKv1Gt+KsPeRypyVo9QNgCvNrmdT6cnO2mYf
+b2RopltwZbj3r9sGv0/8CoPbV/SLu1wcCl82uQ/dTMiDH145xjCzeXlDjQH8ODWZ
+jv8XyskUCFfgzUSejzRg+rutx4PW6KBKnn7bY4xjRrX5iRiYhhOqHS6NGRKj+KvZ
+qnf1AoGAIwlD1nOfPxolqxksYMlVdmbNyhWcVQNEZVimZZp4KTJgd+lJ/3X5L0Ey
+C1/lQdYnoL1yja4gTfbojxMOHtkWuViqEtpqNAaX7M8lur9CceRUBZaHypxMiyHp
+wE7IYzctIYFNKiNpsKnzHfm0JEKvsbaaTFXBCY0s/6lA7PJJZNo=
+-----END RSA PRIVATE KEY-----";
+
+fn test_rsa_key() -> RsaPrivateKey {
+    RsaPrivateKey::from_pkcs1_pem(TEST_RSA_PEM).expect("test rsa pem")
+}
 
 #[derive(Clone)]
 pub struct MockOidcConfig {
@@ -53,33 +86,49 @@ pub struct MockOidcServer {
 }
 
 impl MockOidcServer {
-    pub async fn start(mut config: MockOidcConfig) -> Self {
-        let private_key = RsaPrivateKey::new(&mut rand::thread_rng(), 2048).expect("rsa key");
-        let listener = TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind mock oidc");
-        let base_url = format!("http://{}", listener.local_addr().expect("addr"));
-        config.issuer.clone_from(&base_url);
-        let state = MockOidcState {
-            config: config.clone(),
-            private_key,
-            codes: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let router = Router::new()
-            .route("/.well-known/openid-configuration", get(discovery))
-            .route("/authorize", get(authorize))
-            .route("/token", post(token))
-            .route("/jwks", get(jwks))
-            .with_state(state);
+    #[must_use]
+    pub fn start(mut config: MockOidcConfig) -> Self {
+        let private_key = test_rsa_key();
+        let (addr_tx, addr_rx) = std::sync::mpsc::channel();
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
-        tokio::spawn(async move {
-            axum::serve(listener, router)
-                .with_graceful_shutdown(async {
-                    let _ = shutdown_rx.await;
-                })
-                .await
-                .expect("mock oidc serve");
+        let cfg_for_server = config.clone();
+        // Own OS thread + runtime so oneshot tests on current_thread cannot stall the IdP.
+        std::thread::spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("mock oidc runtime");
+            runtime.block_on(async move {
+                let listener = TcpListener::bind("127.0.0.1:0")
+                    .await
+                    .expect("bind mock oidc");
+                let base_url = format!("http://{}", listener.local_addr().expect("addr"));
+                let mut config = cfg_for_server;
+                config.issuer.clone_from(&base_url);
+                let state = MockOidcState {
+                    config: config.clone(),
+                    private_key,
+                    codes: Arc::new(Mutex::new(HashMap::new())),
+                };
+                addr_tx
+                    .send((base_url, config))
+                    .expect("send mock oidc addr");
+                let router = Router::new()
+                    .route("/.well-known/openid-configuration", get(discovery))
+                    .route("/authorize", get(authorize))
+                    .route("/token", post(token))
+                    .route("/jwks", get(jwks))
+                    .with_state(state);
+                axum::serve(listener, router)
+                    .with_graceful_shutdown(async {
+                        let _ = shutdown_rx.await;
+                    })
+                    .await
+                    .expect("mock oidc serve");
+            });
         });
+        let (base_url, started_config) = addr_rx.recv().expect("mock oidc ready");
+        config = started_config;
         Self {
             base_url,
             config,

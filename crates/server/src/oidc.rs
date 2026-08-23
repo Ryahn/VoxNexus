@@ -365,6 +365,7 @@ fn oidc_http_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
+            .timeout(std::time::Duration::from_secs(15))
             .build()
             .expect("reqwest oidc client")
     })
