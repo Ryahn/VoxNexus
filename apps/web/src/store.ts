@@ -83,6 +83,10 @@ interface UIState {
   // settings
   settingsOpen: boolean;
   setSettingsOpen: (v: boolean) => void;
+
+  // create community
+  createCommunityOpen: boolean;
+  setCreateCommunityOpen: (v: boolean) => void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -146,4 +150,7 @@ export const useUI = create<UIState>((set) => ({
 
   settingsOpen: false,
   setSettingsOpen: (v) => set({ settingsOpen: v }),
+
+  createCommunityOpen: false,
+  setCreateCommunityOpen: (v) => set({ createCommunityOpen: v }),
 }));

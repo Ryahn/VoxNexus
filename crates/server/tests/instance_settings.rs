@@ -147,6 +147,24 @@ fn instance_test_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+const INSTANCE_MODE_LOCK: i64 = 0x0190_0000_0000_0019;
+
+async fn lock_instance_mode(pool: &PgPool) {
+    sqlx::query("SELECT pg_advisory_lock($1)")
+        .bind(INSTANCE_MODE_LOCK)
+        .execute(pool)
+        .await
+        .expect("advisory lock");
+}
+
+async fn unlock_instance_mode(pool: &PgPool) {
+    sqlx::query("SELECT pg_advisory_unlock($1)")
+        .bind(INSTANCE_MODE_LOCK)
+        .execute(pool)
+        .await
+        .expect("advisory unlock");
+}
+
 #[tokio::test]
 async fn non_admin_cannot_patch_instance_settings() {
     let _guard = instance_test_lock().lock().await;
@@ -159,8 +177,9 @@ async fn non_admin_cannot_patch_instance_settings() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
     reset_instance(&pool).await;
-    let router = app(state(pool, redis));
+    let router = app(state(pool.clone(), redis));
     let admin_cookie = register_admin(&router).await;
     let user_email = format!("user-{}@example.com", uuid::Uuid::now_v7());
     let user_response = register_user(&router, &user_email).await;
@@ -198,6 +217,7 @@ async fn non_admin_cannot_patch_instance_settings() {
         .await
         .expect("oneshot");
     assert_eq!(user_patch.status(), StatusCode::FORBIDDEN);
+    unlock_instance_mode(&pool).await;
 }
 
 #[tokio::test]
@@ -212,6 +232,7 @@ async fn closed_registration_blocks_register() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
     reset_instance(&pool).await;
     update_instance(
         &pool,
@@ -222,13 +243,14 @@ async fn closed_registration_blocks_register() {
     )
     .await
     .expect("close registration");
-    let router = app(state(pool, redis));
+    let router = app(state(pool.clone(), redis));
     let email = format!("closed-{}@example.com", uuid::Uuid::now_v7());
     let response = register_user(&router, &email).await;
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
     let body: voxnexus_protocol::ErrorBody =
         serde_json::from_slice(&json_body(response).await).expect("error");
     assert_eq!(body.code, error_codes::PERMISSION_DENIED);
+    unlock_instance_mode(&pool).await;
 }
 
 #[tokio::test]
@@ -243,6 +265,7 @@ async fn single_mode_meta_and_non_admin_create_forbidden() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
     reset_instance(&pool).await;
     update_instance(
         &pool,
@@ -253,7 +276,7 @@ async fn single_mode_meta_and_non_admin_create_forbidden() {
     )
     .await
     .expect("single mode");
-    let router = app(state(pool, redis));
+    let router = app(state(pool.clone(), redis));
 
     let meta = router
         .clone()
@@ -284,9 +307,10 @@ async fn single_mode_meta_and_non_admin_create_forbidden() {
             Request::builder()
                 .method("POST")
                 .uri("/api/v1/communities")
+                .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .header(header::COOKIE, &user_cookie)
-                .body(Body::empty())
+                .body(Body::from(r#"{"name":"Nope"}"#))
                 .expect("request"),
         )
         .await
@@ -299,23 +323,27 @@ async fn single_mode_meta_and_non_admin_create_forbidden() {
             Request::builder()
                 .method("POST")
                 .uri("/api/v1/communities")
+                .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .header(header::COOKIE, &admin_cookie)
-                .body(Body::empty())
+                .body(Body::from(r#"{"name":"Nope"}"#))
                 .expect("request"),
         )
         .await
         .expect("oneshot");
     assert_eq!(admin_create.status(), StatusCode::FORBIDDEN);
+    unlock_instance_mode(&pool).await;
 }
 
 #[tokio::test]
 async fn locked_config_sync_updates_community_creation_mode() {
+    let _guard = instance_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
     reset_instance(&pool).await;
 
     sync_locked_community_creation_mode(&pool, CommunityCreationMode::Single)
@@ -327,15 +355,18 @@ async fn locked_config_sync_updates_community_creation_mode() {
         instance.community_creation_mode,
         CommunityCreationMode::Single
     );
+    unlock_instance_mode(&pool).await;
 }
 
 #[tokio::test]
 async fn oidc_config_sync_updates_instance_row() {
+    let _guard = instance_test_lock().lock().await;
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
     reset_instance(&pool).await;
 
     voxnexus_auth::sync_oidc_from_config(
@@ -353,4 +384,5 @@ async fn oidc_config_sync_updates_instance_row() {
         Some("http://127.0.0.1:9000/application/o/voxnexus/")
     );
     assert_eq!(instance.oidc_client_id.as_deref(), Some("test-client-id"));
+    unlock_instance_mode(&pool).await;
 }

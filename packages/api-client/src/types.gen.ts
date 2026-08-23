@@ -42,16 +42,46 @@ export type ChangePasswordRequest = {
 };
 
 /**
- * Stub acceptance body until F019 implements community persistence.
- */
-export type CommunityCreateAcceptedResponse = {
-    accepted: boolean;
-};
-
-/**
  * Who may create communities on this instance.
  */
 export type CommunityCreationMode = 'open' | 'admin_only' | 'single';
+
+/**
+ * List wrapper for communities the caller belongs to.
+ */
+export type CommunityListResponse = {
+    communities: Array<CommunityResponse>;
+};
+
+/**
+ * Public community representation.
+ */
+export type CommunityResponse = {
+    banner_url?: string | null;
+    created_at: string;
+    description: string;
+    discoverable_on_instance: boolean;
+    icon_url?: string | null;
+    id: string;
+    join_mode: JoinMode;
+    name: string;
+    owner_account_id: string;
+    slug: string;
+    timezone: string;
+    updated_at: string;
+};
+
+/**
+ * Create a community.
+ */
+export type CreateCommunityRequest = {
+    description?: string | null;
+    discoverable_on_instance?: boolean | null;
+    join_mode?: null | JoinMode;
+    name: string;
+    slug?: string | null;
+    timezone?: string | null;
+};
 
 /**
  * JSON error envelope for `/api/v1` and unknown routes.
@@ -83,6 +113,11 @@ export type InstanceSettingsResponse = {
     registration_mode: RegistrationMode;
     updated_at: string;
 };
+
+/**
+ * How accounts may join a community (invites/applications expand in later features).
+ */
+export type JoinMode = 'open' | 'invite' | 'application';
 
 /**
  * Login with email and password.
@@ -163,6 +198,17 @@ export type RegisterRequest = {
  * Who may register new local accounts on this instance.
  */
 export type RegistrationMode = 'open' | 'invite' | 'closed';
+
+/**
+ * Update community settings (owner).
+ */
+export type UpdateCommunityRequest = {
+    description?: string | null;
+    discoverable_on_instance?: boolean | null;
+    join_mode?: null | JoinMode;
+    name?: string | null;
+    timezone?: string | null;
+};
 
 /**
  * Partial update of instance settings (instance admin only).
@@ -406,8 +452,33 @@ export type RegisterResponses = {
 
 export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
 
-export type CreateCommunityData = {
+export type ListCommunitiesData = {
     body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/communities';
+};
+
+export type ListCommunitiesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type ListCommunitiesError = ListCommunitiesErrors[keyof ListCommunitiesErrors];
+
+export type ListCommunitiesResponses = {
+    /**
+     * Membership communities
+     */
+    200: CommunityListResponse;
+};
+
+export type ListCommunitiesResponse = ListCommunitiesResponses[keyof ListCommunitiesResponses];
+
+export type CreateCommunityData = {
+    body: CreateCommunityRequest;
     path?: never;
     query?: never;
     url: '/api/v1/communities';
@@ -422,18 +493,242 @@ export type CreateCommunityErrors = {
      * Creation disallowed by instance policy
      */
     403: ErrorBody;
+    /**
+     * Slug conflict
+     */
+    409: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
 };
 
 export type CreateCommunityError = CreateCommunityErrors[keyof CreateCommunityErrors];
 
 export type CreateCommunityResponses = {
     /**
-     * Creation allowed (stub)
+     * Community created
      */
-    202: CommunityCreateAcceptedResponse;
+    201: CommunityResponse;
 };
 
 export type CreateCommunityResponse = CreateCommunityResponses[keyof CreateCommunityResponses];
+
+export type GetCommunityData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}';
+};
+
+export type GetCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetCommunityError = GetCommunityErrors[keyof GetCommunityErrors];
+
+export type GetCommunityResponses = {
+    /**
+     * Community
+     */
+    200: CommunityResponse;
+};
+
+export type GetCommunityResponse = GetCommunityResponses[keyof GetCommunityResponses];
+
+export type UpdateCommunityData = {
+    body: UpdateCommunityRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}';
+};
+
+export type UpdateCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type UpdateCommunityError = UpdateCommunityErrors[keyof UpdateCommunityErrors];
+
+export type UpdateCommunityResponses = {
+    /**
+     * Updated community
+     */
+    200: CommunityResponse;
+};
+
+export type UpdateCommunityResponse = UpdateCommunityResponses[keyof UpdateCommunityResponses];
+
+export type GetCommunityBannerData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/banner';
+};
+
+export type GetCommunityBannerErrors = {
+    /**
+     * No banner
+     */
+    404: ErrorBody;
+};
+
+export type GetCommunityBannerError = GetCommunityBannerErrors[keyof GetCommunityBannerErrors];
+
+export type GetCommunityBannerResponses = {
+    /**
+     * Image bytes
+     */
+    200: Blob | File;
+};
+
+export type GetCommunityBannerResponse = GetCommunityBannerResponses[keyof GetCommunityBannerResponses];
+
+export type UploadCommunityBannerData = {
+    body?: unknown;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/banner';
+};
+
+export type UploadCommunityBannerErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UploadCommunityBannerError = UploadCommunityBannerErrors[keyof UploadCommunityBannerErrors];
+
+export type UploadCommunityBannerResponses = {
+    /**
+     * Updated community
+     */
+    200: CommunityResponse;
+};
+
+export type UploadCommunityBannerResponse = UploadCommunityBannerResponses[keyof UploadCommunityBannerResponses];
+
+export type GetCommunityIconData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/icon';
+};
+
+export type GetCommunityIconErrors = {
+    /**
+     * No icon
+     */
+    404: ErrorBody;
+};
+
+export type GetCommunityIconError = GetCommunityIconErrors[keyof GetCommunityIconErrors];
+
+export type GetCommunityIconResponses = {
+    /**
+     * Image bytes
+     */
+    200: Blob | File;
+};
+
+export type GetCommunityIconResponse = GetCommunityIconResponses[keyof GetCommunityIconResponses];
+
+export type UploadCommunityIconData = {
+    body?: unknown;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/icon';
+};
+
+export type UploadCommunityIconErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UploadCommunityIconError = UploadCommunityIconErrors[keyof UploadCommunityIconErrors];
+
+export type UploadCommunityIconResponses = {
+    /**
+     * Updated community
+     */
+    200: CommunityResponse;
+};
+
+export type UploadCommunityIconResponse = UploadCommunityIconResponses[keyof UploadCommunityIconResponses];
 
 export type GetInstanceSettingsData = {
     body?: never;

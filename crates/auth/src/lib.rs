@@ -1,5 +1,6 @@
 //! Passwords, sessions, and account persistence.
 
+mod community;
 mod instance;
 mod oidc;
 mod password;
@@ -12,6 +13,12 @@ use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
+pub use community::{
+    count_communities, create_community, ensure_bootstrap_community, first_instance_admin_id,
+    get_community, get_membership, list_communities_for_account, set_community_banner,
+    set_community_icon, slug_taken, slugify, unique_slug, update_community, CommunityPatch,
+    CreateCommunityInput,
+};
 pub use instance::{
     ensure_instance, get_instance, sync_locked_community_creation_mode, sync_oidc_from_config,
     update_instance, InstanceError, InstancePatch, InstanceSeed,
@@ -49,6 +56,8 @@ pub enum AuthError {
     Password(#[from] PasswordError),
     #[error("email already registered")]
     EmailTaken,
+    #[error("community slug already taken")]
+    SlugTaken,
     #[error("issuer and subject already linked")]
     IdentityTaken,
     #[error("registration is closed")]

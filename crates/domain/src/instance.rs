@@ -74,6 +74,8 @@ impl CommunityCreationMode {
     }
 
     /// Whether an authenticated user may call user-driven community creation APIs.
+    ///
+    /// `single` always denies user-driven creates; the bootstrap path seeds the one community.
     #[must_use]
     pub fn user_can_create_community(self, is_instance_admin: bool) -> bool {
         match self {
@@ -81,6 +83,12 @@ impl CommunityCreationMode {
             Self::AdminOnly => is_instance_admin,
             Self::Single => false,
         }
+    }
+
+    /// Whether startup should seed the singleton community (`single` + empty).
+    #[must_use]
+    pub fn needs_bootstrap_community(self, existing_count: i64) -> bool {
+        matches!(self, Self::Single) && existing_count == 0
     }
 }
 

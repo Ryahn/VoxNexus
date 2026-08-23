@@ -302,6 +302,7 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         AuthError::EmailTaken => {
             ApiError::conflict(request_id, "An account with this email already exists.")
         }
+        AuthError::SlugTaken => ApiError::conflict(request_id, "Community slug is already taken."),
         AuthError::IdentityTaken => {
             ApiError::conflict(request_id, "This identity is already linked to an account.")
         }

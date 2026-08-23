@@ -1,11 +1,13 @@
 //! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
 
 use utoipa::OpenApi;
+use voxnexus_domain::JoinMode;
 use voxnexus_protocol::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
-    CommunityCreateAcceptedResponse, ErrorBody, InstanceSettingsResponse, LoginRequest,
-    MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
-    UpdateInstanceSettingsRequest, UpdateProfileRequest,
+    CommunityListResponse, CommunityResponse, CreateCommunityRequest, ErrorBody,
+    InstanceSettingsResponse, LoginRequest, MetaResponse, PresenceEntry, PresenceListResponse,
+    ProfileResponse, RegisterRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
+    UpdateProfileRequest,
 };
 
 use crate::auth;
@@ -36,6 +38,13 @@ use crate::profile;
         instance::get_instance_settings,
         instance::update_instance_settings,
         communities::create_community,
+        communities::list_communities,
+        communities::get_community_by_id,
+        communities::update_community_settings,
+        communities::upload_community_icon,
+        communities::upload_community_banner,
+        communities::get_community_icon,
+        communities::get_community_banner,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -49,7 +58,11 @@ use crate::profile;
         MetaResponse,
         InstanceSettingsResponse,
         UpdateInstanceSettingsRequest,
-        CommunityCreateAcceptedResponse,
+        CreateCommunityRequest,
+        UpdateCommunityRequest,
+        CommunityResponse,
+        CommunityListResponse,
+        JoinMode,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -65,7 +78,7 @@ use crate::profile;
     tags(
         (name = "meta", description = "Unauthenticated instance identity"),
         (name = "instance", description = "Instance settings (instance admin)"),
-        (name = "communities", description = "Community creation policy"),
+        (name = "communities", description = "Communities and settings"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

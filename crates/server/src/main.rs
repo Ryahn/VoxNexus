@@ -113,6 +113,49 @@ async fn run() -> Result<(), i32> {
         );
     }
 
+    if community_creation_mode.needs_bootstrap_community(
+        voxnexus_auth::count_communities(&pool)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "count communities failed");
+                1
+            })?,
+    ) {
+        if let Some(admin_id) = voxnexus_auth::first_instance_admin_id(&pool)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "lookup instance admin for community bootstrap failed");
+                1
+            })?
+        {
+            let name = config
+                .bootstrap_community_name
+                .clone()
+                .unwrap_or_else(|| "Community".to_owned());
+            match voxnexus_auth::ensure_bootstrap_community(&pool, admin_id, &name).await {
+                Ok(Some(community)) => {
+                    tracing::info!(
+                        community_id = %community.id,
+                        slug = %community.slug,
+                        "bootstrap community created for single mode"
+                    );
+                }
+                Ok(None) => {
+                    tracing::info!("community already exists; skipping bootstrap community");
+                }
+                Err(error) => {
+                    tracing::error!(error = %error, "bootstrap community failed");
+                    return Err(1);
+                }
+            }
+        } else {
+            tracing::warn!(
+                "community_creation_mode is single but no instance admin exists yet; \
+                 set BOOTSTRAP_ADMIN_EMAIL/PASSWORD to seed the community"
+            );
+        }
+    }
+
     if let Some(issuer) = config.oidc_issuer.as_ref() {
         voxnexus_auth::sync_oidc_from_config(
             &pool,

@@ -1,5 +1,6 @@
 //! Shared domain types with no I/O.
 
+mod community;
 mod instance;
 mod presence;
 
@@ -7,6 +8,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use community::{Community, CommunityMember, CommunityMemberRole, JoinMode};
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
 pub use presence::{PresenceStatus, PublicPresenceStatus};
 

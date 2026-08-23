@@ -58,6 +58,7 @@ const ENV_KEYS: &[&str] = &[
     "REGISTRATION_OPEN",
     "BOOTSTRAP_ADMIN_EMAIL",
     "BOOTSTRAP_ADMIN_PASSWORD",
+    "BOOTSTRAP_COMMUNITY_NAME",
     "COMMUNITY_CREATION_MODE",
     "COMMUNITY_CREATION_MODE_LOCKED",
     "WEB_DIST",
@@ -99,6 +100,8 @@ pub struct Config {
     pub bootstrap_admin_email: Option<String>,
     /// Password for [`Self::bootstrap_admin_email`]. Secret; both must be set to bootstrap.
     pub bootstrap_admin_password: Option<Secret>,
+    /// Display name for the singleton community when `community_creation_mode` is `single`.
+    pub bootstrap_community_name: Option<String>,
     /// Seeds the singleton instance row when missing. `open`, `admin_only`, or `single`.
     pub community_creation_mode: String,
     /// When true, instance admins cannot PATCH `community_creation_mode`.
@@ -176,6 +179,8 @@ struct RawConfig {
     bootstrap_admin_email: Option<String>,
     #[serde(rename = "BOOTSTRAP_ADMIN_PASSWORD")]
     bootstrap_admin_password: Option<String>,
+    #[serde(rename = "BOOTSTRAP_COMMUNITY_NAME")]
+    bootstrap_community_name: Option<String>,
     #[serde(rename = "COMMUNITY_CREATION_MODE")]
     community_creation_mode: Option<String>,
     #[serde(rename = "COMMUNITY_CREATION_MODE_LOCKED")]
@@ -285,6 +290,7 @@ impl Config {
             )?,
             bootstrap_admin_email: optional_nonempty(raw.bootstrap_admin_email),
             bootstrap_admin_password: optional_secret(raw.bootstrap_admin_password),
+            bootstrap_community_name: optional_nonempty(raw.bootstrap_community_name),
             community_creation_mode: parse_community_creation_mode(raw.community_creation_mode)?,
             community_creation_mode_locked: parse_bool(
                 "COMMUNITY_CREATION_MODE_LOCKED",

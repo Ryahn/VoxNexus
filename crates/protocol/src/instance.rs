@@ -34,9 +34,3 @@ pub struct UpdateInstanceSettingsRequest {
     pub oidc_issuer: Option<Option<String>>,
     pub oidc_client_id: Option<Option<String>>,
 }
-
-/// Stub acceptance body until F019 implements community persistence.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
-pub struct CommunityCreateAcceptedResponse {
-    pub accepted: bool,
-}

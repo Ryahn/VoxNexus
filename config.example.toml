@@ -14,6 +14,7 @@ COOKIE_SECURE = "false"
 # REGISTRATION_OPEN = "true"
 # BOOTSTRAP_ADMIN_EMAIL = "admin@example.com"
 # BOOTSTRAP_ADMIN_PASSWORD = "change-me"
+# BOOTSTRAP_COMMUNITY_NAME = "Community"
 # COMMUNITY_CREATION_MODE = "single"
 # When true, instance admins cannot PATCH community mode; on each startup the mode above is synced into the DB.
 # COMMUNITY_CREATION_MODE_LOCKED = "false"

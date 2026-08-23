@@ -5,7 +5,12 @@ import { useUI } from '../store';
 
 export function CommunityHeader() {
   const activeId = useUI((s) => s.activeCommunity);
-  const community = communities.find((c) => c.id === activeId) ?? communities[0];
+  const community = communities.find((c) => c.id === activeId) ?? {
+    id: activeId,
+    name: 'Community',
+    tag: 'C',
+    accent: '54 210 205',
+  };
   const openMenu = useUI((s) => s.openMenu);
   const setSearchOpen = useUI((s) => s.setSearchOpen);
   const setNotifOpen = useUI((s) => s.setNotifOpen);

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -87,9 +87,74 @@ export const register = <ThrowOnError extends boolean = false>(options: Options<
 });
 
 /**
- * Policy check for user-driven community creation (F017 stub; F019 persists communities).
+ * List communities the caller belongs to.
  */
-export const createCommunity = <ThrowOnError extends boolean = false>(options?: Options<CreateCommunityData, ThrowOnError>): RequestResult<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError> => (options?.client ?? client).post<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError>({ url: '/api/v1/communities', ...options });
+export const listCommunities = <ThrowOnError extends boolean = false>(options?: Options<ListCommunitiesData, ThrowOnError>): RequestResult<ListCommunitiesResponses, ListCommunitiesErrors, ThrowOnError> => (options?.client ?? client).get<ListCommunitiesResponses, ListCommunitiesErrors, ThrowOnError>({ url: '/api/v1/communities', ...options });
+
+/**
+ * Create a community when instance policy allows.
+ */
+export const createCommunity = <ThrowOnError extends boolean = false>(options: Options<CreateCommunityData, ThrowOnError>): RequestResult<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError> => (options.client ?? client).post<CreateCommunityResponses, CreateCommunityErrors, ThrowOnError>({
+    url: '/api/v1/communities',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get one community (members only).
+ */
+export const getCommunity = <ThrowOnError extends boolean = false>(options: Options<GetCommunityData, ThrowOnError>): RequestResult<GetCommunityResponses, GetCommunityErrors, ThrowOnError> => (options.client ?? client).get<GetCommunityResponses, GetCommunityErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}', ...options });
+
+/**
+ * Update community settings (owner only).
+ */
+export const updateCommunity = <ThrowOnError extends boolean = false>(options: Options<UpdateCommunityData, ThrowOnError>): RequestResult<UpdateCommunityResponses, UpdateCommunityErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCommunityResponses, UpdateCommunityErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Serve community banner bytes.
+ */
+export const getCommunityBanner = <ThrowOnError extends boolean = false>(options: Options<GetCommunityBannerData, ThrowOnError>): RequestResult<GetCommunityBannerResponses, GetCommunityBannerErrors, ThrowOnError> => (options.client ?? client).get<GetCommunityBannerResponses, GetCommunityBannerErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/banner', ...options });
+
+/**
+ * Upload community banner (owner).
+ */
+export const uploadCommunityBanner = <ThrowOnError extends boolean = false>(options: Options<UploadCommunityBannerData, ThrowOnError>): RequestResult<UploadCommunityBannerResponses, UploadCommunityBannerErrors, ThrowOnError> => (options.client ?? client).put<UploadCommunityBannerResponses, UploadCommunityBannerErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/communities/{community_id}/banner',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Serve community icon bytes.
+ */
+export const getCommunityIcon = <ThrowOnError extends boolean = false>(options: Options<GetCommunityIconData, ThrowOnError>): RequestResult<GetCommunityIconResponses, GetCommunityIconErrors, ThrowOnError> => (options.client ?? client).get<GetCommunityIconResponses, GetCommunityIconErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/icon', ...options });
+
+/**
+ * Upload community icon (owner).
+ */
+export const uploadCommunityIcon = <ThrowOnError extends boolean = false>(options: Options<UploadCommunityIconData, ThrowOnError>): RequestResult<UploadCommunityIconResponses, UploadCommunityIconErrors, ThrowOnError> => (options.client ?? client).put<UploadCommunityIconResponses, UploadCommunityIconErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/communities/{community_id}/icon',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
 
 /**
  * Read instance settings (instance admin only).
