@@ -100,6 +100,19 @@ async fn run() -> Result<(), i32> {
         1
     })?;
 
+    if config.community_creation_mode_locked {
+        voxnexus_auth::sync_locked_community_creation_mode(&pool, community_creation_mode)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "locked community creation mode sync failed");
+                1
+            })?;
+        tracing::info!(
+            mode = community_creation_mode.as_str(),
+            "synced locked community creation mode from config"
+        );
+    }
+
     let redis = start_redis(config.redis_url.as_str()).await?;
     let storage = start_storage(&config).await?;
     let search = start_typesense(&config).await?;
@@ -138,6 +151,7 @@ async fn run() -> Result<(), i32> {
         search,
         web_dist: config.web_dist.clone(),
         resume_store: std::sync::Arc::new(voxnexus_realtime::ResumeStore::new()),
+        presence_hub: std::sync::Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
     });
     let serve = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

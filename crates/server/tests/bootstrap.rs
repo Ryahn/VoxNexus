@@ -36,6 +36,7 @@ fn state(pool: PgPool, redis: RedisConn) -> AppState {
         search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
         web_dist: None,
         resume_store: Arc::new(voxnexus_realtime::ResumeStore::new()),
+        presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
     }
 }
 

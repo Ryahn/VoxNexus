@@ -9,7 +9,9 @@ use axum::http::{header, Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 use voxnexus::http::{app, AppState};
-use voxnexus_auth::{session_cookie_name, update_instance, InstancePatch};
+use voxnexus_auth::{
+    session_cookie_name, sync_locked_community_creation_mode, update_instance, InstancePatch,
+};
 use voxnexus_db::{connect_and_migrate, test_database_url, PgPool};
 use voxnexus_domain::{CommunityCreationMode, RegistrationMode};
 use voxnexus_jobs::{connect, RedisConn};
@@ -39,6 +41,7 @@ fn state(pool: PgPool, redis: RedisConn) -> AppState {
         search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
         web_dist: None,
         resume_store: Arc::new(voxnexus_realtime::ResumeStore::new()),
+        presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
     }
 }
 
@@ -301,4 +304,24 @@ async fn single_mode_meta_and_non_admin_create_forbidden() {
         .await
         .expect("oneshot");
     assert_eq!(admin_create.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn locked_config_sync_updates_community_creation_mode() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    reset_instance(&pool).await;
+
+    sync_locked_community_creation_mode(&pool, CommunityCreationMode::Single)
+        .await
+        .expect("sync");
+
+    let instance = voxnexus_auth::get_instance(&pool).await.expect("instance");
+    assert_eq!(
+        instance.community_creation_mode,
+        CommunityCreationMode::Single
+    );
 }

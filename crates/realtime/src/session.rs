@@ -8,21 +8,29 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use futures_util::{SinkExt, StreamExt};
 use rand::RngCore;
+use tokio::sync::mpsc;
 use tokio::time::{interval, MissedTickBehavior};
 use uuid::Uuid;
+use voxnexus_domain::PresenceStatus;
 use voxnexus_protocol::{
     DevPingPayload, DevPongPayload, Envelope, EventType, HeartbeatAckPayload, HeartbeatPayload,
-    HelloPayload, IdentifyPayload, InvalidSessionPayload, ReadyPayload, ResumePayload,
-    ResumedPayload, DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
+    HelloPayload, IdentifyPayload, InvalidSessionPayload, PresenceSyncPayload, ReadyPayload,
+    ResumePayload, ResumedPayload, StatusUpdatePayload, DEFAULT_HEARTBEAT_INTERVAL_MS,
+    GATEWAY_PROTOCOL_VERSION,
 };
 
+use crate::presence::{PresenceHub, PresenceHubMessage};
 use crate::resume::ResumeStore;
 
 /// Multiply heartbeat interval by this for the disconnect deadline.
 pub const HEARTBEAT_TIMEOUT_FACTOR: u32 = 2;
 
+/// Persist gateway status changes (optional in unit tests).
+pub type PresenceChangeHandler =
+    Arc<dyn Fn(Uuid, Option<PresenceStatus>, Option<String>) + Send + Sync>;
+
 /// Options for one gateway WebSocket session.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GatewaySessionOptions {
     pub heartbeat_interval: Duration,
     /// Account bound from the HTTP session cookie on the upgrade.
@@ -30,6 +38,11 @@ pub struct GatewaySessionOptions {
     /// When true, `DEV_PING` is accepted after identify (local protocol work).
     pub allow_dev_ping: bool,
     pub resume_store: Arc<ResumeStore>,
+    pub presence_hub: Arc<PresenceHub>,
+    pub stored_presence: PresenceStatus,
+    pub stored_custom_status: String,
+    /// Persist presence changes from the gateway (optional in unit tests).
+    pub on_presence_change: Option<PresenceChangeHandler>,
 }
 
 impl Default for GatewaySessionOptions {
@@ -39,6 +52,10 @@ impl Default for GatewaySessionOptions {
             account_id: Uuid::nil(),
             allow_dev_ping: false,
             resume_store: Arc::new(ResumeStore::new()),
+            presence_hub: Arc::new(PresenceHub::with_default_grace()),
+            stored_presence: PresenceStatus::Online,
+            stored_custom_status: String::new(),
+            on_presence_change: None,
         }
     }
 }
@@ -52,11 +69,13 @@ pub fn missed_heartbeat(last_client_heartbeat: Instant, interval: Duration, now:
 /// Drive one gateway connection until close or heartbeat timeout.
 pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
     let session_id = Uuid::now_v7();
+    let conn_id = Uuid::now_v7();
     let mut sequence: u64 = 0;
     let mut last_client_heartbeat = Instant::now();
     let mut identified = false;
     let mut resume_token = String::new();
 
+    let (hub_tx, mut hub_rx) = mpsc::unbounded_channel();
     let (mut sink, mut stream) = socket.split();
 
     sequence += 1;
@@ -90,6 +109,8 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             &mut identified,
                             &mut resume_token,
                             session_id,
+                            conn_id,
+                            &hub_tx,
                             &options,
                             &text,
                         ).await {
@@ -111,6 +132,29 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                     }
                 }
             }
+            maybe_hub = hub_rx.recv() => {
+                match maybe_hub {
+                    Some(PresenceHubMessage::Sync(presences)) => {
+                        sequence += 1;
+                        let envelope = Envelope::new(
+                            sequence,
+                            EventType::PresenceSync,
+                            PresenceSyncPayload { presences },
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::Update(payload)) => {
+                        sequence += 1;
+                        let envelope = Envelope::new(sequence, EventType::PresenceUpdate, payload);
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    None => break,
+                }
+            }
             _ = tick.tick() => {
                 if missed_heartbeat(last_client_heartbeat, options.heartbeat_interval, Instant::now()) {
                     tracing::debug!(%session_id, "gateway heartbeat timeout");
@@ -119,6 +163,13 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                 }
             }
         }
+    }
+
+    if identified {
+        options
+            .presence_hub
+            .disconnect(options.account_id, conn_id)
+            .await;
     }
 }
 
@@ -130,6 +181,8 @@ async fn handle_text(
     identified: &mut bool,
     resume_token: &mut String,
     session_id: Uuid,
+    conn_id: Uuid,
+    hub_tx: &mpsc::UnboundedSender<PresenceHubMessage>,
     options: &GatewaySessionOptions,
     text: &str,
 ) -> Result<(), bool> {
@@ -174,6 +227,25 @@ async fn handle_text(
                 },
             );
             send_envelope(sink, &ready).await.map_err(|()| true)?;
+            let sync = options
+                .presence_hub
+                .connect(
+                    options.account_id,
+                    conn_id,
+                    hub_tx.clone(),
+                    options.stored_presence,
+                    options.stored_custom_status.clone(),
+                )
+                .await;
+            *sequence += 1;
+            let sync_envelope = Envelope::new(
+                *sequence,
+                EventType::PresenceSync,
+                PresenceSyncPayload { presences: sync },
+            );
+            send_envelope(sink, &sync_envelope)
+                .await
+                .map_err(|()| true)?;
             Ok(())
         }
         EventType::Resume => {
@@ -203,6 +275,25 @@ async fn handle_text(
                     let resumed =
                         Envelope::new(*sequence, EventType::Resumed, ResumedPayload { session_id });
                     send_envelope(sink, &resumed).await.map_err(|()| true)?;
+                    let sync = options
+                        .presence_hub
+                        .connect(
+                            options.account_id,
+                            conn_id,
+                            hub_tx.clone(),
+                            options.stored_presence,
+                            options.stored_custom_status.clone(),
+                        )
+                        .await;
+                    *sequence += 1;
+                    let sync_envelope = Envelope::new(
+                        *sequence,
+                        EventType::PresenceSync,
+                        PresenceSyncPayload { presences: sync },
+                    );
+                    send_envelope(sink, &sync_envelope)
+                        .await
+                        .map_err(|()| true)?;
                     Ok(())
                 }
                 _ => {
@@ -233,13 +324,39 @@ async fn handle_text(
             send_envelope(sink, &reply).await.map_err(|()| true)?;
             Ok(())
         }
+        EventType::StatusUpdate if *identified => {
+            let request: StatusUpdatePayload =
+                serde_json::from_value(envelope.payload).unwrap_or_default();
+            if request.status.is_none() && request.custom_status.is_none() {
+                return Err(false);
+            }
+            if let Some(handler) = &options.on_presence_change {
+                handler(
+                    options.account_id,
+                    request.status,
+                    request.custom_status.clone(),
+                );
+            }
+            options
+                .presence_hub
+                .update(
+                    options.account_id,
+                    request.status,
+                    request.custom_status.as_deref(),
+                )
+                .await;
+            Ok(())
+        }
         EventType::Hello
         | EventType::HeartbeatAck
         | EventType::Ready
         | EventType::Resumed
         | EventType::InvalidSession
         | EventType::DevPong
-        | EventType::DevPing => Err(false),
+        | EventType::DevPing
+        | EventType::StatusUpdate
+        | EventType::PresenceUpdate
+        | EventType::PresenceSync => Err(false),
     }
 }
 

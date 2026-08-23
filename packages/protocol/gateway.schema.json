@@ -14,9 +14,12 @@
     "hello_payload",
     "identify_payload",
     "invalid_session_payload",
+    "presence_sync_payload",
+    "presence_update_payload",
     "ready_payload",
     "resume_payload",
-    "resumed_payload"
+    "resumed_payload",
+    "status_update_payload"
   ],
   "properties": {
     "dev_ping_payload": {
@@ -49,6 +52,12 @@
     "invalid_session_payload": {
       "$ref": "#/definitions/InvalidSessionPayload"
     },
+    "presence_sync_payload": {
+      "$ref": "#/definitions/PresenceSyncPayload"
+    },
+    "presence_update_payload": {
+      "$ref": "#/definitions/PresenceUpdatePayload"
+    },
     "ready_payload": {
       "$ref": "#/definitions/ReadyPayload"
     },
@@ -57,6 +66,9 @@
     },
     "resumed_payload": {
       "$ref": "#/definitions/ResumedPayload"
+    },
+    "status_update_payload": {
+      "$ref": "#/definitions/StatusUpdatePayload"
     }
   },
   "definitions": {
@@ -154,7 +166,10 @@
         "RESUMED",
         "INVALID_SESSION",
         "DEV_PING",
-        "DEV_PONG"
+        "DEV_PONG",
+        "STATUS_UPDATE",
+        "PRESENCE_UPDATE",
+        "PRESENCE_SYNC"
       ]
     },
     "HeartbeatAckPayload": {
@@ -205,6 +220,63 @@
           "type": "boolean"
         }
       }
+    },
+    "PresenceStatus": {
+      "description": "Stored preference and gateway-reported status while connected.",
+      "type": "string",
+      "enum": [
+        "online",
+        "idle",
+        "dnd",
+        "invisible"
+      ]
+    },
+    "PresenceSyncPayload": {
+      "description": "Server → client bulk presence after identify.",
+      "type": "object",
+      "required": [
+        "presences"
+      ],
+      "properties": {
+        "presences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PresenceUpdatePayload"
+          }
+        }
+      }
+    },
+    "PresenceUpdatePayload": {
+      "description": "Server → client presence change for one account.",
+      "type": "object",
+      "required": [
+        "account_id",
+        "custom_status",
+        "status"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "custom_status": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/PublicPresenceStatus"
+        }
+      }
+    },
+    "PublicPresenceStatus": {
+      "description": "Presence exposed to clients (offline when disconnected or hidden from viewers).",
+      "type": "string",
+      "enum": [
+        "online",
+        "idle",
+        "dnd",
+        "invisible",
+        "offline"
+      ]
     },
     "ReadyPayload": {
       "description": "Server → client ready after successful identify.",
@@ -261,6 +333,28 @@
         "session_id": {
           "type": "string",
           "format": "uuid"
+        }
+      }
+    },
+    "StatusUpdatePayload": {
+      "description": "Client → server presence / custom status change (F018).",
+      "type": "object",
+      "properties": {
+        "custom_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PresenceStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     }

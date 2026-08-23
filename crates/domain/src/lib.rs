@@ -1,12 +1,14 @@
 //! Shared domain types with no I/O.
 
 mod instance;
+mod presence;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
+pub use presence::{PresenceStatus, PublicPresenceStatus};
 
 /// Product crate name (workspace placeholder until modules grow).
 pub const CRATE_NAME: &str = "voxnexus-domain";
@@ -63,6 +65,8 @@ pub struct Profile {
     pub account_id: Uuid,
     pub display_name: String,
     pub bio: String,
+    pub presence_status: PresenceStatus,
+    pub custom_status: String,
     pub avatar_object_id: Option<Uuid>,
     pub banner_object_id: Option<Uuid>,
     pub updated_at: DateTime<Utc>,

@@ -11,6 +11,7 @@ workspace = true
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
+schemars = { version = "0.8", features = ["chrono", "uuid1"] }
 serde = { version = "1", features = ["derive"] }
 uuid = { version = "1", features = ["serde", "v7"] }
 utoipa = { version = "5", features = ["macros"] }

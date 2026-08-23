@@ -606,6 +606,37 @@
         }
       }
     },
+    "/api/v1/presence": {
+      "get": {
+        "tags": [
+          "presence"
+        ],
+        "summary": "List accounts currently online on this instance (invisible omitted).",
+        "operationId": "listPresence",
+        "responses": {
+          "200": {
+            "description": "Online accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresenceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/profiles/{account_id}": {
       "get": {
         "tags": [
@@ -974,6 +1005,52 @@
           }
         }
       },
+      "PresenceEntry": {
+        "type": "object",
+        "description": "Instance-wide presence snapshot (F018).",
+        "required": [
+          "account_id",
+          "status",
+          "custom_status"
+        ],
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "custom_status": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicPresenceStatus"
+          }
+        }
+      },
+      "PresenceListResponse": {
+        "type": "object",
+        "description": "Online users visible on this instance.",
+        "required": [
+          "presences"
+        ],
+        "properties": {
+          "presences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PresenceEntry"
+            }
+          }
+        }
+      },
+      "PresenceStatus": {
+        "type": "string",
+        "description": "Stored preference and gateway-reported status while connected.",
+        "enum": [
+          "online",
+          "idle",
+          "dnd",
+          "invisible"
+        ]
+      },
       "ProfileResponse": {
         "type": "object",
         "description": "Public profile fields.",
@@ -981,6 +1058,8 @@
           "account_id",
           "display_name",
           "bio",
+          "presence_status",
+          "custom_status",
           "has_avatar",
           "has_banner"
         ],
@@ -1004,6 +1083,9 @@
           "bio": {
             "type": "string"
           },
+          "custom_status": {
+            "type": "string"
+          },
           "display_name": {
             "type": "string"
           },
@@ -1012,8 +1094,22 @@
           },
           "has_banner": {
             "type": "boolean"
+          },
+          "presence_status": {
+            "$ref": "#/components/schemas/PublicPresenceStatus"
           }
         }
+      },
+      "PublicPresenceStatus": {
+        "type": "string",
+        "description": "Presence exposed to clients (offline when disconnected or hidden from viewers).",
+        "enum": [
+          "online",
+          "idle",
+          "dnd",
+          "invisible",
+          "offline"
+        ]
       },
       "RegisterRequest": {
         "type": "object",
@@ -1098,9 +1194,15 @@
       },
       "UpdateProfileRequest": {
         "type": "object",
-        "description": "Patch display name and/or bio.",
+        "description": "Patch display name, bio, presence, and/or custom status.",
         "properties": {
           "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "custom_status": {
             "type": [
               "string",
               "null"
@@ -1110,6 +1212,16 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "presence_status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PresenceStatus"
+              }
             ]
           }
         }
@@ -1136,6 +1248,10 @@
     {
       "name": "profiles",
       "description": "Account profiles, avatars, and banners"
+    },
+    {
+      "name": "presence",
+      "description": "Instance-wide online presence"
     }
   ]
 }

@@ -103,6 +103,27 @@ export type MetaResponse = {
 };
 
 /**
+ * Instance-wide presence snapshot (F018).
+ */
+export type PresenceEntry = {
+    account_id: string;
+    custom_status: string;
+    status: PublicPresenceStatus;
+};
+
+/**
+ * Online users visible on this instance.
+ */
+export type PresenceListResponse = {
+    presences: Array<PresenceEntry>;
+};
+
+/**
+ * Stored preference and gateway-reported status while connected.
+ */
+export type PresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible';
+
+/**
  * Public profile fields.
  */
 export type ProfileResponse = {
@@ -110,10 +131,17 @@ export type ProfileResponse = {
     avatar_url?: string | null;
     banner_url?: string | null;
     bio: string;
+    custom_status: string;
     display_name: string;
     has_avatar: boolean;
     has_banner: boolean;
+    presence_status: PublicPresenceStatus;
 };
+
+/**
+ * Presence exposed to clients (offline when disconnected or hidden from viewers).
+ */
+export type PublicPresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible' | 'offline';
 
 /**
  * Register with email and password.
@@ -142,11 +170,13 @@ export type UpdateInstanceSettingsRequest = {
 };
 
 /**
- * Patch display name and/or bio.
+ * Patch display name, bio, presence, and/or custom status.
  */
 export type UpdateProfileRequest = {
     bio?: string | null;
+    custom_status?: string | null;
     display_name?: string | null;
+    presence_status?: null | PresenceStatus;
 };
 
 export type LoginData = {
@@ -532,6 +562,31 @@ export type GetMetaResponses = {
 };
 
 export type GetMetaResponse = GetMetaResponses[keyof GetMetaResponses];
+
+export type ListPresenceData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/presence';
+};
+
+export type ListPresenceErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+};
+
+export type ListPresenceError = ListPresenceErrors[keyof ListPresenceErrors];
+
+export type ListPresenceResponses = {
+    /**
+     * Online accounts
+     */
+    200: PresenceListResponse;
+};
+
+export type ListPresenceResponse = ListPresenceResponses[keyof ListPresenceResponses];
 
 export type GetProfileData = {
     body?: never;

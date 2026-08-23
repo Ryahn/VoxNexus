@@ -44,7 +44,7 @@ pub async fn get_my_profile(
     let profile = ensure_profile(&state.pool, user.account_id)
         .await
         .map_err(|error| map_db(&error, request_id))?;
-    Ok(Json(to_response(&profile)))
+    Ok(Json(to_response(&state, &profile, user.account_id).await))
 }
 
 /// Update display name and/or bio.
@@ -67,11 +67,15 @@ pub async fn update_my_profile(
     ValidatedJson(body): ValidatedJson<UpdateProfileRequest>,
 ) -> Result<Json<ProfileResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
-    if body.display_name.is_none() && body.bio.is_none() {
+    if body.display_name.is_none()
+        && body.bio.is_none()
+        && body.presence_status.is_none()
+        && body.custom_status.is_none()
+    {
         return Err(ApiError::new(
             StatusCode::BAD_REQUEST,
             error_codes::VALIDATION_ERROR,
-            "Provide display_name and/or bio.",
+            "Provide at least one field to update.",
             None,
             request_id,
         ));
@@ -81,10 +85,24 @@ pub async fn update_my_profile(
         user.account_id,
         body.display_name.as_deref(),
         body.bio.as_deref(),
+        body.presence_status,
+        body.custom_status.as_deref(),
     )
     .await
-    .map_err(|error| map_db(&error, request_id))?;
-    Ok(Json(to_response(&profile)))
+    .map_err(|error| map_db(&error, request_id.clone()))?;
+
+    if body.presence_status.is_some() || body.custom_status.is_some() {
+        state
+            .presence_hub
+            .update(
+                user.account_id,
+                body.presence_status,
+                body.custom_status.as_deref(),
+            )
+            .await;
+    }
+
+    Ok(Json(to_response(&state, &profile, user.account_id).await))
 }
 
 /// Upload avatar image (raw body; Content-Type ignored in favor of magic bytes).
@@ -146,7 +164,7 @@ pub async fn upload_my_banner(
 )]
 pub async fn get_profile_by_id(
     State(state): State<AppState>,
-    _user: AuthUser,
+    user: AuthUser,
     headers: HeaderMap,
     Path(account_id): Path<Uuid>,
 ) -> Result<Json<ProfileResponse>, ApiError> {
@@ -155,7 +173,7 @@ pub async fn get_profile_by_id(
         .await
         .map_err(|error| map_db(&error, request_id.clone()))?
         .ok_or_else(|| ApiError::not_found(request_id))?;
-    Ok(Json(to_response(&profile)))
+    Ok(Json(to_response(&state, &profile, user.account_id).await))
 }
 
 /// Stream an account's avatar (authenticated).
@@ -314,7 +332,7 @@ async fn upload_image(
         .await
         .map_err(|error| map_db(&error, request_id.clone()))?
         .ok_or_else(|| ApiError::not_found(request_id))?;
-    Ok(Json(to_response(&profile)))
+    Ok(Json(to_response(state, &profile, account_id).await))
 }
 
 async fn serve_slot(
@@ -373,11 +391,17 @@ async fn serve_slot(
     }
 }
 
-fn to_response(profile: &Profile) -> ProfileResponse {
+async fn to_response(state: &AppState, profile: &Profile, viewer_id: Uuid) -> ProfileResponse {
+    let (presence_status, custom_status) = state
+        .presence_hub
+        .view(profile.account_id, viewer_id, &profile.custom_status)
+        .await;
     ProfileResponse {
         account_id: profile.account_id,
         display_name: profile.display_name.clone(),
         bio: profile.bio.clone(),
+        presence_status,
+        custom_status,
         has_avatar: profile.avatar_object_id.is_some(),
         has_banner: profile.banner_object_id.is_some(),
         avatar_url: profile

@@ -29,6 +29,7 @@ import { roles } from '../data/roles';
 import { me } from '../data/users';
 import { readApiErrorMessage } from '../lib/apiError';
 import { bannerGradient } from '../lib/avatar';
+import { type PresenceState, presenceLabel, usePresence } from '../presence';
 import { useUI } from '../store';
 import { Avatar } from './ui/Avatar';
 import { Portal } from './ui/Portal';
@@ -639,8 +640,11 @@ function AccountPanel() {
 }
 
 function ProfilePanel() {
+  const { setStatus, online } = usePresence();
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
+  const [customStatus, setCustomStatus] = useState('');
+  const [presenceStatus, setPresenceStatus] = useState<PresenceState>('online');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -656,6 +660,8 @@ function ProfilePanel() {
         }
         setDisplayName(result.data.display_name);
         setBio(result.data.bio);
+        setCustomStatus(result.data.custom_status);
+        setPresenceStatus(result.data.presence_status as PresenceState);
         setAvatarUrl(result.data.avatar_url ?? null);
         setBannerUrl(result.data.banner_url ?? null);
       })
@@ -674,7 +680,11 @@ function ProfilePanel() {
     setError(null);
     try {
       const result = await updateMyProfile({
-        body: { display_name: displayName, bio },
+        body: {
+          display_name: displayName,
+          bio,
+          custom_status: customStatus,
+        },
         ...credentials,
       });
       if (!result.data) {
@@ -771,6 +781,51 @@ function ProfilePanel() {
             className="mt-1 w-full resize-none rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
           />
         </label>
+        <div>
+          <span className="kicker">Status</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(['online', 'idle', 'dnd', 'invisible'] as PresenceState[]).map((status) => (
+              <button
+                key={status}
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setPresenceStatus(status);
+                  void setStatus(status, customStatus);
+                }}
+                className={`rounded-md border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors ${
+                  presenceStatus === status
+                    ? 'border-accent/50 bg-accent/15 text-accent'
+                    : 'border-line-2/60 text-ink-2 hover:text-ink'
+                }`}
+              >
+                {presenceLabel(status)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="block">
+          <span className="kicker">Custom status</span>
+          <input
+            value={customStatus}
+            maxLength={128}
+            onChange={(event) => setCustomStatus(event.target.value)}
+            placeholder="What are you up to?"
+            className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+          />
+        </label>
+        {online.length > 0 ? (
+          <div className="rounded-lg border border-line-2/50 bg-app/60 p-3">
+            <div className="kicker mb-2">Online on this instance</div>
+            <ul className="space-y-1 text-[12.5px] text-ink-2">
+              {online.map((entry) => (
+                <li key={entry.accountId} className="truncate font-mono text-3xs">
+                  {entry.accountId.slice(0, 8)}… — {presenceLabel(entry.status, entry.customStatus)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="grid gap-2 sm:grid-cols-2">
           <label className="block">
             <span className="kicker">Avatar</span>

@@ -5,6 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
+use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
 
 /// Negotiated WebSocket subprotocol.
 pub const GATEWAY_SUBPROTOCOL: &str = "voxnexus.gateway.v1";
@@ -29,6 +30,9 @@ pub enum EventType {
     InvalidSession,
     DevPing,
     DevPong,
+    StatusUpdate,
+    PresenceUpdate,
+    PresenceSync,
 }
 
 /// Subscription / fanout scope (connection-level events omit this).
@@ -126,6 +130,27 @@ pub struct DevPongPayload {
     pub nonce: String,
 }
 
+/// Client → server presence / custom status change (F018).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct StatusUpdatePayload {
+    pub status: Option<PresenceStatus>,
+    pub custom_status: Option<String>,
+}
+
+/// Server → client presence change for one account.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PresenceUpdatePayload {
+    pub account_id: Uuid,
+    pub status: PublicPresenceStatus,
+    pub custom_status: String,
+}
+
+/// Server → client bulk presence after identify.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PresenceSyncPayload {
+    pub presences: Vec<PresenceUpdatePayload>,
+}
+
 /// Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
 #[derive(Debug, Clone, JsonSchema)]
 pub struct GatewaySchemaCatalog {
@@ -142,6 +167,9 @@ pub struct GatewaySchemaCatalog {
     pub invalid_session_payload: InvalidSessionPayload,
     pub dev_ping_payload: DevPingPayload,
     pub dev_pong_payload: DevPongPayload,
+    pub status_update_payload: StatusUpdatePayload,
+    pub presence_update_payload: PresenceUpdatePayload,
+    pub presence_sync_payload: PresenceSyncPayload,
 }
 
 /// Root JSON Schema for gateway types (deterministic export).

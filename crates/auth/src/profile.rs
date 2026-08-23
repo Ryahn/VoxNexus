@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
-use voxnexus_domain::{ObjectMeta, Profile};
+use voxnexus_domain::{ObjectMeta, PresenceStatus, Profile};
 
 use crate::AuthError;
 
@@ -36,7 +36,8 @@ pub async fn ensure_profile(pool: &PgPool, account_id: Uuid) -> Result<Profile, 
 pub async fn get_profile(pool: &PgPool, account_id: Uuid) -> Result<Option<Profile>, AuthError> {
     let row = sqlx::query_as::<_, ProfileRow>(
         r"
-        SELECT account_id, display_name, bio, avatar_object_id, banner_object_id, updated_at
+        SELECT account_id, display_name, bio, presence_status, custom_status,
+               avatar_object_id, banner_object_id, updated_at
         FROM profiles
         WHERE account_id = $1
         ",
@@ -57,22 +58,29 @@ pub async fn update_profile(
     account_id: Uuid,
     display_name: Option<&str>,
     bio: Option<&str>,
+    presence_status: Option<PresenceStatus>,
+    custom_status: Option<&str>,
 ) -> Result<Profile, AuthError> {
     ensure_profile(pool, account_id).await?;
     let now = Utc::now();
+    let presence_str = presence_status.map(voxnexus_domain::PresenceStatus::as_str);
     sqlx::query(
         r"
         UPDATE profiles
         SET
             display_name = COALESCE($2, display_name),
             bio = COALESCE($3, bio),
-            updated_at = $4
+            presence_status = COALESCE($4, presence_status),
+            custom_status = COALESCE($5, custom_status),
+            updated_at = $6
         WHERE account_id = $1
         ",
     )
     .bind(account_id)
     .bind(display_name)
     .bind(bio)
+    .bind(presence_str)
+    .bind(custom_status)
     .bind(now)
     .execute(pool)
     .await?;
@@ -228,6 +236,8 @@ struct ProfileRow {
     account_id: Uuid,
     display_name: String,
     bio: String,
+    presence_status: String,
+    custom_status: String,
     avatar_object_id: Option<Uuid>,
     banner_object_id: Option<Uuid>,
     updated_at: DateTime<Utc>,
@@ -239,6 +249,9 @@ impl ProfileRow {
             account_id: self.account_id,
             display_name: self.display_name,
             bio: self.bio,
+            presence_status: PresenceStatus::parse(&self.presence_status)
+                .unwrap_or(PresenceStatus::Online),
+            custom_status: self.custom_status,
             avatar_object_id: self.avatar_object_id,
             banner_object_id: self.banner_object_id,
             updated_at: self.updated_at,

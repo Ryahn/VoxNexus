@@ -3820,6 +3820,7 @@ name = "voxnexus-domain"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "schemars",
  "serde",
  "utoipa",
  "uuid",
@@ -3873,6 +3874,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+ "voxnexus-domain",
  "voxnexus-protocol",
 ]
 

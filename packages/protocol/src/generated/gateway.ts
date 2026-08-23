@@ -20,7 +20,24 @@ export type EventType =
   | 'RESUMED'
   | 'INVALID_SESSION'
   | 'DEV_PING'
-  | 'DEV_PONG';
+  | 'DEV_PONG'
+  | 'STATUS_UPDATE'
+  | 'PRESENCE_UPDATE'
+  | 'PRESENCE_SYNC';
+/**
+ * Presence exposed to clients (offline when disconnected or hidden from viewers).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "PublicPresenceStatus".
+ */
+export type PublicPresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible' | 'offline';
+/**
+ * Stored preference and gateway-reported status while connected.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "PresenceStatus".
+ */
+export type PresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible';
 
 /**
  * Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
@@ -36,9 +53,12 @@ export interface GatewaySchemaCatalog {
   hello_payload: HelloPayload;
   identify_payload: IdentifyPayload;
   invalid_session_payload: InvalidSessionPayload;
+  presence_sync_payload: PresenceSyncPayload;
+  presence_update_payload: PresenceUpdatePayload;
   ready_payload: ReadyPayload;
   resume_payload: ResumePayload;
   resumed_payload: ResumedPayload;
+  status_update_payload: StatusUpdatePayload;
   [k: string]: unknown;
 }
 /**
@@ -137,6 +157,28 @@ export interface InvalidSessionPayload {
   [k: string]: unknown;
 }
 /**
+ * Server → client bulk presence after identify.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "PresenceSyncPayload".
+ */
+export interface PresenceSyncPayload {
+  presences: PresenceUpdatePayload[];
+  [k: string]: unknown;
+}
+/**
+ * Server → client presence change for one account.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "PresenceUpdatePayload".
+ */
+export interface PresenceUpdatePayload {
+  account_id: string;
+  custom_status: string;
+  status: PublicPresenceStatus;
+  [k: string]: unknown;
+}
+/**
  * Server → client ready after successful identify.
  *
  * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
@@ -168,5 +210,16 @@ export interface ResumePayload {
  */
 export interface ResumedPayload {
   session_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Client → server presence / custom status change (F018).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "StatusUpdatePayload".
+ */
+export interface StatusUpdatePayload {
+  custom_status?: string | null;
+  status?: PresenceStatus | null;
   [k: string]: unknown;
 }

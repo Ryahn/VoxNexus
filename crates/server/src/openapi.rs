@@ -4,14 +4,15 @@ use utoipa::OpenApi;
 use voxnexus_protocol::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
     CommunityCreateAcceptedResponse, ErrorBody, InstanceSettingsResponse, LoginRequest,
-    MetaResponse, ProfileResponse, RegisterRequest, UpdateInstanceSettingsRequest,
-    UpdateProfileRequest,
+    MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
+    UpdateInstanceSettingsRequest, UpdateProfileRequest,
 };
 
 use crate::auth;
 use crate::communities;
 use crate::http;
 use crate::instance;
+use crate::presence;
 use crate::profile;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
@@ -38,7 +39,8 @@ use crate::profile;
         profile::upload_my_banner,
         profile::get_profile_by_id,
         profile::get_profile_avatar,
-        profile::get_profile_banner
+        profile::get_profile_banner,
+        presence::list_presence
     ),
     components(schemas(
         MetaResponse,
@@ -53,14 +55,17 @@ use crate::profile;
         AccountResponse,
         AuthSessionResponse,
         ProfileResponse,
-        UpdateProfileRequest
+        UpdateProfileRequest,
+        PresenceEntry,
+        PresenceListResponse
     )),
     tags(
         (name = "meta", description = "Unauthenticated instance identity"),
         (name = "instance", description = "Instance settings (instance admin)"),
         (name = "communities", description = "Community creation policy"),
         (name = "auth", description = "Registration, login, logout, and session"),
-        (name = "profiles", description = "Account profiles, avatars, and banners")
+        (name = "profiles", description = "Account profiles, avatars, and banners"),
+        (name = "presence", description = "Instance-wide online presence")
     )
 )]
 pub struct ApiDoc;

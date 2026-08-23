@@ -10,4 +10,7 @@ export type {
   Envelope,
   EventType,
   HelloPayload,
+  PresenceSyncPayload,
+  PresenceUpdatePayload,
+  StatusUpdatePayload,
 } from './generated/gateway';

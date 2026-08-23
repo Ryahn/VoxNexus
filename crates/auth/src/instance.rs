@@ -68,6 +68,38 @@ pub async fn ensure_instance(pool: &PgPool, seed: &InstanceSeed) -> Result<(), I
     Ok(())
 }
 
+/// Apply operator-configured community creation mode when PATCH is locked.
+///
+/// Called on every startup after [`ensure_instance`] so `COMMUNITY_CREATION_MODE` in
+/// config/env stays authoritative without wiping the database.
+///
+/// # Errors
+///
+/// Returns database errors, or [`InstanceError::InvalidRow`] if the singleton row is missing.
+pub async fn sync_locked_community_creation_mode(
+    pool: &PgPool,
+    mode: CommunityCreationMode,
+) -> Result<(), InstanceError> {
+    let now = Utc::now();
+    let result = sqlx::query(
+        r"
+        UPDATE instances
+        SET community_creation_mode = $2, updated_at = $3
+        WHERE id = $1
+        ",
+    )
+    .bind(DEFAULT_INSTANCE_ID)
+    .bind(mode.as_str())
+    .bind(now)
+    .execute(pool)
+    .await?;
+
+    if result.rows_affected() == 0 {
+        return Err(InstanceError::Db(sqlx::Error::RowNotFound));
+    }
+    Ok(())
+}
+
 /// Load the singleton instance row.
 ///
 /// # Errors

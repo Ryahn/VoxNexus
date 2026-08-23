@@ -12,7 +12,8 @@ use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
 pub use instance::{
-    ensure_instance, get_instance, update_instance, InstanceError, InstancePatch, InstanceSeed,
+    ensure_instance, get_instance, sync_locked_community_creation_mode, update_instance,
+    InstanceError, InstancePatch, InstanceSeed,
 };
 pub use password::{hash_password, verify_password, PasswordError};
 pub use profile::{

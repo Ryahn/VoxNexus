@@ -42,6 +42,7 @@ fn state(pool: PgPool, redis: RedisConn, allow_dev_ping: bool, heartbeat: Durati
         search: Arc::new(MemorySearchEngine::new_ready()) as Arc<dyn SearchEngine>,
         web_dist: None,
         resume_store: Arc::new(ResumeStore::new()),
+        presence_hub: Arc::new(voxnexus_realtime::PresenceHub::with_default_grace()),
     }
 }
 
@@ -175,6 +176,13 @@ async fn gateway_identify_ready_and_heartbeat() {
     assert_eq!(ready_payload.session_id, hello_payload.session_id);
     assert!(!ready_payload.resume_token.is_empty());
 
+    let sync_msg = ws.next().await.expect("sync frame").expect("ok");
+    let Message::Text(sync_text) = sync_msg else {
+        panic!("expected text sync, got {sync_msg:?}");
+    };
+    let sync: Envelope = serde_json::from_str(&sync_text).expect("sync envelope");
+    assert_eq!(sync.event_type, EventType::PresenceSync);
+
     let heartbeat = Envelope::new(0, EventType::Heartbeat, HeartbeatPayload {});
     ws.send(Message::Text(
         serde_json::to_string(&heartbeat).expect("ser").into(),
@@ -252,6 +260,12 @@ async fn gateway_resume_after_reconnect() {
     };
     let ready: Envelope = serde_json::from_str(&ready_text).expect("ready");
     let ready_payload: ReadyPayload = serde_json::from_value(ready.payload).expect("payload");
+    let sync_msg = ws.next().await.expect("sync").expect("ok");
+    let Message::Text(sync_text) = sync_msg else {
+        panic!("sync");
+    };
+    let sync: Envelope = serde_json::from_str(&sync_text).expect("sync");
+    assert_eq!(sync.event_type, EventType::PresenceSync);
     ws.close(None).await.ok();
 
     let (mut ws2, _) = tokio_tungstenite::connect_async(connect(&cookie))
@@ -279,6 +293,12 @@ async fn gateway_resume_after_reconnect() {
     let resumed: Envelope = serde_json::from_str(&resumed_text).expect("resumed");
     assert_eq!(resumed.event_type, EventType::Resumed);
     let _: ResumedPayload = serde_json::from_value(resumed.payload).expect("payload");
+    let sync_msg = ws2.next().await.expect("sync2").expect("ok");
+    let Message::Text(sync_text) = sync_msg else {
+        panic!("sync2");
+    };
+    let sync: Envelope = serde_json::from_str(&sync_text).expect("sync2");
+    assert_eq!(sync.event_type, EventType::PresenceSync);
     ws2.close(None).await.ok();
 }
 

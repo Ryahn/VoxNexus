@@ -10,6 +10,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { AuthContext } from './auth';
 import { MetaProvider } from './meta';
+import { PresenceProvider } from './presence';
 import { Shell } from './Shell';
 
 const credentials = { credentials: 'include' as const };
@@ -99,7 +100,9 @@ export function App() {
   return (
     <MetaProvider>
       <AuthContext.Provider value={{ session, refresh, signOut }}>
-        <Shell />
+        <PresenceProvider>
+          <Shell />
+        </PresenceProvider>
       </AuthContext.Provider>
     </MetaProvider>
   );

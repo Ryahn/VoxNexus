@@ -30,7 +30,7 @@ use voxnexus_config::Url;
 use voxnexus_db::PgPool;
 use voxnexus_jobs::RedisConn;
 use voxnexus_protocol::MetaResponse;
-use voxnexus_realtime::ResumeStore;
+use voxnexus_realtime::{PresenceHub, ResumeStore};
 use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
 
@@ -72,6 +72,8 @@ pub struct AppState {
     pub web_dist: Option<PathBuf>,
     /// In-memory gateway resume tokens.
     pub resume_store: Arc<ResumeStore>,
+    /// Live instance presence (F018).
+    pub presence_hub: Arc<PresenceHub>,
 }
 
 #[derive(Serialize)]
@@ -163,6 +165,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::profile::get_profile_by_id))
         .routes(routes!(crate::profile::get_profile_avatar))
         .routes(routes!(crate::profile::get_profile_banner))
+        .routes(routes!(crate::presence::list_presence))
 }
 
 /// Request-id, body limit, compression, CORS, and CSRF Origin check.

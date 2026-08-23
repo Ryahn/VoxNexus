@@ -15,9 +15,10 @@ base64 = "0.22"
 futures-util = { version = "0.3", features = ["sink"] }
 rand = "0.8"
 serde_json = "1"
-tokio = { version = "1", features = ["macros", "time"] }
+tokio = { version = "1", features = ["macros", "time", "sync"] }
 tracing = "0.1"
 uuid = { version = "1", features = ["v7"] }
+voxnexus-domain = { path = "../domain" }
 voxnexus-protocol = { path = "../protocol" }
 
 [dev-dependencies]
