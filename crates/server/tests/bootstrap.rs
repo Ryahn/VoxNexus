@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use axum::body::Body;
 use axum::http::{header, Request, StatusCode};
@@ -92,8 +92,28 @@ async fn instance_admin_count(pool: &PgPool) -> i64 {
     .expect("count")
 }
 
+fn bootstrap_test_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+/// CI shares one Postgres across integration tests; reset admin flag so bootstrap behavior is observable.
+async fn clear_instance_admins(pool: &PgPool) {
+    sqlx::query(
+        r"
+        UPDATE accounts
+        SET is_instance_admin = FALSE, updated_at = NOW()
+        WHERE is_instance_admin = TRUE AND deleted_at IS NULL
+        ",
+    )
+    .execute(pool)
+    .await
+    .expect("clear instance admins");
+}
+
 #[tokio::test]
 async fn second_registered_user_is_not_instance_admin() {
+    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -103,6 +123,7 @@ async fn second_registered_user_is_not_instance_admin() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    clear_instance_admins(&pool).await;
     let router = app(state(pool.clone(), redis));
 
     let first_email = format!("first-{}@example.com", uuid::Uuid::now_v7());
@@ -127,6 +148,7 @@ async fn second_registered_user_is_not_instance_admin() {
 
 #[tokio::test]
 async fn concurrent_bootstrap_creates_single_instance_admin() {
+    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
@@ -136,6 +158,7 @@ async fn concurrent_bootstrap_creates_single_instance_admin() {
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    clear_instance_admins(&pool).await;
     let router = app(state(pool.clone(), redis));
 
     let email_a = format!("a-{}@example.com", uuid::Uuid::now_v7());
@@ -156,11 +179,13 @@ async fn concurrent_bootstrap_creates_single_instance_admin() {
 
 #[tokio::test]
 async fn bootstrap_env_creates_instance_admin_once() {
+    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    clear_instance_admins(&pool).await;
     let email = format!("bootstrap-{}@example.com", uuid::Uuid::now_v7());
 
     let created = bootstrap_instance_admin(&pool, &email, "bootstrap-password")
@@ -178,11 +203,13 @@ async fn bootstrap_env_creates_instance_admin_once() {
 
 #[tokio::test]
 async fn bootstrap_env_admin_blocks_registration_bootstrap_for_others() {
+    let _guard = bootstrap_test_lock().lock().expect("bootstrap test lock");
     let Some(url) = test_database_url() else {
         eprintln!("skipping: DATABASE_URL_TEST required");
         return;
     };
     let pool = connect_and_migrate(&url).await.expect("migrate");
+    clear_instance_admins(&pool).await;
     let admin_email = format!("env-admin-{}@example.com", uuid::Uuid::now_v7());
     bootstrap_instance_admin(&pool, &admin_email, "bootstrap-password")
         .await
