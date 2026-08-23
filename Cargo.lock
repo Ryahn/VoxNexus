@@ -4337,6 +4337,7 @@ dependencies = [
  "chrono",
  "password-hash",
  "rand 0.8.7",
+ "serde_json",
  "sha2 0.10.9",
  "sqlx",
  "thiserror 2.0.20",
@@ -4382,6 +4383,7 @@ dependencies = [
  "chrono",
  "schemars 0.8.22",
  "serde",
+ "serde_json",
  "utoipa",
  "uuid",
 ]

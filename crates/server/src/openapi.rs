@@ -1,23 +1,25 @@
 //! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
 
 use utoipa::OpenApi;
-use voxnexus_domain::{CommunityMemberRole, JoinMode, SpaceVisibility};
+use voxnexus_domain::{ChannelType, CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
     AccountResponse, AddSpaceMemberRequest, AuthSessionResponse, CategoryListResponse,
-    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, CommunityListResponse,
-    CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse, CreateCategoryRequest,
-    CreateCommunityRequest, CreateInviteRequest, CreateSpaceRequest, DeleteCommunityRequest,
-    ErrorBody, InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
-    InvitePreviewResponse, InviteResponse, ListCategoriesQuery, LoginRequest, MetaResponse,
-    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
-    ReorderCategoriesRequest, SpaceListResponse, SpaceMemberListResponse, SpaceMemberResponse,
-    SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest, UpdateCommunityRequest,
-    UpdateInstanceSettingsRequest, UpdateInviteRequest, UpdateNicknameRequest,
-    UpdateProfileRequest, UpdateSpaceRequest,
+    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, ChannelListResponse,
+    ChannelResponse, CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse,
+    CommunityResponse, CreateCategoryRequest, CreateChannelRequest, CreateCommunityRequest,
+    CreateInviteRequest, CreateSpaceRequest, DeleteCommunityRequest, ErrorBody,
+    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
+    InvitePreviewResponse, InviteResponse, ListCategoriesQuery, ListChannelsQuery, LoginRequest,
+    MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
+    ReorderCategoriesRequest, ReorderChannelsRequest, SpaceListResponse, SpaceMemberListResponse,
+    SpaceMemberResponse, SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest,
+    UpdateChannelRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
+    UpdateInviteRequest, UpdateNicknameRequest, UpdateProfileRequest, UpdateSpaceRequest,
 };
 
 use crate::auth;
 use crate::categories;
+use crate::channels;
 use crate::communities;
 use crate::http;
 use crate::instance;
@@ -82,6 +84,15 @@ use crate::spaces;
         categories::get_category_by_id,
         categories::update_category,
         categories::delete_category,
+        channels::create_channel,
+        channels::list_channels,
+        channels::reorder_channels,
+        channels::get_channel_by_id,
+        channels::update_channel,
+        channels::delete_channel,
+        channels::archive_channel,
+        channels::restore_channel,
+        channels::clone_channel,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -127,6 +138,13 @@ use crate::spaces;
         UpdateCategoryRequest,
         ReorderCategoriesRequest,
         ListCategoriesQuery,
+        ChannelResponse,
+        ChannelListResponse,
+        CreateChannelRequest,
+        UpdateChannelRequest,
+        ReorderChannelsRequest,
+        ListChannelsQuery,
+        ChannelType,
         ErrorBody,
         RegisterRequest,
         LoginRequest,
@@ -146,6 +164,7 @@ use crate::spaces;
         (name = "invites", description = "Community invite links"),
         (name = "spaces", description = "Spaces (groups) within a community"),
         (name = "categories", description = "Channel sidebar categories"),
+        (name = "channels", description = "Channels within a community"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

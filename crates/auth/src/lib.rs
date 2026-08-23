@@ -1,6 +1,7 @@
 //! Passwords, sessions, and account persistence.
 
 mod category;
+mod channel;
 mod community;
 mod instance;
 mod invite;
@@ -19,6 +20,10 @@ use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 pub use category::{
     create_category, delete_category, get_category, list_categories, update_category,
     CategoryPatch, CreateCategoryInput,
+};
+pub use channel::{
+    archive_channel, clone_channel, create_channel, delete_channel, get_channel, list_channels,
+    restore_channel, update_channel, ChannelPatch, CreateChannelInput,
 };
 pub use community::{
     count_communities, create_community, delete_community, ensure_bootstrap_community,
@@ -87,6 +92,8 @@ pub enum AuthError {
     SpaceJoinNotAllowed,
     #[error("category scope mismatch")]
     CategoryScopeMismatch,
+    #[error("channel scope mismatch")]
+    ChannelScopeMismatch,
     #[error("community join not allowed")]
     JoinNotAllowed,
     #[error("community owner cannot leave")]

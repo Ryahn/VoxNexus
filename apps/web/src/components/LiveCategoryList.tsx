@@ -1,16 +1,21 @@
 import {
   type CategoryResponse,
+  type ChannelResponse,
   getCommunity,
   listCategories,
+  listChannels,
   reorderCategories,
 } from '@voxnexus/api-client';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
+import { apiChannelToUi } from '../lib/apiChannel';
 import { readApiErrorMessage } from '../lib/apiError';
-import type { Category } from '../types';
+import { useUI } from '../store';
+import type { Category, Channel } from '../types';
 import { ChannelCategory } from './ChannelCategory';
 import { CreateCategoryModal } from './CreateCategoryModal';
+import { CreateChannelModal } from './CreateChannelModal';
 
 type Props = {
   communityId: string;
@@ -24,15 +29,22 @@ function toSidebarCategory(cat: CategoryResponse, spaceId: string): Category {
 
 export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
   const { session } = useAuth();
+  const setChannel = useUI((s) => s.setChannel);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [channels, setChannels] = useState<ChannelResponse[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [createChannelFor, setCreateChannelFor] = useState<string | null>(null);
   const dragId = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [listResult, communityResult] = await Promise.all([
+    const [listResult, channelResult, communityResult] = await Promise.all([
       listCategories({
+        path: { community_id: communityId },
+        query: { space_id: spaceId },
+      }),
+      listChannels({
         path: { community_id: communityId },
         query: { space_id: spaceId },
       }),
@@ -41,10 +53,18 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
     if (listResult.error || !listResult.data) {
       setError(readApiErrorMessage(listResult.error, 'Could not load categories.'));
       setCategories([]);
+      setChannels([]);
+      return;
+    }
+    if (channelResult.error || !channelResult.data) {
+      setError(readApiErrorMessage(channelResult.error, 'Could not load channels.'));
+      setCategories(listResult.data.categories);
+      setChannels([]);
       return;
     }
     setError(null);
     setCategories(listResult.data.categories);
+    setChannels(channelResult.data.channels);
     setIsOwner(communityResult.data?.owner_account_id === session.account.id);
   }, [communityId, spaceId, session.account.id]);
 
@@ -80,6 +100,9 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
     void reorder(next);
   };
 
+  const channelsForCategory = (categoryId: string): Channel[] =>
+    channels.filter((ch) => ch.category_id === categoryId).map((ch) => apiChannelToUi(ch, spaceId));
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between px-3 pb-1 pt-2">
@@ -90,7 +113,7 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
           <button
             type="button"
             title="Create category"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => setCreateCategoryOpen(true)}
             className="rounded p-0.5 text-ink-4 hover:bg-surface-hover/70 hover:text-ink"
           >
             <Plus size={14} strokeWidth={2} />
@@ -100,7 +123,7 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {categories.length === 0 ? (
           <p className="px-2 py-2 text-[12px] text-ink-4">
-            No categories yet. Channels arrive in F027.
+            No categories yet. Create one to add channels.
           </p>
         ) : (
           categories.map((cat) => {
@@ -120,7 +143,11 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
                 }}
                 className={isOwner ? 'cursor-grab active:cursor-grabbing' : undefined}
               >
-                <ChannelCategory category={sidebarCat} channels={[]} />
+                <ChannelCategory
+                  category={sidebarCat}
+                  channels={channelsForCategory(cat.id)}
+                  onAddChannel={isOwner ? () => setCreateChannelFor(cat.id) : undefined}
+                />
               </div>
             );
           })
@@ -128,12 +155,26 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
       </div>
       {error ? <p className="px-2 pb-2 text-[11px] text-dnd">{error}</p> : null}
       <CreateCategoryModal
-        open={createOpen}
+        open={createCategoryOpen}
         communityId={communityId}
         spaceId={spaceId}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => setCreateCategoryOpen(false)}
         onCreated={() => void refresh()}
       />
+      {createChannelFor ? (
+        <CreateChannelModal
+          open
+          communityId={communityId}
+          spaceId={spaceId}
+          categoryId={createChannelFor}
+          onClose={() => setCreateChannelFor(null)}
+          onCreated={(channelId) => {
+            setCreateChannelFor(null);
+            setChannel(channelId);
+            void refresh();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

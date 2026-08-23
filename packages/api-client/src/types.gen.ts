@@ -69,6 +69,36 @@ export type ChangePasswordRequest = {
 };
 
 /**
+ * Channels in a list scope.
+ */
+export type ChannelListResponse = {
+    channels: Array<ChannelResponse>;
+};
+
+/**
+ * Public channel representation.
+ */
+export type ChannelResponse = {
+    archived_at?: string | null;
+    category_id?: string | null;
+    community_id: string;
+    config: unknown;
+    created_at: string;
+    id: string;
+    name: string;
+    position: number;
+    space_id?: string | null;
+    topic: string;
+    type: ChannelType;
+    updated_at: string;
+};
+
+/**
+ * Channel type registry (F027). Typed features attach in later milestones.
+ */
+export type ChannelType = 'text' | 'voice' | 'forum' | 'announcement' | 'calendar' | 'scheduling' | 'docs' | 'tasks' | 'media' | 'stage' | 'streaming';
+
+/**
  * Who may create communities on this instance.
  */
 export type CommunityCreationMode = 'open' | 'admin_only' | 'single';
@@ -131,6 +161,18 @@ export type CommunityResponse = {
 export type CreateCategoryRequest = {
     name: string;
     space_id?: string | null;
+};
+
+/**
+ * Create a channel in a community scope.
+ */
+export type CreateChannelRequest = {
+    category_id?: string | null;
+    config?: unknown;
+    name: string;
+    space_id?: string | null;
+    topic?: string | null;
+    type: ChannelType;
 };
 
 /**
@@ -267,6 +309,15 @@ export type ListCategoriesQuery = {
 };
 
 /**
+ * List channels query.
+ */
+export type ListChannelsQuery = {
+    category_id?: string | null;
+    include_archived?: boolean | null;
+    space_id?: string | null;
+};
+
+/**
  * Login with email and password.
  */
 export type LoginRequest = {
@@ -355,6 +406,13 @@ export type ReorderCategoriesRequest = {
 };
 
 /**
+ * Reorder channels in a scope by id list.
+ */
+export type ReorderChannelsRequest = {
+    channel_ids: Array<string>;
+};
+
+/**
  * Spaces in a community, ordered by position.
  */
 export type SpaceListResponse = {
@@ -420,6 +478,18 @@ export type UpdateCategoryRequest = {
     name?: string | null;
     position?: number | null;
     space_id?: string | null;
+};
+
+/**
+ * Update a channel.
+ */
+export type UpdateChannelRequest = {
+    category_id?: string | null;
+    config?: unknown;
+    name?: string | null;
+    position?: number | null;
+    space_id?: string | null;
+    topic?: string | null;
 };
 
 /**
@@ -818,6 +888,234 @@ export type UpdateCategoryResponses = {
 
 export type UpdateCategoryResponse = UpdateCategoryResponses[keyof UpdateCategoryResponses];
 
+export type DeleteChannelData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}';
+};
+
+export type DeleteChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteChannelError = DeleteChannelErrors[keyof DeleteChannelErrors];
+
+export type DeleteChannelResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteChannelResponse = DeleteChannelResponses[keyof DeleteChannelResponses];
+
+export type GetChannelData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}';
+};
+
+export type GetChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetChannelError = GetChannelErrors[keyof GetChannelErrors];
+
+export type GetChannelResponses = {
+    /**
+     * Channel
+     */
+    200: ChannelResponse;
+};
+
+export type GetChannelResponse = GetChannelResponses[keyof GetChannelResponses];
+
+export type UpdateChannelData = {
+    body: UpdateChannelRequest;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}';
+};
+
+export type UpdateChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateChannelError = UpdateChannelErrors[keyof UpdateChannelErrors];
+
+export type UpdateChannelResponses = {
+    /**
+     * Updated channel
+     */
+    200: ChannelResponse;
+};
+
+export type UpdateChannelResponse = UpdateChannelResponses[keyof UpdateChannelResponses];
+
+export type ArchiveChannelData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/archive';
+};
+
+export type ArchiveChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ArchiveChannelError = ArchiveChannelErrors[keyof ArchiveChannelErrors];
+
+export type ArchiveChannelResponses = {
+    /**
+     * Archived channel
+     */
+    200: ChannelResponse;
+};
+
+export type ArchiveChannelResponse = ArchiveChannelResponses[keyof ArchiveChannelResponses];
+
+export type CloneChannelData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/clone';
+};
+
+export type CloneChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type CloneChannelError = CloneChannelErrors[keyof CloneChannelErrors];
+
+export type CloneChannelResponses = {
+    /**
+     * Cloned channel
+     */
+    201: ChannelResponse;
+};
+
+export type CloneChannelResponse = CloneChannelResponses[keyof CloneChannelResponses];
+
+export type RestoreChannelData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/restore';
+};
+
+export type RestoreChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type RestoreChannelError = RestoreChannelErrors[keyof RestoreChannelErrors];
+
+export type RestoreChannelResponses = {
+    /**
+     * Restored channel
+     */
+    200: ChannelResponse;
+};
+
+export type RestoreChannelResponse = RestoreChannelResponses[keyof RestoreChannelResponses];
+
 export type ListCommunitiesData = {
     body?: never;
     path?: never;
@@ -1147,6 +1445,128 @@ export type ReorderCategoriesResponses = {
 };
 
 export type ReorderCategoriesResponse = ReorderCategoriesResponses[keyof ReorderCategoriesResponses];
+
+export type ListChannelsData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: {
+        space_id?: string;
+        category_id?: string;
+        include_archived?: boolean;
+    };
+    url: '/api/v1/communities/{community_id}/channels';
+};
+
+export type ListChannelsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListChannelsError = ListChannelsErrors[keyof ListChannelsErrors];
+
+export type ListChannelsResponses = {
+    /**
+     * Channel list
+     */
+    200: ChannelListResponse;
+};
+
+export type ListChannelsResponse = ListChannelsResponses[keyof ListChannelsResponses];
+
+export type CreateChannelData = {
+    body: CreateChannelRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/channels';
+};
+
+export type CreateChannelErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type CreateChannelError = CreateChannelErrors[keyof CreateChannelErrors];
+
+export type CreateChannelResponses = {
+    /**
+     * Channel created
+     */
+    201: ChannelResponse;
+};
+
+export type CreateChannelResponse = CreateChannelResponses[keyof CreateChannelResponses];
+
+export type ReorderChannelsData = {
+    body: ReorderChannelsRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/channels/reorder';
+};
+
+export type ReorderChannelsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type ReorderChannelsError = ReorderChannelsErrors[keyof ReorderChannelsErrors];
+
+export type ReorderChannelsResponses = {
+    /**
+     * Reordered
+     */
+    200: ChannelListResponse;
+};
+
+export type ReorderChannelsResponse = ReorderChannelsResponses[keyof ReorderChannelsResponses];
 
 export type DeleteCommunityData = {
     body: DeleteCommunityRequest;

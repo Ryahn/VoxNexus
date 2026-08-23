@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub use community::{
-    ChannelCategory, Community, CommunityInvite, CommunityMember, CommunityMemberRole, JoinMode,
-    Space, SpaceMember, SpaceVisibility,
+    Channel, ChannelCategory, ChannelType, Community, CommunityInvite, CommunityMember,
+    CommunityMemberRole, JoinMode, Space, SpaceMember, SpaceVisibility,
 };
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
 pub use presence::{PresenceStatus, PublicPresenceStatus};

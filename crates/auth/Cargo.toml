@@ -24,6 +24,7 @@ sqlx = { version = "0.8", default-features = false, features = [
     "chrono",
     "macros",
 ] }
+serde_json = "1"
 thiserror = "2"
 uuid = { version = "1", features = ["v7"] }
 voxnexus-domain = { path = "../domain" }

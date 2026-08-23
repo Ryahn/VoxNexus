@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, AddSpaceMemberData, AddSpaceMemberErrors, AddSpaceMemberResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteCommunityData, DeleteCommunityErrors, DeleteCommunityResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCategoryData, GetCategoryErrors, GetCategoryResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, JoinSpaceData, JoinSpaceErrors, JoinSpaceResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, LeaveSpaceData, LeaveSpaceErrors, LeaveSpaceResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListSpaceMembersData, ListSpaceMembersErrors, ListSpaceMembersResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveSpaceMemberData, RemoveSpaceMemberErrors, RemoveSpaceMemberResponses, ReorderCategoriesData, ReorderCategoriesErrors, ReorderCategoriesResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, TransferCommunityData, TransferCommunityErrors, TransferCommunityResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, AddSpaceMemberData, AddSpaceMemberErrors, AddSpaceMemberResponses, ArchiveChannelData, ArchiveChannelErrors, ArchiveChannelResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CloneChannelData, CloneChannelErrors, CloneChannelResponses, CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateChannelData, CreateChannelErrors, CreateChannelResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteChannelData, DeleteChannelErrors, DeleteChannelResponses, DeleteCommunityData, DeleteCommunityErrors, DeleteCommunityResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCategoryData, GetCategoryErrors, GetCategoryResponses, GetChannelData, GetChannelErrors, GetChannelResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, JoinSpaceData, JoinSpaceErrors, JoinSpaceResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, LeaveSpaceData, LeaveSpaceErrors, LeaveSpaceResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListChannelsData, ListChannelsErrors, ListChannelsResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListSpaceMembersData, ListSpaceMembersErrors, ListSpaceMembersResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveSpaceMemberData, RemoveSpaceMemberErrors, RemoveSpaceMemberResponses, ReorderCategoriesData, ReorderCategoriesErrors, ReorderCategoriesResponses, ReorderChannelsData, ReorderChannelsErrors, ReorderChannelsResponses, RestoreChannelData, RestoreChannelErrors, RestoreChannelResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, TransferCommunityData, TransferCommunityErrors, TransferCommunityResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateChannelData, UpdateChannelErrors, UpdateChannelResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -109,6 +109,43 @@ export const updateCategory = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
+ * Delete a channel (owner until F029).
+ */
+export const deleteChannel = <ThrowOnError extends boolean = false>(options: Options<DeleteChannelData, ThrowOnError>): RequestResult<DeleteChannelResponses, DeleteChannelErrors, ThrowOnError> => (options.client ?? client).delete<DeleteChannelResponses, DeleteChannelErrors, ThrowOnError>({ url: '/api/v1/channels/{channel_id}', ...options });
+
+/**
+ * Get one channel.
+ */
+export const getChannel = <ThrowOnError extends boolean = false>(options: Options<GetChannelData, ThrowOnError>): RequestResult<GetChannelResponses, GetChannelErrors, ThrowOnError> => (options.client ?? client).get<GetChannelResponses, GetChannelErrors, ThrowOnError>({ url: '/api/v1/channels/{channel_id}', ...options });
+
+/**
+ * Update a channel (owner until F029).
+ */
+export const updateChannel = <ThrowOnError extends boolean = false>(options: Options<UpdateChannelData, ThrowOnError>): RequestResult<UpdateChannelResponses, UpdateChannelErrors, ThrowOnError> => (options.client ?? client).patch<UpdateChannelResponses, UpdateChannelErrors, ThrowOnError>({
+    url: '/api/v1/channels/{channel_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archive a channel (hide from default lists).
+ */
+export const archiveChannel = <ThrowOnError extends boolean = false>(options: Options<ArchiveChannelData, ThrowOnError>): RequestResult<ArchiveChannelResponses, ArchiveChannelErrors, ThrowOnError> => (options.client ?? client).post<ArchiveChannelResponses, ArchiveChannelErrors, ThrowOnError>({ url: '/api/v1/channels/{channel_id}/archive', ...options });
+
+/**
+ * Clone channel shell (no messages).
+ */
+export const cloneChannel = <ThrowOnError extends boolean = false>(options: Options<CloneChannelData, ThrowOnError>): RequestResult<CloneChannelResponses, CloneChannelErrors, ThrowOnError> => (options.client ?? client).post<CloneChannelResponses, CloneChannelErrors, ThrowOnError>({ url: '/api/v1/channels/{channel_id}/clone', ...options });
+
+/**
+ * Restore an archived channel.
+ */
+export const restoreChannel = <ThrowOnError extends boolean = false>(options: Options<RestoreChannelData, ThrowOnError>): RequestResult<RestoreChannelResponses, RestoreChannelErrors, ThrowOnError> => (options.client ?? client).post<RestoreChannelResponses, RestoreChannelErrors, ThrowOnError>({ url: '/api/v1/channels/{channel_id}/restore', ...options });
+
+/**
  * List communities the caller belongs to.
  */
 export const listCommunities = <ThrowOnError extends boolean = false>(options?: Options<ListCommunitiesData, ThrowOnError>): RequestResult<ListCommunitiesResponses, ListCommunitiesErrors, ThrowOnError> => (options?.client ?? client).get<ListCommunitiesResponses, ListCommunitiesErrors, ThrowOnError>({ url: '/api/v1/communities', ...options });
@@ -182,6 +219,35 @@ export const createCategory = <ThrowOnError extends boolean = false>(options: Op
  */
 export const reorderCategories = <ThrowOnError extends boolean = false>(options: Options<ReorderCategoriesData, ThrowOnError>): RequestResult<ReorderCategoriesResponses, ReorderCategoriesErrors, ThrowOnError> => (options.client ?? client).post<ReorderCategoriesResponses, ReorderCategoriesErrors, ThrowOnError>({
     url: '/api/v1/communities/{community_id}/categories/reorder',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List channels in a community scope.
+ */
+export const listChannels = <ThrowOnError extends boolean = false>(options: Options<ListChannelsData, ThrowOnError>): RequestResult<ListChannelsResponses, ListChannelsErrors, ThrowOnError> => (options.client ?? client).get<ListChannelsResponses, ListChannelsErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/channels', ...options });
+
+/**
+ * Create a channel (owner / manage_channels until F029).
+ */
+export const createChannel = <ThrowOnError extends boolean = false>(options: Options<CreateChannelData, ThrowOnError>): RequestResult<CreateChannelResponses, CreateChannelErrors, ThrowOnError> => (options.client ?? client).post<CreateChannelResponses, CreateChannelErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/channels',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reorder channels in a scope by id list (owner).
+ */
+export const reorderChannels = <ThrowOnError extends boolean = false>(options: Options<ReorderChannelsData, ThrowOnError>): RequestResult<ReorderChannelsResponses, ReorderChannelsErrors, ThrowOnError> => (options.client ?? client).post<ReorderChannelsResponses, ReorderChannelsErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/channels/reorder',
     ...options,
     headers: {
         'Content-Type': 'application/json',

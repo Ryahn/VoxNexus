@@ -3,6 +3,7 @@
 pub mod auth;
 pub mod auth_middleware;
 pub mod categories;
+pub mod channels;
 pub mod communities;
 pub mod csrf;
 pub mod error;

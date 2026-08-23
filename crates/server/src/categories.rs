@@ -165,12 +165,8 @@ pub async fn reorder_categories(
                 "All categories must belong to the same scope.",
             ));
         }
-        let position = i32::try_from(index).map_err(|_| {
-            validation(
-                request_id.clone(),
-                "Category order index is out of range.",
-            )
-        })?;
+        let position = i32::try_from(index)
+            .map_err(|_| validation(request_id.clone(), "Category order index is out of range."))?;
         persist_update(
             &state.pool,
             *category_id,

@@ -324,6 +324,7 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         | AuthError::OwnerCannotLeave
         | AuthError::NotCommunityOwner
         | AuthError::CategoryScopeMismatch
+        | AuthError::ChannelScopeMismatch
         | AuthError::InviteNotFound
         | AuthError::InviteExpired
         | AuthError::InviteExhausted

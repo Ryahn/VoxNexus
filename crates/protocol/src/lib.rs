@@ -2,6 +2,7 @@
 
 mod auth;
 mod category;
+mod channel;
 mod community;
 mod error;
 mod gateway;
@@ -18,6 +19,10 @@ pub use auth::{
 pub use category::{
     CategoryListResponse, CategoryResponse, CreateCategoryRequest, ListCategoriesQuery,
     ReorderCategoriesRequest, UpdateCategoryRequest,
+};
+pub use channel::{
+    ChannelListResponse, ChannelResponse, CreateChannelRequest, ListChannelsQuery,
+    ReorderChannelsRequest, UpdateChannelRequest,
 };
 pub use community::{
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,

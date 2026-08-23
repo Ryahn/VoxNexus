@@ -6,9 +6,11 @@ import { ChannelItem } from './ChannelItem';
 export function ChannelCategory({
   category,
   channels,
+  onAddChannel,
 }: {
   category: Category;
   channels: Channel[];
+  onAddChannel?: () => void;
 }) {
   const collapsed = useUI((s) => s.collapsedCats[category.id]);
   const toggle = useUI((s) => s.toggleCat);
@@ -31,13 +33,16 @@ export function ChannelCategory({
           />
           <span className="kicker group-hover:text-ink-2">{category.name}</span>
         </button>
-        <button
-          type="button"
-          aria-label={`Create channel in ${category.name}`}
-          className="grid h-4 w-4 place-items-center rounded text-ink-4 opacity-0 transition hover:text-ink-2 group-hover:opacity-100"
-        >
-          <Plus size={13} />
-        </button>
+        {onAddChannel ? (
+          <button
+            type="button"
+            onClick={onAddChannel}
+            aria-label={`Create channel in ${category.name}`}
+            className="grid h-4 w-4 place-items-center rounded text-ink-4 opacity-0 transition hover:text-ink-2 group-hover:opacity-100"
+          >
+            <Plus size={13} />
+          </button>
+        ) : null}
       </div>
       <div className="flex flex-col gap-px pl-1">
         {visible.map((c) => (

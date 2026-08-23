@@ -177,3 +177,74 @@ pub struct ChannelCategory {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// Channel type registry (F027). Typed features attach in later milestones.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ChannelType {
+    Text,
+    Voice,
+    Forum,
+    Announcement,
+    Calendar,
+    Scheduling,
+    Docs,
+    Tasks,
+    Media,
+    Stage,
+    Streaming,
+}
+
+impl ChannelType {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Text => "text",
+            Self::Voice => "voice",
+            Self::Forum => "forum",
+            Self::Announcement => "announcement",
+            Self::Calendar => "calendar",
+            Self::Scheduling => "scheduling",
+            Self::Docs => "docs",
+            Self::Tasks => "tasks",
+            Self::Media => "media",
+            Self::Stage => "stage",
+            Self::Streaming => "streaming",
+        }
+    }
+
+    #[must_use]
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "text" => Some(Self::Text),
+            "voice" => Some(Self::Voice),
+            "forum" => Some(Self::Forum),
+            "announcement" => Some(Self::Announcement),
+            "calendar" => Some(Self::Calendar),
+            "scheduling" => Some(Self::Scheduling),
+            "docs" => Some(Self::Docs),
+            "tasks" => Some(Self::Tasks),
+            "media" => Some(Self::Media),
+            "stage" => Some(Self::Stage),
+            "streaming" => Some(Self::Streaming),
+            _ => None,
+        }
+    }
+}
+
+/// A channel within a community (optional Space / category scope).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Channel {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub space_id: Option<Uuid>,
+    pub category_id: Option<Uuid>,
+    pub channel_type: ChannelType,
+    pub name: String,
+    pub topic: String,
+    pub position: i32,
+    pub archived_at: Option<DateTime<Utc>>,
+    pub config: serde_json::Value,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
