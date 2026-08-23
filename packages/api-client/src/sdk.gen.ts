@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -152,6 +152,33 @@ export const uploadCommunityIcon = <ThrowOnError extends boolean = false>(option
     ...options,
     headers: {
         'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
+ * Join an open community.
+ */
+export const joinCommunity = <ThrowOnError extends boolean = false>(options: Options<JoinCommunityData, ThrowOnError>): RequestResult<JoinCommunityResponses, JoinCommunityErrors, ThrowOnError> => (options.client ?? client).post<JoinCommunityResponses, JoinCommunityErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/join', ...options });
+
+/**
+ * Leave a community (owners cannot leave until transfer exists).
+ */
+export const leaveCommunity = <ThrowOnError extends boolean = false>(options: Options<LeaveCommunityData, ThrowOnError>): RequestResult<LeaveCommunityResponses, LeaveCommunityErrors, ThrowOnError> => (options.client ?? client).post<LeaveCommunityResponses, LeaveCommunityErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/leave', ...options });
+
+/**
+ * List community members (members only).
+ */
+export const listCommunityMembers = <ThrowOnError extends boolean = false>(options: Options<ListCommunityMembersData, ThrowOnError>): RequestResult<ListCommunityMembersResponses, ListCommunityMembersErrors, ThrowOnError> => (options.client ?? client).get<ListCommunityMembersResponses, ListCommunityMembersErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/members', ...options });
+
+/**
+ * Update the caller's nickname in a community.
+ */
+export const updateMyCommunityNickname = <ThrowOnError extends boolean = false>(options: Options<UpdateMyCommunityNicknameData, ThrowOnError>): RequestResult<UpdateMyCommunityNicknameResponses, UpdateMyCommunityNicknameErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMyCommunityNicknameResponses, UpdateMyCommunityNicknameErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/members/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
         ...options.headers
     }
 });

@@ -1,13 +1,13 @@
 //! OpenAPI document for the HTTP API. Rust handlers are the source of truth.
 
 use utoipa::OpenApi;
-use voxnexus_domain::JoinMode;
+use voxnexus_domain::{CommunityMemberRole, JoinMode};
 use voxnexus_protocol::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
-    CommunityListResponse, CommunityResponse, CreateCommunityRequest, ErrorBody,
-    InstanceSettingsResponse, LoginRequest, MetaResponse, PresenceEntry, PresenceListResponse,
-    ProfileResponse, RegisterRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
-    UpdateProfileRequest,
+    CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
+    CreateCommunityRequest, ErrorBody, InstanceSettingsResponse, LoginRequest, MetaResponse,
+    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest, UpdateCommunityRequest,
+    UpdateInstanceSettingsRequest, UpdateNicknameRequest, UpdateProfileRequest,
 };
 
 use crate::auth;
@@ -45,6 +45,10 @@ use crate::profile;
         communities::upload_community_banner,
         communities::get_community_icon,
         communities::get_community_banner,
+        communities::join_community,
+        communities::leave_community,
+        communities::list_community_members,
+        communities::update_my_nickname,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -60,8 +64,12 @@ use crate::profile;
         UpdateInstanceSettingsRequest,
         CreateCommunityRequest,
         UpdateCommunityRequest,
+        UpdateNicknameRequest,
         CommunityResponse,
         CommunityListResponse,
+        CommunityMemberResponse,
+        CommunityMemberListResponse,
+        CommunityMemberRole,
         JoinMode,
         ErrorBody,
         RegisterRequest,

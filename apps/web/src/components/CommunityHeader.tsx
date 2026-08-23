@@ -1,10 +1,14 @@
+import { leaveCommunity } from '@voxnexus/api-client';
 import { Bell, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { communities } from '../data/communities';
 import { menuFor } from '../lib/menus';
 import { useUI } from '../store';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function CommunityHeader() {
   const activeId = useUI((s) => s.activeCommunity);
+  const setCommunity = useUI((s) => s.setCommunity);
   const community = communities.find((c) => c.id === activeId) ?? {
     id: activeId,
     name: 'Community',
@@ -14,6 +18,23 @@ export function CommunityHeader() {
   const openMenu = useUI((s) => s.openMenu);
   const setSearchOpen = useUI((s) => s.setSearchOpen);
   const setNotifOpen = useUI((s) => s.setNotifOpen);
+
+  const items = menuFor('community', community.name).map((item) => {
+    if (item.label?.startsWith('Leave ') && UUID_RE.test(activeId)) {
+      return {
+        ...item,
+        onSelect: () => {
+          void (async () => {
+            const result = await leaveCommunity({ path: { community_id: activeId } });
+            if (!result.error) {
+              setCommunity('home');
+            }
+          })();
+        },
+      };
+    }
+    return item;
+  });
 
   return (
     <header className="relative border-b border-line/70">
@@ -29,7 +50,7 @@ export function CommunityHeader() {
         type="button"
         onClick={(e) => {
           const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          openMenu({ x: r.left + 8, y: r.bottom + 6 }, menuFor('community', community.name));
+          openMenu({ x: r.left + 8, y: r.bottom + 6 }, items);
         }}
         className="group relative flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-hover/50"
       >
@@ -49,7 +70,7 @@ export function CommunityHeader() {
             <Sparkles size={12} className="shrink-0 text-accent/80" />
           </span>
           <span className="block truncate font-mono text-3xs uppercase tracking-wider text-ink-3">
-            11 online · 11 members
+            Members
           </span>
         </span>
         <ChevronDown

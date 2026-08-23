@@ -23,7 +23,9 @@ export type EventType =
   | 'DEV_PONG'
   | 'STATUS_UPDATE'
   | 'PRESENCE_UPDATE'
-  | 'PRESENCE_SYNC';
+  | 'PRESENCE_SYNC'
+  | 'MEMBER_JOIN'
+  | 'MEMBER_LEAVE';
 /**
  * Presence exposed to clients (offline when disconnected or hidden from viewers).
  *
@@ -53,6 +55,8 @@ export interface GatewaySchemaCatalog {
   hello_payload: HelloPayload;
   identify_payload: IdentifyPayload;
   invalid_session_payload: InvalidSessionPayload;
+  member_join_payload: MemberJoinPayload;
+  member_leave_payload: MemberLeavePayload;
   presence_sync_payload: PresenceSyncPayload;
   presence_update_payload: PresenceUpdatePayload;
   ready_payload: ReadyPayload;
@@ -154,6 +158,31 @@ export interface IdentifyPayload {
  */
 export interface InvalidSessionPayload {
   resumable: boolean;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when an account joins a community (F020).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MemberJoinPayload".
+ */
+export interface MemberJoinPayload {
+  account_id: string;
+  community_id: string;
+  display_name: string;
+  nickname: string;
+  role: string;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when an account leaves a community (F020).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MemberLeavePayload".
+ */
+export interface MemberLeavePayload {
+  account_id: string;
+  community_id: string;
   [k: string]: unknown;
 }
 /**

@@ -3,7 +3,7 @@
 #![allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
 
 use axum::body::Bytes;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
@@ -11,16 +11,20 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use voxnexus_auth::{
     create_community as persist_community, delete_object_meta, get_community, get_instance,
-    get_membership, get_object, insert_object, list_communities_for_account, set_community_banner,
-    set_community_icon, slugify, unique_slug, update_community, CommunityPatch,
-    CreateCommunityInput,
+    get_membership, get_object, get_profile, insert_object, join_community as persist_join,
+    leave_community as persist_leave, list_communities_for_account, list_member_account_ids,
+    list_members, set_community_banner, set_community_icon, set_nickname, slugify, unique_slug,
+    update_community, CommunityPatch, CreateCommunityInput, MemberListItem,
 };
 use voxnexus_domain::{Community, CommunityMemberRole, JoinMode};
 use voxnexus_media::{sniff_image, AVATAR_MAX_BYTES, BANNER_MAX_BYTES};
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
-    CommunityListResponse, CommunityResponse, CreateCommunityRequest, UpdateCommunityRequest,
+    CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
+    CreateCommunityRequest, CursorQuery, MemberJoinPayload, MemberLeavePayload,
+    UpdateCommunityRequest, UpdateNicknameRequest,
 };
+use voxnexus_realtime::PresenceHubMessage;
 use voxnexus_storage::ObjectKey;
 
 use crate::error::ApiError;
@@ -291,6 +295,202 @@ pub async fn get_community_banner(
     serve_image(&state, headers, community_id, ImageSlot::Banner).await
 }
 
+/// Join an open community.
+#[utoipa::path(
+    post,
+    path = "/api/v1/communities/{community_id}/join",
+    operation_id = "joinCommunity",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    responses(
+        (status = 201, description = "Joined", body = CommunityMemberResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Join not allowed", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody),
+        (status = 409, description = "Already a member", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn join_community(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+) -> Result<(StatusCode, Json<CommunityMemberResponse>), ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let member = persist_join(&state.pool, community_id, user.account_id)
+        .await
+        .map_err(|error| map_membership_auth(error, request_id.clone()))?;
+    let profile = get_profile(&state.pool, user.account_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "profile lookup failed");
+            internal(request_id.clone())
+        })?
+        .ok_or_else(|| internal(request_id.clone()))?;
+
+    let response = member_response(&MemberListItem {
+        member: member.clone(),
+        display_name: profile.display_name.clone(),
+        has_avatar: profile.avatar_object_id.is_some(),
+    });
+
+    let mut recipients = list_member_account_ids(&state.pool, community_id)
+        .await
+        .unwrap_or_default();
+    recipients.push(user.account_id);
+    recipients.sort_unstable();
+    recipients.dedup();
+    state
+        .presence_hub
+        .broadcast_to_accounts(
+            &recipients,
+            PresenceHubMessage::MemberJoin(MemberJoinPayload {
+                community_id,
+                account_id: user.account_id,
+                role: member.role.as_str().to_owned(),
+                nickname: member.nickname.clone(),
+                display_name: profile.display_name,
+            }),
+        )
+        .await;
+
+    Ok((StatusCode::CREATED, Json(response)))
+}
+
+/// Leave a community (owners cannot leave until transfer exists).
+#[utoipa::path(
+    post,
+    path = "/api/v1/communities/{community_id}/leave",
+    operation_id = "leaveCommunity",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    responses(
+        (status = 204, description = "Left"),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Owner cannot leave", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not a member / not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn leave_community(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+) -> Result<StatusCode, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let recipients = list_member_account_ids(&state.pool, community_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "list members for leave fanout failed");
+            internal(request_id.clone())
+        })?;
+    persist_leave(&state.pool, community_id, user.account_id)
+        .await
+        .map_err(|error| map_membership_auth(error, request_id))?;
+
+    state
+        .presence_hub
+        .broadcast_to_accounts(
+            &recipients,
+            PresenceHubMessage::MemberLeave(MemberLeavePayload {
+                community_id,
+                account_id: user.account_id,
+            }),
+        )
+        .await;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// List community members (members only).
+#[utoipa::path(
+    get,
+    path = "/api/v1/communities/{community_id}/members",
+    operation_id = "listCommunityMembers",
+    tag = "communities",
+    params(
+        ("community_id" = Uuid, Path, description = "Community id"),
+        ("after" = Option<Uuid>, Query, description = "Cursor: members after this account id"),
+        ("before" = Option<Uuid>, Query, description = "Cursor: members before this account id"),
+        ("limit" = Option<u16>, Query, description = "Page size (1-100)")
+    ),
+    responses(
+        (status = 200, description = "Members page", body = CommunityMemberListResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not a member", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn list_community_members(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    Query(query): Query<CursorQuery>,
+) -> Result<Json<CommunityMemberListResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    require_member(&state, community_id, user.account_id, &request_id).await?;
+    let page = list_members(
+        &state.pool,
+        community_id,
+        query.after,
+        query.before,
+        query.resolved_limit(),
+    )
+    .await
+    .map_err(|error| {
+        tracing::error!(error = %error, "list members failed");
+        internal(request_id)
+    })?;
+    Ok(Json(CommunityMemberListResponse {
+        items: page.items.iter().map(member_response).collect(),
+        has_more: page.has_more,
+    }))
+}
+
+/// Update the caller's nickname in a community.
+#[utoipa::path(
+    patch,
+    path = "/api/v1/communities/{community_id}/members/me",
+    operation_id = "updateMyCommunityNickname",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    request_body = UpdateNicknameRequest,
+    responses(
+        (status = 200, description = "Updated membership", body = CommunityMemberResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not a member", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody),
+        (status = 422, description = "Validation error", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn update_my_nickname(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<UpdateNicknameRequest>,
+) -> Result<Json<CommunityMemberResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    require_member(&state, community_id, user.account_id, &request_id).await?;
+    let nickname = body.nickname.trim().to_owned();
+    let member = set_nickname(&state.pool, community_id, user.account_id, &nickname)
+        .await
+        .map_err(|error| map_membership_auth(error, request_id.clone()))?;
+    let profile = get_profile(&state.pool, user.account_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "profile lookup failed");
+            internal(request_id.clone())
+        })?
+        .ok_or_else(|| internal(request_id))?;
+    Ok(Json(member_response(&MemberListItem {
+        member,
+        display_name: profile.display_name,
+        has_avatar: profile.avatar_object_id.is_some(),
+    })))
+}
+
 #[derive(Clone, Copy)]
 enum ImageSlot {
     Icon,
@@ -515,6 +715,21 @@ fn to_response(community: &Community) -> CommunityResponse {
     }
 }
 
+fn member_response(item: &MemberListItem) -> CommunityMemberResponse {
+    CommunityMemberResponse {
+        community_id: item.member.community_id,
+        account_id: item.member.account_id,
+        role: item.member.role,
+        nickname: item.member.nickname.clone(),
+        display_name: item.display_name.clone(),
+        has_avatar: item.has_avatar,
+        avatar_url: item
+            .has_avatar
+            .then(|| format!("/api/v1/profiles/{}/avatar", item.member.account_id)),
+        joined_at: item.member.joined_at,
+    }
+}
+
 fn map_auth(error: voxnexus_auth::AuthError, request_id: String) -> ApiError {
     match error {
         voxnexus_auth::AuthError::SlugTaken => ApiError::new(
@@ -524,7 +739,35 @@ fn map_auth(error: voxnexus_auth::AuthError, request_id: String) -> ApiError {
             None,
             request_id,
         ),
+        other => map_membership_auth(other, request_id),
+    }
+}
+
+fn map_membership_auth(error: voxnexus_auth::AuthError, request_id: String) -> ApiError {
+    match error {
+        voxnexus_auth::AuthError::AlreadyMember => {
+            ApiError::conflict(request_id, "You are already a member of this community.")
+        }
+        voxnexus_auth::AuthError::JoinNotAllowed => ApiError::permission_denied(
+            request_id,
+            "This community is invite-only or requires an application.",
+        ),
+        voxnexus_auth::AuthError::OwnerCannotLeave => ApiError::permission_denied(
+            request_id,
+            "Community owners cannot leave without transferring ownership.",
+        ),
+        voxnexus_auth::AuthError::NotMember => ApiError::new(
+            StatusCode::NOT_FOUND,
+            error_codes::NOT_FOUND,
+            "You are not a member of this community.",
+            None,
+            request_id,
+        ),
         other => {
+            let message = other.to_string();
+            if message.contains("no rows returned") || message.contains("RowNotFound") {
+                return not_found(request_id);
+            }
             tracing::error!(error = %other, "community auth error");
             internal(request_id)
         }

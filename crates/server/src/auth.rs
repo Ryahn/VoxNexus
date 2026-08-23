@@ -307,6 +307,19 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
             ApiError::conflict(request_id, "This identity is already linked to an account.")
         }
         AuthError::InvalidCredentials => ApiError::unauthenticated(request_id),
+        AuthError::AlreadyMember
+        | AuthError::NotMember
+        | AuthError::JoinNotAllowed
+        | AuthError::OwnerCannotLeave => {
+            tracing::error!(error = %error, "unexpected community auth error in auth routes");
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                error_codes::INTERNAL,
+                "Unexpected server error.",
+                None,
+                request_id,
+            )
+        }
         AuthError::Password(_) | AuthError::Db(_) => {
             tracing::error!(error = %error, "auth failure");
             ApiError::new(

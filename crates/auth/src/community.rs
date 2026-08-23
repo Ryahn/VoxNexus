@@ -1,6 +1,6 @@
-//! Community persistence (F019).
+//! Community and membership persistence (F019 / F020).
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 use voxnexus_domain::{
@@ -8,6 +8,21 @@ use voxnexus_domain::{
 };
 
 use crate::AuthError;
+
+/// Member row joined with profile fields for list responses.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemberListItem {
+    pub member: CommunityMember,
+    pub display_name: String,
+    pub has_avatar: bool,
+}
+
+/// Cursor page of community members.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MembersPage {
+    pub items: Vec<MemberListItem>,
+    pub has_more: bool,
+}
 
 /// Fields accepted when creating a community.
 #[derive(Debug, Clone)]
@@ -228,6 +243,216 @@ pub async fn get_membership(
     .fetch_optional(pool)
     .await?;
     row.map(MemberRow::into_member).transpose()
+}
+
+/// Join an open community as a regular member.
+///
+/// # Errors
+///
+/// Returns [`AuthError::JoinNotAllowed`] when `join_mode` is not open,
+/// [`AuthError::AlreadyMember`] when already joined, or not-found / database errors.
+pub async fn join_community(
+    pool: &PgPool,
+    community_id: Uuid,
+    account_id: Uuid,
+) -> Result<CommunityMember, AuthError> {
+    let community = get_community(pool, community_id)
+        .await?
+        .ok_or(AuthError::Db(sqlx::Error::RowNotFound))?;
+    if community.join_mode != JoinMode::Open {
+        return Err(AuthError::JoinNotAllowed);
+    }
+    if get_membership(pool, community_id, account_id)
+        .await?
+        .is_some()
+    {
+        return Err(AuthError::AlreadyMember);
+    }
+
+    let now = Utc::now();
+    let result = sqlx::query(
+        r"
+        INSERT INTO community_members (community_id, account_id, role, nickname, joined_at)
+        VALUES ($1, $2, $3, '', $4)
+        ",
+    )
+    .bind(community_id)
+    .bind(account_id)
+    .bind(CommunityMemberRole::Member.as_str())
+    .bind(now)
+    .execute(pool)
+    .await;
+
+    if let Err(error) = result {
+        if is_unique_violation(&error) {
+            return Err(AuthError::AlreadyMember);
+        }
+        return Err(error.into());
+    }
+
+    get_membership(pool, community_id, account_id)
+        .await?
+        .ok_or(AuthError::Db(sqlx::Error::RowNotFound))
+}
+
+/// Leave a community. Owners cannot leave (transfer is F025).
+///
+/// # Errors
+///
+/// Returns [`AuthError::NotMember`], [`AuthError::OwnerCannotLeave`], or database errors.
+pub async fn leave_community(
+    pool: &PgPool,
+    community_id: Uuid,
+    account_id: Uuid,
+) -> Result<(), AuthError> {
+    let membership = get_membership(pool, community_id, account_id)
+        .await?
+        .ok_or(AuthError::NotMember)?;
+    if membership.role == CommunityMemberRole::Owner {
+        return Err(AuthError::OwnerCannotLeave);
+    }
+    let result = sqlx::query(
+        r"
+        DELETE FROM community_members
+        WHERE community_id = $1 AND account_id = $2
+        ",
+    )
+    .bind(community_id)
+    .bind(account_id)
+    .execute(pool)
+    .await?;
+    if result.rows_affected() == 0 {
+        return Err(AuthError::NotMember);
+    }
+    Ok(())
+}
+
+/// Paginated members for a community (`after` / `before` on `account_id`).
+///
+/// # Errors
+///
+/// Returns database errors.
+pub async fn list_members(
+    pool: &PgPool,
+    community_id: Uuid,
+    after: Option<Uuid>,
+    before: Option<Uuid>,
+    limit: u16,
+) -> Result<MembersPage, AuthError> {
+    let fetch = i64::from(limit) + 1;
+    let rows = if let Some(after_id) = after {
+        sqlx::query_as::<_, MemberListRow>(
+            r"
+            SELECT m.community_id, m.account_id, m.role, m.nickname, m.joined_at,
+                   p.display_name, (p.avatar_object_id IS NOT NULL) AS has_avatar
+            FROM community_members m
+            INNER JOIN profiles p ON p.account_id = m.account_id
+            WHERE m.community_id = $1 AND m.account_id > $2
+            ORDER BY m.account_id ASC
+            LIMIT $3
+            ",
+        )
+        .bind(community_id)
+        .bind(after_id)
+        .bind(fetch)
+        .fetch_all(pool)
+        .await?
+    } else if let Some(before_id) = before {
+        let mut rows = sqlx::query_as::<_, MemberListRow>(
+            r"
+            SELECT m.community_id, m.account_id, m.role, m.nickname, m.joined_at,
+                   p.display_name, (p.avatar_object_id IS NOT NULL) AS has_avatar
+            FROM community_members m
+            INNER JOIN profiles p ON p.account_id = m.account_id
+            WHERE m.community_id = $1 AND m.account_id < $2
+            ORDER BY m.account_id DESC
+            LIMIT $3
+            ",
+        )
+        .bind(community_id)
+        .bind(before_id)
+        .bind(fetch)
+        .fetch_all(pool)
+        .await?;
+        rows.reverse();
+        rows
+    } else {
+        sqlx::query_as::<_, MemberListRow>(
+            r"
+            SELECT m.community_id, m.account_id, m.role, m.nickname, m.joined_at,
+                   p.display_name, (p.avatar_object_id IS NOT NULL) AS has_avatar
+            FROM community_members m
+            INNER JOIN profiles p ON p.account_id = m.account_id
+            WHERE m.community_id = $1
+            ORDER BY m.account_id ASC
+            LIMIT $2
+            ",
+        )
+        .bind(community_id)
+        .bind(fetch)
+        .fetch_all(pool)
+        .await?
+    };
+
+    let has_more = rows.len() > usize::from(limit);
+    let items = rows
+        .into_iter()
+        .take(usize::from(limit))
+        .map(MemberListRow::into_item)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(MembersPage { items, has_more })
+}
+
+/// Account ids of every member (for gateway fanout).
+///
+/// # Errors
+///
+/// Returns database errors.
+pub async fn list_member_account_ids(
+    pool: &PgPool,
+    community_id: Uuid,
+) -> Result<Vec<Uuid>, AuthError> {
+    let ids = sqlx::query_scalar::<_, Uuid>(
+        r"
+        SELECT account_id FROM community_members
+        WHERE community_id = $1
+        ORDER BY account_id ASC
+        ",
+    )
+    .bind(community_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(ids)
+}
+
+/// Update the caller's community nickname.
+///
+/// # Errors
+///
+/// Returns [`AuthError::NotMember`] or database errors.
+pub async fn set_nickname(
+    pool: &PgPool,
+    community_id: Uuid,
+    account_id: Uuid,
+    nickname: &str,
+) -> Result<CommunityMember, AuthError> {
+    let result = sqlx::query(
+        r"
+        UPDATE community_members SET nickname = $3
+        WHERE community_id = $1 AND account_id = $2
+        ",
+    )
+    .bind(community_id)
+    .bind(account_id)
+    .bind(nickname)
+    .execute(pool)
+    .await?;
+    if result.rows_affected() == 0 {
+        return Err(AuthError::NotMember);
+    }
+    get_membership(pool, community_id, account_id)
+        .await?
+        .ok_or(AuthError::NotMember)
 }
 
 /// Update community settings.
@@ -479,6 +704,39 @@ impl MemberRow {
             role,
             nickname: self.nickname,
             joined_at: self.joined_at,
+        })
+    }
+}
+
+#[derive(Debug, sqlx::FromRow)]
+struct MemberListRow {
+    community_id: Uuid,
+    account_id: Uuid,
+    role: String,
+    nickname: String,
+    joined_at: DateTime<Utc>,
+    display_name: String,
+    has_avatar: bool,
+}
+
+impl MemberListRow {
+    fn into_item(self) -> Result<MemberListItem, AuthError> {
+        let role = CommunityMemberRole::parse(&self.role).ok_or_else(|| {
+            AuthError::Db(sqlx::Error::Decode(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("invalid member role {}", self.role),
+            ))))
+        })?;
+        Ok(MemberListItem {
+            member: CommunityMember {
+                community_id: self.community_id,
+                account_id: self.account_id,
+                role,
+                nickname: self.nickname,
+                joined_at: self.joined_at,
+            },
+            display_name: self.display_name,
+            has_avatar: self.has_avatar,
         })
     }
 }

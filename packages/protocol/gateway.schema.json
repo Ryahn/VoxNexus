@@ -14,6 +14,8 @@
     "hello_payload",
     "identify_payload",
     "invalid_session_payload",
+    "member_join_payload",
+    "member_leave_payload",
     "presence_sync_payload",
     "presence_update_payload",
     "ready_payload",
@@ -51,6 +53,12 @@
     },
     "invalid_session_payload": {
       "$ref": "#/definitions/InvalidSessionPayload"
+    },
+    "member_join_payload": {
+      "$ref": "#/definitions/MemberJoinPayload"
+    },
+    "member_leave_payload": {
+      "$ref": "#/definitions/MemberLeavePayload"
     },
     "presence_sync_payload": {
       "$ref": "#/definitions/PresenceSyncPayload"
@@ -169,7 +177,9 @@
         "DEV_PONG",
         "STATUS_UPDATE",
         "PRESENCE_UPDATE",
-        "PRESENCE_SYNC"
+        "PRESENCE_SYNC",
+        "MEMBER_JOIN",
+        "MEMBER_LEAVE"
       ]
     },
     "HeartbeatAckPayload": {
@@ -218,6 +228,54 @@
       "properties": {
         "resumable": {
           "type": "boolean"
+        }
+      }
+    },
+    "MemberJoinPayload": {
+      "description": "Server → client when an account joins a community (F020).",
+      "type": "object",
+      "required": [
+        "account_id",
+        "community_id",
+        "display_name",
+        "nickname",
+        "role"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "nickname": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "MemberLeavePayload": {
+      "description": "Server → client when an account leaves a community (F020).",
+      "type": "object",
+      "required": [
+        "account_id",
+        "community_id"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     },

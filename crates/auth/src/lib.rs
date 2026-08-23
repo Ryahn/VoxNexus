@@ -15,9 +15,10 @@ use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
 pub use community::{
     count_communities, create_community, ensure_bootstrap_community, first_instance_admin_id,
-    get_community, get_membership, list_communities_for_account, set_community_banner,
-    set_community_icon, slug_taken, slugify, unique_slug, update_community, CommunityPatch,
-    CreateCommunityInput,
+    get_community, get_membership, join_community, leave_community, list_communities_for_account,
+    list_member_account_ids, list_members, set_community_banner, set_community_icon, set_nickname,
+    slug_taken, slugify, unique_slug, update_community, CommunityPatch, CreateCommunityInput,
+    MemberListItem, MembersPage,
 };
 pub use instance::{
     ensure_instance, get_instance, sync_locked_community_creation_mode, sync_oidc_from_config,
@@ -58,6 +59,14 @@ pub enum AuthError {
     EmailTaken,
     #[error("community slug already taken")]
     SlugTaken,
+    #[error("already a community member")]
+    AlreadyMember,
+    #[error("not a community member")]
+    NotMember,
+    #[error("community join not allowed")]
+    JoinNotAllowed,
+    #[error("community owner cannot leave")]
+    OwnerCannotLeave,
     #[error("issuer and subject already linked")]
     IdentityTaken,
     #[error("registration is closed")]

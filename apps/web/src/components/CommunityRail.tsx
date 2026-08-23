@@ -7,6 +7,7 @@ import { useUI } from '../store';
 import type { Community } from '../types';
 import { CommunityIcon } from './CommunityIcon';
 import { CreateCommunityModal } from './CreateCommunityModal';
+import { JoinCommunityModal } from './JoinCommunityModal';
 import { Tooltip } from './ui/Tooltip';
 
 function toRailCommunity(c: CommunityResponse): Community {
@@ -30,6 +31,7 @@ export function CommunityRail() {
   const setNotifOpen = useUI((s) => s.setNotifOpen);
   const notifOpen = useUI((s) => s.notifOpen);
   const setCreateOpen = useUI((s) => s.setCreateCommunityOpen);
+  const setJoinOpen = useUI((s) => s.setJoinCommunityOpen);
   const meta = useMeta();
   const { session } = useAuth();
   const mode = meta?.community_creation_mode;
@@ -100,10 +102,24 @@ export function CommunityRail() {
                 <Plus size={20} strokeWidth={2} />
               </button>
             </Tooltip>
-            <Tooltip label="Discover communities" side="right">
+            <Tooltip label="Join a community" side="right">
               <button
                 type="button"
-                aria-label="Discover communities"
+                aria-label="Join a community"
+                onClick={() => setJoinOpen(true)}
+                className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent-2/60 hover:bg-accent-2/10 hover:text-accent-2"
+              >
+                <Compass size={19} strokeWidth={1.9} />
+              </button>
+            </Tooltip>
+          </div>
+        ) : mode !== 'single' ? (
+          <div className="mt-1 flex flex-col items-center gap-2.5">
+            <Tooltip label="Join a community" side="right">
+              <button
+                type="button"
+                aria-label="Join a community"
+                onClick={() => setJoinOpen(true)}
                 className="grid h-11 w-11 place-items-center rounded-[50%] border border-dashed border-line-2/80 text-ink-2 transition-all duration-200 ease-swift hover:rounded-[34%] hover:border-accent-2/60 hover:bg-accent-2/10 hover:text-accent-2"
               >
                 <Compass size={19} strokeWidth={1.9} />
@@ -133,6 +149,11 @@ export function CommunityRail() {
 
       <CreateCommunityModal
         onCreated={(id) => {
+          void refresh().then(() => setCommunity(id));
+        }}
+      />
+      <JoinCommunityModal
+        onJoined={(id) => {
           void refresh().then(() => setCommunity(id));
         }}
       />

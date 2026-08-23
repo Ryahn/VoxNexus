@@ -8,7 +8,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
-use voxnexus_protocol::PresenceUpdatePayload;
+use voxnexus_protocol::{MemberJoinPayload, MemberLeavePayload, PresenceUpdatePayload};
 
 /// Outbound gateway fanout for one WebSocket connection.
 pub type PresenceOutbound = mpsc::UnboundedSender<PresenceHubMessage>;
@@ -20,6 +20,10 @@ pub enum PresenceHubMessage {
     Sync(Vec<PresenceUpdatePayload>),
     /// Incremental presence change.
     Update(PresenceUpdatePayload),
+    /// Account joined a community (F020).
+    MemberJoin(MemberJoinPayload),
+    /// Account left a community (F020).
+    MemberLeave(MemberLeavePayload),
 }
 
 #[derive(Clone)]
@@ -85,6 +89,23 @@ impl PresenceHub {
                     continue;
                 }
                 let _ = outbound.send(PresenceHubMessage::Update(payload.clone()));
+            }
+        }
+    }
+
+    /// Fan out a hub message to every live connection for the given accounts.
+    pub async fn broadcast_to_accounts(&self, account_ids: &[Uuid], message: PresenceHubMessage) {
+        if account_ids.is_empty() {
+            return;
+        }
+        let id_set: std::collections::HashSet<Uuid> = account_ids.iter().copied().collect();
+        let inner = self.inner.read().await;
+        for (account_id, account) in inner.iter() {
+            if !id_set.contains(account_id) {
+                continue;
+            }
+            for outbound in account.connections.values() {
+                let _ = outbound.send(message.clone());
             }
         }
     }

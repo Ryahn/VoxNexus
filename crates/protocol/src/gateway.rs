@@ -33,6 +33,8 @@ pub enum EventType {
     StatusUpdate,
     PresenceUpdate,
     PresenceSync,
+    MemberJoin,
+    MemberLeave,
 }
 
 /// Subscription / fanout scope (connection-level events omit this).
@@ -65,6 +67,24 @@ impl Envelope {
             event_type,
             timestamp: Utc::now(),
             scope: None,
+            payload: serde_json::to_value(payload).unwrap_or(Value::Null),
+        }
+    }
+
+    /// Build an outbound envelope scoped to a community (or other resource).
+    #[must_use]
+    pub fn with_scope(
+        sequence: u64,
+        event_type: EventType,
+        scope: EventScope,
+        payload: impl Serialize,
+    ) -> Self {
+        Self {
+            event_id: Uuid::now_v7(),
+            sequence,
+            event_type,
+            timestamp: Utc::now(),
+            scope: Some(scope),
             payload: serde_json::to_value(payload).unwrap_or(Value::Null),
         }
     }
@@ -151,6 +171,23 @@ pub struct PresenceSyncPayload {
     pub presences: Vec<PresenceUpdatePayload>,
 }
 
+/// Server → client when an account joins a community (F020).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MemberJoinPayload {
+    pub community_id: Uuid,
+    pub account_id: Uuid,
+    pub role: String,
+    pub nickname: String,
+    pub display_name: String,
+}
+
+/// Server → client when an account leaves a community (F020).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MemberLeavePayload {
+    pub community_id: Uuid,
+    pub account_id: Uuid,
+}
+
 /// Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
 #[derive(Debug, Clone, JsonSchema)]
 pub struct GatewaySchemaCatalog {
@@ -170,6 +207,8 @@ pub struct GatewaySchemaCatalog {
     pub status_update_payload: StatusUpdatePayload,
     pub presence_update_payload: PresenceUpdatePayload,
     pub presence_sync_payload: PresenceSyncPayload,
+    pub member_join_payload: MemberJoinPayload,
+    pub member_leave_payload: MemberLeavePayload,
 }
 
 /// Root JSON Schema for gateway types (deterministic export).

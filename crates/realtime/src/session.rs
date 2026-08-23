@@ -13,10 +13,10 @@ use tokio::time::{interval, MissedTickBehavior};
 use uuid::Uuid;
 use voxnexus_domain::PresenceStatus;
 use voxnexus_protocol::{
-    DevPingPayload, DevPongPayload, Envelope, EventType, HeartbeatAckPayload, HeartbeatPayload,
-    HelloPayload, IdentifyPayload, InvalidSessionPayload, PresenceSyncPayload, ReadyPayload,
-    ResumePayload, ResumedPayload, StatusUpdatePayload, DEFAULT_HEARTBEAT_INTERVAL_MS,
-    GATEWAY_PROTOCOL_VERSION,
+    DevPingPayload, DevPongPayload, Envelope, EventScope, EventType, HeartbeatAckPayload,
+    HeartbeatPayload, HelloPayload, IdentifyPayload, InvalidSessionPayload, PresenceSyncPayload,
+    ReadyPayload, ResumePayload, ResumedPayload, StatusUpdatePayload,
+    DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
 };
 
 use crate::presence::{PresenceHub, PresenceHubMessage};
@@ -67,6 +67,7 @@ pub fn missed_heartbeat(last_client_heartbeat: Instant, interval: Duration, now:
 }
 
 /// Drive one gateway connection until close or heartbeat timeout.
+#[allow(clippy::too_many_lines)]
 pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
     let session_id = Uuid::now_v7();
     let conn_id = Uuid::now_v7();
@@ -148,6 +149,38 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                     Some(PresenceHubMessage::Update(payload)) => {
                         sequence += 1;
                         let envelope = Envelope::new(sequence, EventType::PresenceUpdate, payload);
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MemberJoin(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MemberJoin,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MemberLeave(payload)) => {
+                        sequence += 1;
+                        let community_id = payload.community_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MemberLeave,
+                            EventScope {
+                                scope_type: "community".to_owned(),
+                                id: community_id,
+                            },
+                            payload,
+                        );
                         if send_envelope(&mut sink, &envelope).await.is_err() {
                             break;
                         }
@@ -356,7 +389,9 @@ async fn handle_text(
         | EventType::DevPing
         | EventType::StatusUpdate
         | EventType::PresenceUpdate
-        | EventType::PresenceSync => Err(false),
+        | EventType::PresenceSync
+        | EventType::MemberJoin
+        | EventType::MemberLeave => Err(false),
     }
 }
 

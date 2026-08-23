@@ -54,6 +54,33 @@ export type CommunityListResponse = {
 };
 
 /**
+ * Cursor page of community members.
+ */
+export type CommunityMemberListResponse = {
+    has_more: boolean;
+    items: Array<CommunityMemberResponse>;
+};
+
+/**
+ * One community member with profile display fields.
+ */
+export type CommunityMemberResponse = {
+    account_id: string;
+    avatar_url?: string | null;
+    community_id: string;
+    display_name: string;
+    has_avatar: boolean;
+    joined_at: string;
+    nickname: string;
+    role: CommunityMemberRole;
+};
+
+/**
+ * Membership role within a community.
+ */
+export type CommunityMemberRole = 'owner' | 'member';
+
+/**
  * Public community representation.
  */
 export type CommunityResponse = {
@@ -221,6 +248,13 @@ export type UpdateInstanceSettingsRequest = {
     oidc_issuer?: string | null;
     public_url?: string | null;
     registration_mode?: null | RegistrationMode;
+};
+
+/**
+ * Update the caller's nickname in a community.
+ */
+export type UpdateNicknameRequest = {
+    nickname: string;
 };
 
 /**
@@ -729,6 +763,179 @@ export type UploadCommunityIconResponses = {
 };
 
 export type UploadCommunityIconResponse = UploadCommunityIconResponses[keyof UploadCommunityIconResponses];
+
+export type JoinCommunityData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/join';
+};
+
+export type JoinCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Join not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Already a member
+     */
+    409: ErrorBody;
+};
+
+export type JoinCommunityError = JoinCommunityErrors[keyof JoinCommunityErrors];
+
+export type JoinCommunityResponses = {
+    /**
+     * Joined
+     */
+    201: CommunityMemberResponse;
+};
+
+export type JoinCommunityResponse = JoinCommunityResponses[keyof JoinCommunityResponses];
+
+export type LeaveCommunityData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/leave';
+};
+
+export type LeaveCommunityErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Owner cannot leave
+     */
+    403: ErrorBody;
+    /**
+     * Not a member / not found
+     */
+    404: ErrorBody;
+};
+
+export type LeaveCommunityError = LeaveCommunityErrors[keyof LeaveCommunityErrors];
+
+export type LeaveCommunityResponses = {
+    /**
+     * Left
+     */
+    204: void;
+};
+
+export type LeaveCommunityResponse = LeaveCommunityResponses[keyof LeaveCommunityResponses];
+
+export type ListCommunityMembersData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: {
+        /**
+         * Cursor: members after this account id
+         */
+        after?: string;
+        /**
+         * Cursor: members before this account id
+         */
+        before?: string;
+        /**
+         * Page size (1-100)
+         */
+        limit?: number;
+    };
+    url: '/api/v1/communities/{community_id}/members';
+};
+
+export type ListCommunityMembersErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListCommunityMembersError = ListCommunityMembersErrors[keyof ListCommunityMembersErrors];
+
+export type ListCommunityMembersResponses = {
+    /**
+     * Members page
+     */
+    200: CommunityMemberListResponse;
+};
+
+export type ListCommunityMembersResponse = ListCommunityMembersResponses[keyof ListCommunityMembersResponses];
+
+export type UpdateMyCommunityNicknameData = {
+    body: UpdateNicknameRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/members/me';
+};
+
+export type UpdateMyCommunityNicknameErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type UpdateMyCommunityNicknameError = UpdateMyCommunityNicknameErrors[keyof UpdateMyCommunityNicknameErrors];
+
+export type UpdateMyCommunityNicknameResponses = {
+    /**
+     * Updated membership
+     */
+    200: CommunityMemberResponse;
+};
+
+export type UpdateMyCommunityNicknameResponse = UpdateMyCommunityNicknameResponses[keyof UpdateMyCommunityNicknameResponses];
 
 export type GetInstanceSettingsData = {
     body?: never;

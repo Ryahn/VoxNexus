@@ -14,15 +14,17 @@ pub use auth::{
     RegisterRequest,
 };
 pub use community::{
-    CommunityListResponse, CommunityResponse, CreateCommunityRequest, UpdateCommunityRequest,
+    CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
+    CreateCommunityRequest, UpdateCommunityRequest, UpdateNicknameRequest,
 };
 pub use error::{error_codes, ErrorBody};
 pub use gateway::{
     gateway_schema, gateway_schema_json, DevPingPayload, DevPongPayload, Envelope, EventScope,
     EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload, HelloPayload,
-    IdentifyPayload, InvalidSessionPayload, PresenceSyncPayload, PresenceUpdatePayload,
-    ReadyPayload, ResumePayload, ResumedPayload, StatusUpdatePayload,
-    DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
+    IdentifyPayload, InvalidSessionPayload, MemberJoinPayload, MemberLeavePayload,
+    PresenceSyncPayload, PresenceUpdatePayload, ReadyPayload, ResumePayload, ResumedPayload,
+    StatusUpdatePayload, DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
+    GATEWAY_SUBPROTOCOL,
 };
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use meta::MetaResponse;

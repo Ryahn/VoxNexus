@@ -87,6 +87,10 @@ interface UIState {
   // create community
   createCommunityOpen: boolean;
   setCreateCommunityOpen: (v: boolean) => void;
+
+  // join community by id
+  joinCommunityOpen: boolean;
+  setJoinCommunityOpen: (v: boolean) => void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -153,4 +157,7 @@ export const useUI = create<UIState>((set) => ({
 
   createCommunityOpen: false,
   setCreateCommunityOpen: (v) => set({ createCommunityOpen: v }),
+
+  joinCommunityOpen: false,
+  setJoinCommunityOpen: (v) => set({ joinCommunityOpen: v }),
 }));

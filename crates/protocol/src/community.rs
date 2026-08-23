@@ -1,10 +1,10 @@
-//! Community HTTP DTOs (F019).
+//! Community HTTP DTOs (F019 / F020).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
-use voxnexus_domain::JoinMode;
+use voxnexus_domain::{CommunityMemberRole, JoinMode};
 
 /// Public community representation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -57,4 +57,32 @@ pub struct UpdateCommunityRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct CommunityListResponse {
     pub communities: Vec<CommunityResponse>,
+}
+
+/// One community member with profile display fields.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct CommunityMemberResponse {
+    pub community_id: uuid::Uuid,
+    pub account_id: uuid::Uuid,
+    pub role: CommunityMemberRole,
+    pub nickname: String,
+    pub display_name: String,
+    pub has_avatar: bool,
+    pub avatar_url: Option<String>,
+    #[schema(value_type = String, format = DateTime)]
+    pub joined_at: DateTime<Utc>,
+}
+
+/// Cursor page of community members.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct CommunityMemberListResponse {
+    pub items: Vec<CommunityMemberResponse>,
+    pub has_more: bool,
+}
+
+/// Update the caller's nickname in a community.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct UpdateNicknameRequest {
+    #[validate(length(max = 32))]
+    pub nickname: String,
 }
