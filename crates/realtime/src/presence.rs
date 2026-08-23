@@ -201,14 +201,17 @@ impl PresenceHub {
         stored: PresenceStatus,
         custom_status: String,
     ) {
-        let mut inner = self.inner.write().await;
-        let remove = inner
-            .get(&account_id)
-            .is_some_and(|entry| entry.connections.is_empty());
-        if remove {
-            inner.remove(&account_id);
-        }
-        if remove {
+        let should_broadcast = {
+            let mut inner = self.inner.write().await;
+            let remove = inner
+                .get(&account_id)
+                .is_some_and(|entry| entry.connections.is_empty());
+            if remove {
+                inner.remove(&account_id);
+            }
+            remove
+        };
+        if should_broadcast {
             let payload = Self::payload(account_id, stored, &custom_status, false, false);
             self.broadcast_update(&payload, None).await;
         }
@@ -221,28 +224,32 @@ impl PresenceHub {
         status: Option<PresenceStatus>,
         custom_status: Option<&str>,
     ) -> Option<PresenceUpdatePayload> {
-        let mut inner = self.inner.write().await;
-        let entry = inner.get_mut(&account_id)?;
-        if entry.connections.is_empty() {
-            return None;
-        }
-        if let Some(status) = status {
-            entry.stored_status = status;
-        }
-        if let Some(custom) = custom_status {
-            entry.custom_status = custom.to_owned();
-        }
-        let stored = entry.stored_status;
-        let custom = entry.custom_status.clone();
-        let self_payload = Self::payload(account_id, stored, &custom, true, true);
-        for outbound in entry.connections.values() {
-            let _ = outbound.send(PresenceHubMessage::Update(self_payload.clone()));
-        }
-        let public_payload = if Self::is_listed_online(stored, true) {
-            Some(Self::payload(account_id, stored, &custom, false, true))
-        } else {
-            None
+        let (self_payload, public_payload) = {
+            let mut inner = self.inner.write().await;
+            let entry = inner.get_mut(&account_id)?;
+            if entry.connections.is_empty() {
+                return None;
+            }
+            if let Some(status) = status {
+                entry.stored_status = status;
+            }
+            if let Some(custom) = custom_status {
+                entry.custom_status = custom.to_owned();
+            }
+            let stored = entry.stored_status;
+            let custom = entry.custom_status.clone();
+            let self_payload = Self::payload(account_id, stored, &custom, true, true);
+            for outbound in entry.connections.values() {
+                let _ = outbound.send(PresenceHubMessage::Update(self_payload.clone()));
+            }
+            let public_payload = if Self::is_listed_online(stored, true) {
+                Some(Self::payload(account_id, stored, &custom, false, true))
+            } else {
+                None
+            };
+            (self_payload, public_payload)
         };
+
         if let Some(payload) = public_payload {
             self.broadcast_update(&payload, None).await;
         }
@@ -360,5 +367,36 @@ mod tests {
         .await;
         tokio::time::sleep(Duration::from_millis(120)).await;
         assert!(hub.is_visible_online(account_id).await);
+    }
+
+    #[tokio::test]
+    async fn update_while_online_does_not_deadlock() {
+        let hub = PresenceHub::new(Duration::from_millis(40));
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let account_id = Uuid::now_v7();
+        let conn_id = Uuid::now_v7();
+
+        hub.connect(
+            account_id,
+            conn_id,
+            tx,
+            PresenceStatus::Online,
+            String::new(),
+        )
+        .await;
+
+        let updated = tokio::time::timeout(
+            Duration::from_secs(1),
+            hub.update(account_id, Some(PresenceStatus::Idle), Some("afk")),
+        )
+        .await
+        .expect("presence update deadlocked on hub RwLock")
+        .expect("connected account");
+
+        assert_eq!(updated.status, PublicPresenceStatus::Idle);
+        assert_eq!(updated.custom_status, "afk");
+
+        // Drain sync + self update (+ public broadcast to same conn).
+        while rx.try_recv().is_ok() {}
     }
 }

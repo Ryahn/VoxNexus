@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 import { useAuth } from './auth';
+import { readApiErrorMessage } from './lib/apiError';
 
 export type PresenceState = 'online' | 'idle' | 'dnd' | 'invisible' | 'offline';
 
@@ -141,13 +142,14 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
         body.custom_status = customStatus;
       }
       const result = await updateMyProfile({ body, ...credentials });
-      if (result.data) {
-        setSelf({
-          accountId,
-          status: mapStatus(result.data.presence_status),
-          customStatus: result.data.custom_status,
-        });
+      if (result.error || !result.data) {
+        throw new Error(readApiErrorMessage(result.error, 'Could not update presence.'));
       }
+      setSelf({
+        accountId,
+        status: mapStatus(result.data.presence_status),
+        customStatus: result.data.custom_status,
+      });
     },
     [accountId],
   );

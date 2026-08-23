@@ -117,6 +117,7 @@ type AuthScreenProps = {
 function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [registrationOpen, setRegistrationOpen] = useState(true);
@@ -160,7 +161,14 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
     try {
       const result =
         mode === 'register'
-          ? await register({ body: { email, password }, ...credentials })
+          ? await register({
+              body: {
+                email,
+                password,
+                display_name: displayName.trim(),
+              },
+              ...credentials,
+            })
           : await login({ body: { email, password }, ...credentials });
       if (result.data) {
         onAuthenticated(result.data);
@@ -212,6 +220,21 @@ function AuthScreen({ mode, onModeChange, onAuthenticated }: AuthScreenProps) {
 
         {passwordLoginEnabled ? (
           <form className="space-y-3" onSubmit={onSubmit}>
+            {mode === 'register' ? (
+              <label className="block">
+                <span className="kicker">Display name</span>
+                <input
+                  type="text"
+                  name="display_name"
+                  autoComplete="nickname"
+                  required
+                  maxLength={64}
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line-2/50 bg-input px-3 py-2 text-[13.5px] text-ink outline-none focus:border-accent/60"
+                />
+              </label>
+            ) : null}
             <label className="block">
               <span className="kicker">Email</span>
               <input

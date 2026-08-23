@@ -10,6 +10,7 @@ pub mod extract_auth;
 pub mod gateway;
 pub mod http;
 pub mod instance;
+pub mod invites;
 pub mod oidc;
 pub mod openapi;
 pub mod presence;

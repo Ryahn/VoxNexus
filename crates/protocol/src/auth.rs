@@ -5,13 +5,15 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-/// Register with email and password.
+/// Register with email, password, and display name.
 #[derive(Debug, Clone, Deserialize, Serialize, Validate, ToSchema)]
 pub struct RegisterRequest {
     #[validate(email, length(max = 320))]
     pub email: String,
     #[validate(length(min = 8, max = 128))]
     pub password: String,
+    #[validate(length(min = 1, max = 64))]
+    pub display_name: String,
 }
 
 /// Login with email and password.

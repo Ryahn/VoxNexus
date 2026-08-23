@@ -5,7 +5,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, DEFAULT_INSTANCE_ID};
 
-use crate::profile::ensure_profile;
+use crate::profile::ensure_profile_with_name;
 use crate::{insert_auth_identity, AuthError};
 
 /// Verified OIDC subject claims used to resolve or create a local account.
@@ -90,7 +90,11 @@ async fn create_oidc_account(pool: &PgPool, identity: &OidcIdentity) -> Result<A
 
     insert_auth_identity_tx(&mut tx, id, &identity.issuer, &identity.subject).await?;
     tx.commit().await?;
-    ensure_profile(pool, id).await?;
+    let hint = email
+        .as_deref()
+        .and_then(|value| value.split('@').next())
+        .unwrap_or("member");
+    ensure_profile_with_name(pool, id, Some(hint)).await?;
     get_account(pool, id)
         .await?
         .ok_or_else(|| AuthError::Db(sqlx::Error::RowNotFound))

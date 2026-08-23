@@ -86,7 +86,7 @@ async fn register_admin(router: &axum::Router) -> String {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )
@@ -106,7 +106,7 @@ async fn register_user(router: &axum::Router, email: &str) -> axum::response::Re
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )

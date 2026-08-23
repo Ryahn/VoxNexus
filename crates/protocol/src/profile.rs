@@ -23,7 +23,8 @@ pub struct ProfileResponse {
 /// Patch display name, bio, presence, and/or custom status.
 #[derive(Debug, Clone, Deserialize, Serialize, Validate, ToSchema)]
 pub struct UpdateProfileRequest {
-    #[validate(length(min = 1, max = 64))]
+    /// Empty string is allowed (new accounts start blank until set).
+    #[validate(length(max = 64))]
     pub display_name: Option<String>,
     #[validate(length(max = 500))]
     pub bio: Option<String>,

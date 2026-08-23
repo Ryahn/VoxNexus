@@ -9,18 +9,36 @@ use crate::AuthError;
 
 /// Ensure a profile row exists for `account_id`.
 ///
+/// When `display_name` is provided and the row is newly inserted, it is stored
+/// as the initial name (existing rows are left unchanged).
+///
 /// # Errors
 ///
 /// Returns database errors.
 pub async fn ensure_profile(pool: &PgPool, account_id: Uuid) -> Result<Profile, AuthError> {
+    ensure_profile_with_name(pool, account_id, None).await
+}
+
+/// Ensure a profile exists, optionally seeding `display_name` on insert.
+///
+/// # Errors
+///
+/// Returns database errors.
+pub async fn ensure_profile_with_name(
+    pool: &PgPool,
+    account_id: Uuid,
+    display_name: Option<&str>,
+) -> Result<Profile, AuthError> {
+    let name = display_name.map(str::trim).unwrap_or("");
     sqlx::query(
         r"
-        INSERT INTO profiles (account_id)
-        VALUES ($1)
+        INSERT INTO profiles (account_id, display_name)
+        VALUES ($1, $2)
         ON CONFLICT (account_id) DO NOTHING
         ",
     )
     .bind(account_id)
+    .bind(name)
     .execute(pool)
     .await?;
     get_profile(pool, account_id)

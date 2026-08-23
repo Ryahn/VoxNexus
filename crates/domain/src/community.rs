@@ -1,4 +1,4 @@
-//! Community and membership domain types (F019).
+//! Community and membership domain types (F019 / F020 / F021).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -87,4 +87,30 @@ pub struct CommunityMember {
     pub role: CommunityMemberRole,
     pub nickname: String,
     pub joined_at: DateTime<Utc>,
+}
+
+/// Invite link into a community (F021).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunityInvite {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub code: String,
+    pub created_by: Uuid,
+    pub max_uses: Option<i32>,
+    pub uses: i32,
+    pub expires_at: Option<DateTime<Utc>>,
+    pub paused: bool,
+    pub revoked_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+impl CommunityInvite {
+    /// Whether this invite can still be accepted right now.
+    #[must_use]
+    pub fn is_acceptably_active(&self, now: DateTime<Utc>) -> bool {
+        self.revoked_at.is_none()
+            && !self.paused
+            && self.expires_at.is_none_or(|expires| expires > now)
+            && self.max_uses.is_none_or(|max| self.uses < max)
+    }
 }

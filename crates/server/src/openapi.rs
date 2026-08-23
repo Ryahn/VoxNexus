@@ -5,15 +5,18 @@ use voxnexus_domain::{CommunityMemberRole, JoinMode};
 use voxnexus_protocol::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest,
     CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse,
-    CreateCommunityRequest, ErrorBody, InstanceSettingsResponse, LoginRequest, MetaResponse,
-    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest, UpdateCommunityRequest,
-    UpdateInstanceSettingsRequest, UpdateNicknameRequest, UpdateProfileRequest,
+    CreateCommunityRequest, CreateInviteRequest, ErrorBody, InstanceSettingsResponse,
+    InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
+    LoginRequest, MetaResponse, PresenceEntry, PresenceListResponse, ProfileResponse,
+    RegisterRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
+    UpdateNicknameRequest, UpdateProfileRequest,
 };
 
 use crate::auth;
 use crate::communities;
 use crate::http;
 use crate::instance;
+use crate::invites;
 use crate::oidc;
 use crate::presence;
 use crate::profile;
@@ -49,6 +52,12 @@ use crate::profile;
         communities::leave_community,
         communities::list_community_members,
         communities::update_my_nickname,
+        invites::create_community_invite,
+        invites::list_community_invites,
+        invites::revoke_community_invite,
+        invites::update_community_invite,
+        invites::get_invite_preview,
+        invites::accept_invite,
         profile::get_my_profile,
         profile::update_my_profile,
         profile::upload_my_avatar,
@@ -65,6 +74,13 @@ use crate::profile;
         CreateCommunityRequest,
         UpdateCommunityRequest,
         UpdateNicknameRequest,
+        CreateInviteRequest,
+        UpdateInviteRequest,
+        InviteExpireAfter,
+        InviteExpireUnit,
+        InviteResponse,
+        InviteListResponse,
+        InvitePreviewResponse,
         CommunityResponse,
         CommunityListResponse,
         CommunityMemberResponse,
@@ -87,6 +103,7 @@ use crate::profile;
         (name = "meta", description = "Unauthenticated instance identity"),
         (name = "instance", description = "Instance settings (instance admin)"),
         (name = "communities", description = "Communities and settings"),
+        (name = "invites", description = "Community invite links"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

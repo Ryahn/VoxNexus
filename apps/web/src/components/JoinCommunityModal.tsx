@@ -1,4 +1,4 @@
-import { joinCommunity } from '@voxnexus/api-client';
+import { acceptInvite, joinCommunity } from '@voxnexus/api-client';
 import { useEffect, useRef, useState } from 'react';
 import { useUI } from '../store';
 import { Portal } from './ui/Portal';
@@ -7,17 +7,19 @@ type Props = {
   onJoined: (id: string) => void;
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function JoinCommunityModal({ onJoined }: Props) {
   const open = useUI((s) => s.joinCommunityOpen);
   const setOpen = useUI((s) => s.setJoinCommunityOpen);
-  const [communityId, setCommunityId] = useState('');
+  const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      setCommunityId('');
+      setValue('');
       setError(null);
       setPending(false);
       setTimeout(() => inputRef.current?.focus(), 20);
@@ -36,20 +38,36 @@ export function JoinCommunityModal({ onJoined }: Props) {
   if (!open) return null;
 
   const submit = async () => {
-    const trimmed = communityId.trim();
+    const trimmed = value.trim();
     if (!trimmed) {
-      setError('Community id is required.');
+      setError('Community id or invite code is required.');
       return;
     }
     setPending(true);
     setError(null);
-    const result = await joinCommunity({ path: { community_id: trimmed } });
+    if (UUID_RE.test(trimmed)) {
+      const result = await joinCommunity({ path: { community_id: trimmed } });
+      setPending(false);
+      if (result.error || !result.data) {
+        const message =
+          result.error && typeof result.error === 'object' && 'message' in result.error
+            ? String((result.error as { message: string }).message)
+            : 'Could not join community.';
+        setError(message);
+        return;
+      }
+      setOpen(false);
+      onJoined(result.data.community_id);
+      return;
+    }
+
+    const result = await acceptInvite({ path: { code: trimmed } });
     setPending(false);
     if (result.error || !result.data) {
       const message =
         result.error && typeof result.error === 'object' && 'message' in result.error
           ? String((result.error as { message: string }).message)
-          : 'Could not join community.';
+          : 'Could not accept invite.';
       setError(message);
       return;
     }
@@ -76,19 +94,19 @@ export function JoinCommunityModal({ onJoined }: Props) {
             Join a community
           </h2>
           <p className="mb-4 text-sm text-ink-3">
-            Enter a community id for an open community. Invite links come later.
+            Paste an invite code, or a community id for open communities.
           </p>
           <label className="mb-3 block text-xs font-medium uppercase tracking-wide text-ink-3">
-            Community id
+            Invite code or community id
             <input
               ref={inputRef}
-              value={communityId}
-              onChange={(e) => setCommunityId(e.target.value)}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void submit();
               }}
               className="mt-1.5 w-full rounded-lg border border-line-2/60 bg-input px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent/50"
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              placeholder="invite code or uuid"
             />
           </label>
           {error ? <p className="mb-3 text-sm text-danger">{error}</p> : null}

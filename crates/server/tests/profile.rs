@@ -91,7 +91,7 @@ async fn register(router: &axum::Router, email: &str) -> String {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )

@@ -548,6 +548,16 @@ function AccountPanel() {
           void onChangeEmail();
         }}
       >
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={email}
+          readOnly
+          hidden
+          aria-hidden
+          tabIndex={-1}
+        />
         <label className="block">
           <span className="kicker">New email</span>
           <input
@@ -589,6 +599,16 @@ function AccountPanel() {
           void onChangePassword();
         }}
       >
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={session.account.email ?? ''}
+          readOnly
+          hidden
+          aria-hidden
+          tabIndex={-1}
+        />
         <label className="block">
           <span className="kicker">Current password</span>
           <input
@@ -647,6 +667,10 @@ function ProfilePanel() {
   const [presenceStatus, setPresenceStatus] = useState<PresenceState>('online');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
+  const [pendingBanner, setPendingBanner] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bump, setBump] = useState(0);
@@ -675,21 +699,183 @@ function ProfilePanel() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [bannerPreview]);
+
+  function pickImage(kind: 'avatar' | 'banner', file: File | undefined) {
+    if (!file) {
+      return;
+    }
+    const maxBytes = kind === 'avatar' ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setError(
+        kind === 'avatar' ? 'Avatar must be 2 MB or smaller.' : 'Banner must be 5 MB or smaller.',
+      );
+      return;
+    }
+    if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) {
+      setError('Image must be JPEG, PNG, GIF, or WebP.');
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    if (kind === 'avatar') {
+      setAvatarPreview((previous) => {
+        if (previous) {
+          URL.revokeObjectURL(previous);
+        }
+        return preview;
+      });
+      setPendingAvatar(file);
+    } else {
+      setBannerPreview((previous) => {
+        if (previous) {
+          URL.revokeObjectURL(previous);
+        }
+        return preview;
+      });
+      setPendingBanner(file);
+    }
+    setError(null);
+  }
+
+  async function uploadPending(
+    kind: 'avatar' | 'banner',
+    file: File,
+  ): Promise<
+    | { ok: true; avatarUrl?: string | null; bannerUrl?: string | null }
+    | { ok: false; message: string }
+  > {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const upload =
+      kind === 'avatar'
+        ? uploadMyAvatar({
+            body: bytes,
+            headers: { 'Content-Type': 'application/octet-stream' },
+            ...credentials,
+          })
+        : uploadMyBanner({
+            body: bytes,
+            headers: { 'Content-Type': 'application/octet-stream' },
+            ...credentials,
+          });
+    const result = await Promise.race([
+      upload,
+      new Promise<null>((resolve) => {
+        window.setTimeout(() => resolve(null), 45_000);
+      }),
+    ]);
+    if (result === null) {
+      return { ok: false, message: 'Image upload timed out — try again.' };
+    }
+    if (result.error || !result.data) {
+      return {
+        ok: false,
+        message: readApiErrorMessage(result.error, 'Upload failed (check size and image type).'),
+      };
+    }
+    return {
+      ok: true,
+      avatarUrl: result.data.avatar_url,
+      bannerUrl: result.data.banner_url,
+    };
+  }
+
   async function onSave() {
     setBusy(true);
     setError(null);
+    const name = displayName.trim();
+    if (!name) {
+      setBusy(false);
+      setError('Display name is required (1–64 characters).');
+      return;
+    }
     try {
-      const result = await updateMyProfile({
+      let nextAvatarUrl = avatarUrl;
+      let nextBannerUrl = bannerUrl;
+
+      if (pendingAvatar) {
+        const uploaded = await uploadPending('avatar', pendingAvatar);
+        if (!uploaded.ok) {
+          setError(uploaded.message);
+          return;
+        }
+        nextAvatarUrl = uploaded.avatarUrl ?? nextAvatarUrl;
+        nextBannerUrl = uploaded.bannerUrl ?? nextBannerUrl;
+        setAvatarUrl(nextAvatarUrl);
+        setPendingAvatar(null);
+        setAvatarPreview((previous) => {
+          if (previous) {
+            URL.revokeObjectURL(previous);
+          }
+          return null;
+        });
+        setBump((value) => value + 1);
+      }
+      if (pendingBanner) {
+        const uploaded = await uploadPending('banner', pendingBanner);
+        if (!uploaded.ok) {
+          setError(uploaded.message);
+          return;
+        }
+        nextAvatarUrl = uploaded.avatarUrl ?? nextAvatarUrl;
+        nextBannerUrl = uploaded.bannerUrl ?? nextBannerUrl;
+        setBannerUrl(nextBannerUrl);
+        setPendingBanner(null);
+        setBannerPreview((previous) => {
+          if (previous) {
+            URL.revokeObjectURL(previous);
+          }
+          return null;
+        });
+        setBump((value) => value + 1);
+      }
+
+      const save = updateMyProfile({
         body: {
-          display_name: displayName,
-          bio,
-          custom_status: customStatus,
+          display_name: name,
+          bio: bio.trim(),
+          custom_status: customStatus.trim(),
+          presence_status:
+            presenceStatus === 'offline'
+              ? undefined
+              : (presenceStatus as 'online' | 'idle' | 'dnd' | 'invisible'),
         },
         ...credentials,
       });
-      if (!result.data) {
-        setError('Save failed.');
+      const result = await Promise.race([
+        save,
+        new Promise<null>((resolve) => {
+          window.setTimeout(() => resolve(null), 20_000);
+        }),
+      ]);
+      if (result === null) {
+        setError('Save is taking too long — try again or refresh.');
+        return;
       }
+      if (result.error || !result.data) {
+        setError(readApiErrorMessage(result.error, 'Save failed.'));
+        return;
+      }
+      setDisplayName(result.data.display_name);
+      setBio(result.data.bio);
+      setCustomStatus(result.data.custom_status);
+      setPresenceStatus(result.data.presence_status as PresenceState);
+      setAvatarUrl(result.data.avatar_url ?? nextAvatarUrl);
+      setBannerUrl(result.data.banner_url ?? nextBannerUrl);
+      setBump((value) => value + 1);
     } catch {
       setError('Save failed.');
     } finally {
@@ -697,43 +883,8 @@ function ProfilePanel() {
     }
   }
 
-  async function onUpload(kind: 'avatar' | 'banner', file: File | undefined) {
-    if (!file) {
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const result =
-        kind === 'avatar'
-          ? await uploadMyAvatar({
-              body: file,
-              headers: { 'Content-Type': 'application/octet-stream' },
-              ...credentials,
-            })
-          : await uploadMyBanner({
-              body: file,
-              headers: { 'Content-Type': 'application/octet-stream' },
-              ...credentials,
-            });
-      if (result.data) {
-        setDisplayName(result.data.display_name);
-        setBio(result.data.bio);
-        setAvatarUrl(result.data.avatar_url ?? null);
-        setBannerUrl(result.data.banner_url ?? null);
-        setBump((value) => value + 1);
-      } else {
-        setError('Upload failed (check size and image type).');
-      }
-    } catch {
-      setError('Upload failed.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const avatarSrc = avatarUrl ? `${avatarUrl}?v=${bump}` : null;
-  const bannerSrc = bannerUrl ? `${bannerUrl}?v=${bump}` : null;
+  const avatarSrc = avatarPreview ?? (avatarUrl ? `${avatarUrl}?v=${bump}` : null);
+  const bannerSrc = bannerPreview ?? (bannerUrl ? `${bannerUrl}?v=${bump}` : null);
 
   return (
     <>
@@ -788,10 +939,11 @@ function ProfilePanel() {
               <button
                 key={status}
                 type="button"
-                disabled={busy}
                 onClick={() => {
                   setPresenceStatus(status);
-                  void setStatus(status, customStatus);
+                  void setStatus(status, customStatus).catch((error: unknown) => {
+                    setError(error instanceof Error ? error.message : 'Could not update presence.');
+                  });
                 }}
                 className={`rounded-md border px-2.5 py-1.5 text-[12.5px] font-medium transition-colors ${
                   presenceStatus === status
@@ -834,8 +986,15 @@ function ProfilePanel() {
               accept="image/png,image/jpeg,image/gif,image/webp"
               disabled={busy}
               className="mt-1 block w-full text-[12.5px] text-ink-2 file:mr-3 file:rounded-md file:border-0 file:bg-surface file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-ink"
-              onChange={(event) => void onUpload('avatar', event.target.files?.[0])}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                pickImage('avatar', file);
+              }}
             />
+            {pendingAvatar ? (
+              <p className="mt-1 text-[11.5px] text-ink-3">Pending — click Save profile to apply</p>
+            ) : null}
           </label>
           <label className="block">
             <span className="kicker">Banner</span>
@@ -844,8 +1003,15 @@ function ProfilePanel() {
               accept="image/png,image/jpeg,image/gif,image/webp"
               disabled={busy}
               className="mt-1 block w-full text-[12.5px] text-ink-2 file:mr-3 file:rounded-md file:border-0 file:bg-surface file:px-2.5 file:py-1.5 file:text-[12px] file:font-medium file:text-ink"
-              onChange={(event) => void onUpload('banner', event.target.files?.[0])}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = '';
+                pickImage('banner', file);
+              }}
             />
+            {pendingBanner ? (
+              <p className="mt-1 text-[11.5px] text-ink-3">Pending — click Save profile to apply</p>
+            ) : null}
           </label>
         </div>
         {error ? <p className="text-[13px] text-dnd">{error}</p> : null}

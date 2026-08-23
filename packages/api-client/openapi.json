@@ -797,6 +797,287 @@
         }
       }
     },
+    "/api/v1/communities/{community_id}/invites": {
+      "get": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "List active (non-revoked) invites for a community.",
+        "operationId": "listCommunityInvites",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invites",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Community not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Create an invite (owner / manage_invites — owner until F029).",
+        "operationId": "createCommunityInvite",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Invite created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Community not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/communities/{community_id}/invites/{invite_id}": {
+      "delete": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Revoke an invite.",
+        "operationId": "revokeCommunityInvite",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invite_id",
+            "in": "path",
+            "description": "Invite id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked"
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Pause or unpause an invite.",
+        "operationId": "updateCommunityInvite",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invite_id",
+            "in": "path",
+            "description": "Invite id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/communities/{community_id}/join": {
       "post": {
         "tags": [
@@ -1192,6 +1473,130 @@
           },
           "403": {
             "description": "Not instance admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/{code}": {
+      "get": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Preview an invite by code (authenticated).",
+        "operationId": "getInvitePreview",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "Invite code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invite preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitePreviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/invites/{code}/accept": {
+      "post": {
+        "tags": [
+          "invites"
+        ],
+        "summary": "Accept an invite by code.",
+        "operationId": "acceptInvite",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "Invite code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Joined",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityMemberResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invite not usable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already a member",
             "content": {
               "application/json": {
                 "schema": {
@@ -1859,6 +2264,31 @@
           }
         }
       },
+      "CreateInviteRequest": {
+        "type": "object",
+        "description": "Create a community invite.",
+        "properties": {
+          "expire_after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InviteExpireAfter",
+                "description": "Relative expiry from creation time. Omit for no expiry."
+              }
+            ]
+          },
+          "max_uses": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "`null` / omitted = unlimited. Otherwise `1..=1000`."
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "description": "JSON error envelope for `/api/v1` and unknown routes.",
@@ -1937,6 +2367,147 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "InviteExpireAfter": {
+        "type": "object",
+        "description": "Relative invite lifetime chosen before code generation.",
+        "required": [
+          "unit",
+          "value"
+        ],
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/InviteExpireUnit"
+          },
+          "value": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "InviteExpireUnit": {
+        "type": "string",
+        "description": "Units for [`InviteExpireAfter`].",
+        "enum": [
+          "hours",
+          "days",
+          "months"
+        ]
+      },
+      "InviteListResponse": {
+        "type": "object",
+        "description": "List of invites for a community.",
+        "required": [
+          "invites"
+        ],
+        "properties": {
+          "invites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InviteResponse"
+            }
+          }
+        }
+      },
+      "InvitePreviewResponse": {
+        "type": "object",
+        "description": "Preview for join-by-code UI (no sensitive creator detail beyond community).",
+        "required": [
+          "code",
+          "community_id",
+          "community_name",
+          "community_slug",
+          "paused",
+          "expired",
+          "exhausted"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "community_name": {
+            "type": "string"
+          },
+          "community_slug": {
+            "type": "string"
+          },
+          "exhausted": {
+            "type": "boolean"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        }
+      },
+      "InviteResponse": {
+        "type": "object",
+        "description": "Public invite representation.",
+        "required": [
+          "id",
+          "community_id",
+          "code",
+          "created_by",
+          "uses",
+          "paused",
+          "created_at"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "max_uses": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "uses": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2107,12 +2678,16 @@
       },
       "RegisterRequest": {
         "type": "object",
-        "description": "Register with email and password.",
+        "description": "Register with email, password, and display name.",
         "required": [
           "email",
-          "password"
+          "password",
+          "display_name"
         ],
         "properties": {
+          "display_name": {
+            "type": "string"
+          },
           "email": {
             "type": "string"
           },
@@ -2226,6 +2801,18 @@
           }
         }
       },
+      "UpdateInviteRequest": {
+        "type": "object",
+        "description": "Pause / unpause an invite.",
+        "properties": {
+          "paused": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
       "UpdateNicknameRequest": {
         "type": "object",
         "description": "Update the caller's nickname in a community.",
@@ -2258,7 +2845,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Empty string is allowed (new accounts start blank until set)."
           },
           "presence_status": {
             "oneOf": [
@@ -2286,6 +2874,10 @@
     {
       "name": "communities",
       "description": "Communities and settings"
+    },
+    {
+      "name": "invites",
+      "description": "Community invite links"
     },
     {
       "name": "auth",

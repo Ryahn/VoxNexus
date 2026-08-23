@@ -3,12 +3,14 @@ import { Bell, ChevronDown, Search, Sparkles } from 'lucide-react';
 import { communities } from '../data/communities';
 import { menuFor } from '../lib/menus';
 import { useUI } from '../store';
+import { InviteManagerModal } from './InviteManagerModal';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function CommunityHeader() {
   const activeId = useUI((s) => s.activeCommunity);
   const setCommunity = useUI((s) => s.setCommunity);
+  const setInviteManagerOpen = useUI((s) => s.setInviteManagerOpen);
   const community = communities.find((c) => c.id === activeId) ?? {
     id: activeId,
     name: 'Community',
@@ -18,9 +20,16 @@ export function CommunityHeader() {
   const openMenu = useUI((s) => s.openMenu);
   const setSearchOpen = useUI((s) => s.setSearchOpen);
   const setNotifOpen = useUI((s) => s.setNotifOpen);
+  const isLive = UUID_RE.test(activeId);
 
   const items = menuFor('community', community.name).map((item) => {
-    if (item.label?.startsWith('Leave ') && UUID_RE.test(activeId)) {
+    if (item.label === 'Invite People' && isLive) {
+      return {
+        ...item,
+        onSelect: () => setInviteManagerOpen(true),
+      };
+    }
+    if (item.label?.startsWith('Leave ') && isLive) {
       return {
         ...item,
         onSelect: () => {
@@ -38,7 +47,6 @@ export function CommunityHeader() {
 
   return (
     <header className="relative border-b border-line/70">
-      {/* faint community-accent wash behind the header */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.14]"
@@ -100,6 +108,7 @@ export function CommunityHeader() {
           <Bell size={15} strokeWidth={1.9} />
         </button>
       </div>
+      {isLive ? <InviteManagerModal communityId={activeId} /> : null}
     </header>
   );
 }

@@ -43,7 +43,14 @@ pub async fn register(
     let request_id = request_id_from_headers(&headers);
     let account = match voxnexus_auth::get_instance(&state.pool).await {
         Ok(instance) if !state.oidc_only && instance.registration_mode.allows_registration() => {
-            match create_local_account(&state.pool, &body.email, &body.password, true).await {
+            match create_local_account(
+                &state.pool,
+                &body.email,
+                &body.password,
+                &body.display_name,
+                true,
+            )
+            .await {
                 Ok(account) => account,
                 Err(error) => return map_auth_error(&error, request_id).into_response(),
             }
@@ -310,7 +317,11 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         AuthError::AlreadyMember
         | AuthError::NotMember
         | AuthError::JoinNotAllowed
-        | AuthError::OwnerCannotLeave => {
+        | AuthError::OwnerCannotLeave
+        | AuthError::InviteNotFound
+        | AuthError::InviteExpired
+        | AuthError::InviteExhausted
+        | AuthError::InvitePaused => {
             tracing::error!(error = %error, "unexpected community auth error in auth routes");
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,

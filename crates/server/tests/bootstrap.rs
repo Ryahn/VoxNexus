@@ -63,7 +63,7 @@ async fn register(router: &axum::Router, email: &str) -> axum::response::Respons
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )
@@ -225,6 +225,7 @@ async fn bootstrap_env_admin_blocks_registration_bootstrap_for_others() {
         &pool,
         &format!("other-{}@example.com", uuid::Uuid::now_v7()),
         "password123",
+        "Other",
         true,
     )
     .await

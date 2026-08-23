@@ -2,6 +2,7 @@
 
 mod community;
 mod instance;
+mod invite;
 mod oidc;
 mod password;
 mod profile;
@@ -24,11 +25,15 @@ pub use instance::{
     ensure_instance, get_instance, sync_locked_community_creation_mode, sync_oidc_from_config,
     update_instance, InstanceError, InstancePatch, InstanceSeed,
 };
+pub use invite::{
+    accept_invite, create_invite, get_invite, get_invite_by_code, list_invites, revoke_invite,
+    update_invite, CreateInviteInput, InvitePatch,
+};
 pub use oidc::{resolve_oidc_login, OidcIdentity};
 pub use password::{hash_password, verify_password, PasswordError};
 pub use profile::{
-    delete_object_meta, ensure_profile, get_object, get_profile, insert_object, set_avatar_object,
-    set_banner_object, update_profile,
+    delete_object_meta, ensure_profile, ensure_profile_with_name, get_object, get_profile,
+    insert_object, set_avatar_object, set_banner_object, update_profile,
 };
 pub use session::{
     clear_session_cookie, hash_session_token, new_session_token, session_cookie,
@@ -67,6 +72,14 @@ pub enum AuthError {
     JoinNotAllowed,
     #[error("community owner cannot leave")]
     OwnerCannotLeave,
+    #[error("invite not found")]
+    InviteNotFound,
+    #[error("invite expired")]
+    InviteExpired,
+    #[error("invite exhausted")]
+    InviteExhausted,
+    #[error("invite paused")]
+    InvitePaused,
     #[error("issuer and subject already linked")]
     IdentityTaken,
     #[error("registration is closed")]
@@ -86,12 +99,14 @@ pub async fn create_local_account(
     pool: &PgPool,
     email: &str,
     password: &str,
+    display_name: &str,
     registration_open: bool,
 ) -> Result<Account, AuthError> {
     if !registration_open {
         return Err(AuthError::RegistrationClosed);
     }
     let email = normalize_email(email);
+    let display_name = display_name.trim();
     let password_hash = hash_password(password)?;
     let now = Utc::now();
     let id = Uuid::now_v7();
@@ -119,7 +134,7 @@ pub async fn create_local_account(
     match result {
         Ok(_) => {
             tx.commit().await?;
-            ensure_profile(pool, id).await?;
+            ensure_profile_with_name(pool, id, Some(display_name)).await?;
             get_account(pool, id)
                 .await?
                 .ok_or_else(|| AuthError::Db(sqlx::Error::RowNotFound))
@@ -186,7 +201,8 @@ pub async fn bootstrap_instance_admin(
     .await?;
 
     tx.commit().await?;
-    ensure_profile(pool, id).await?;
+    let hint = email.split('@').next().unwrap_or("admin");
+    ensure_profile_with_name(pool, id, Some(hint)).await?;
     Ok(BootstrapResult::Created)
 }
 

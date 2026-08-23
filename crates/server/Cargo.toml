@@ -50,6 +50,7 @@ voxnexus-realtime = { path = "../realtime" }
 voxnexus-jobs = { path = "../jobs" }
 voxnexus-search = { path = "../search" }
 voxnexus-storage = { path = "../storage" }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
 [dev-dependencies]
 axum = { version = "0.8" }

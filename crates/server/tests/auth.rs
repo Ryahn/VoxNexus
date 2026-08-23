@@ -116,7 +116,7 @@ async fn register_login_logout_session_flow() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )
@@ -211,7 +211,7 @@ async fn duplicate_email_conflicts_and_sql_injection_is_literal() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )
@@ -228,7 +228,7 @@ async fn duplicate_email_conflicts_and_sql_injection_is_literal() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(format!(
-                    r#"{{"email":"{email}","password":"password123"}}"#
+                    r#"{{"email":"{email}","password":"password123","display_name":"Test User"}}"#
                 )))
                 .expect("request"),
         )
@@ -244,7 +244,7 @@ async fn duplicate_email_conflicts_and_sql_injection_is_literal() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .body(Body::from(
-                    r#"{"email":"x'; DROP TABLE accounts;--@ex.com","password":"password123"}"#,
+                    r#"{"email":"x'; DROP TABLE accounts;--@ex.com","password":"password123","display_name":"Test"}"#,
                 ))
                 .expect("request"),
         )
@@ -272,6 +272,7 @@ async fn auth_identity_issuer_subject_unique() {
         &pool,
         &format!("oidc-{}@example.com", uuid::Uuid::now_v7()),
         "password123",
+        "OIDC User",
         true,
     )
     .await

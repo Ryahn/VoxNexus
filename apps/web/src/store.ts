@@ -91,6 +91,10 @@ interface UIState {
   // join community by id
   joinCommunityOpen: boolean;
   setJoinCommunityOpen: (v: boolean) => void;
+
+  // invite manager
+  inviteManagerOpen: boolean;
+  setInviteManagerOpen: (v: boolean) => void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -160,4 +164,7 @@ export const useUI = create<UIState>((set) => ({
 
   joinCommunityOpen: false,
   setJoinCommunityOpen: (v) => set({ joinCommunityOpen: v }),
+
+  inviteManagerOpen: false,
+  setInviteManagerOpen: (v) => set({ inviteManagerOpen: v }),
 }));

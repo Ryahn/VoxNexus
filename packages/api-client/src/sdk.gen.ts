@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -157,6 +157,40 @@ export const uploadCommunityIcon = <ThrowOnError extends boolean = false>(option
 });
 
 /**
+ * List active (non-revoked) invites for a community.
+ */
+export const listCommunityInvites = <ThrowOnError extends boolean = false>(options: Options<ListCommunityInvitesData, ThrowOnError>): RequestResult<ListCommunityInvitesResponses, ListCommunityInvitesErrors, ThrowOnError> => (options.client ?? client).get<ListCommunityInvitesResponses, ListCommunityInvitesErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/invites', ...options });
+
+/**
+ * Create an invite (owner / manage_invites — owner until F029).
+ */
+export const createCommunityInvite = <ThrowOnError extends boolean = false>(options: Options<CreateCommunityInviteData, ThrowOnError>): RequestResult<CreateCommunityInviteResponses, CreateCommunityInviteErrors, ThrowOnError> => (options.client ?? client).post<CreateCommunityInviteResponses, CreateCommunityInviteErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/invites',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke an invite.
+ */
+export const revokeCommunityInvite = <ThrowOnError extends boolean = false>(options: Options<RevokeCommunityInviteData, ThrowOnError>): RequestResult<RevokeCommunityInviteResponses, RevokeCommunityInviteErrors, ThrowOnError> => (options.client ?? client).delete<RevokeCommunityInviteResponses, RevokeCommunityInviteErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/invites/{invite_id}', ...options });
+
+/**
+ * Pause or unpause an invite.
+ */
+export const updateCommunityInvite = <ThrowOnError extends boolean = false>(options: Options<UpdateCommunityInviteData, ThrowOnError>): RequestResult<UpdateCommunityInviteResponses, UpdateCommunityInviteErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCommunityInviteResponses, UpdateCommunityInviteErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/invites/{invite_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Join an open community.
  */
 export const joinCommunity = <ThrowOnError extends boolean = false>(options: Options<JoinCommunityData, ThrowOnError>): RequestResult<JoinCommunityResponses, JoinCommunityErrors, ThrowOnError> => (options.client ?? client).post<JoinCommunityResponses, JoinCommunityErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/join', ...options });
@@ -199,6 +233,16 @@ export const updateInstanceSettings = <ThrowOnError extends boolean = false>(opt
         ...options.headers
     }
 });
+
+/**
+ * Preview an invite by code (authenticated).
+ */
+export const getInvitePreview = <ThrowOnError extends boolean = false>(options: Options<GetInvitePreviewData, ThrowOnError>): RequestResult<GetInvitePreviewResponses, GetInvitePreviewErrors, ThrowOnError> => (options.client ?? client).get<GetInvitePreviewResponses, GetInvitePreviewErrors, ThrowOnError>({ url: '/api/v1/invites/{code}', ...options });
+
+/**
+ * Accept an invite by code.
+ */
+export const acceptInvite = <ThrowOnError extends boolean = false>(options: Options<AcceptInviteData, ThrowOnError>): RequestResult<AcceptInviteResponses, AcceptInviteErrors, ThrowOnError> => (options.client ?? client).post<AcceptInviteResponses, AcceptInviteErrors, ThrowOnError>({ url: '/api/v1/invites/{code}/accept', ...options });
 
 /**
  * Current user's profile.

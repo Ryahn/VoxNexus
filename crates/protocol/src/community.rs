@@ -86,3 +86,71 @@ pub struct UpdateNicknameRequest {
     #[validate(length(max = 32))]
     pub nickname: String,
 }
+
+/// Create a community invite.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct CreateInviteRequest {
+    /// `null` / omitted = unlimited. Otherwise `1..=1000`.
+    #[validate(range(min = 1, max = 1000))]
+    pub max_uses: Option<i32>,
+    /// Relative expiry from creation time. Omit for no expiry.
+    pub expire_after: Option<InviteExpireAfter>,
+}
+
+/// Relative invite lifetime chosen before code generation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct InviteExpireAfter {
+    pub unit: InviteExpireUnit,
+    pub value: u32,
+}
+
+/// Units for [`InviteExpireAfter`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum InviteExpireUnit {
+    Hours,
+    Days,
+    Months,
+}
+
+/// Pause / unpause an invite.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
+pub struct UpdateInviteRequest {
+    pub paused: Option<bool>,
+}
+
+/// Public invite representation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct InviteResponse {
+    pub id: uuid::Uuid,
+    pub community_id: uuid::Uuid,
+    pub code: String,
+    pub created_by: uuid::Uuid,
+    pub max_uses: Option<i32>,
+    pub uses: i32,
+    #[schema(value_type = Option<String>, format = DateTime)]
+    pub expires_at: Option<DateTime<Utc>>,
+    pub paused: bool,
+    #[schema(value_type = Option<String>, format = DateTime)]
+    pub revoked_at: Option<DateTime<Utc>>,
+    #[schema(value_type = String, format = DateTime)]
+    pub created_at: DateTime<Utc>,
+}
+
+/// List of invites for a community.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct InviteListResponse {
+    pub invites: Vec<InviteResponse>,
+}
+
+/// Preview for join-by-code UI (no sensitive creator detail beyond community).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+pub struct InvitePreviewResponse {
+    pub code: String,
+    pub community_id: uuid::Uuid,
+    pub community_name: String,
+    pub community_slug: String,
+    pub paused: bool,
+    pub expired: bool,
+    pub exhausted: bool,
+}

@@ -111,6 +111,17 @@ export type CreateCommunityRequest = {
 };
 
 /**
+ * Create a community invite.
+ */
+export type CreateInviteRequest = {
+    expire_after?: null | InviteExpireAfter;
+    /**
+     * `null` / omitted = unlimited. Otherwise `1..=1000`.
+     */
+    max_uses?: number | null;
+};
+
+/**
  * JSON error envelope for `/api/v1` and unknown routes.
  */
 export type ErrorBody = {
@@ -139,6 +150,55 @@ export type InstanceSettingsResponse = {
     public_url: string;
     registration_mode: RegistrationMode;
     updated_at: string;
+};
+
+/**
+ * Relative invite lifetime chosen before code generation.
+ */
+export type InviteExpireAfter = {
+    unit: InviteExpireUnit;
+    value: number;
+};
+
+/**
+ * Units for [`InviteExpireAfter`].
+ */
+export type InviteExpireUnit = 'hours' | 'days' | 'months';
+
+/**
+ * List of invites for a community.
+ */
+export type InviteListResponse = {
+    invites: Array<InviteResponse>;
+};
+
+/**
+ * Preview for join-by-code UI (no sensitive creator detail beyond community).
+ */
+export type InvitePreviewResponse = {
+    code: string;
+    community_id: string;
+    community_name: string;
+    community_slug: string;
+    exhausted: boolean;
+    expired: boolean;
+    paused: boolean;
+};
+
+/**
+ * Public invite representation.
+ */
+export type InviteResponse = {
+    code: string;
+    community_id: string;
+    created_at: string;
+    created_by: string;
+    expires_at?: string | null;
+    id: string;
+    max_uses?: number | null;
+    paused: boolean;
+    revoked_at?: string | null;
+    uses: number;
 };
 
 /**
@@ -214,9 +274,10 @@ export type ProfileResponse = {
 export type PublicPresenceStatus = 'online' | 'idle' | 'dnd' | 'invisible' | 'offline';
 
 /**
- * Register with email and password.
+ * Register with email, password, and display name.
  */
 export type RegisterRequest = {
+    display_name: string;
     email: string;
     password: string;
 };
@@ -251,6 +312,13 @@ export type UpdateInstanceSettingsRequest = {
 };
 
 /**
+ * Pause / unpause an invite.
+ */
+export type UpdateInviteRequest = {
+    paused?: boolean | null;
+};
+
+/**
  * Update the caller's nickname in a community.
  */
 export type UpdateNicknameRequest = {
@@ -263,6 +331,9 @@ export type UpdateNicknameRequest = {
 export type UpdateProfileRequest = {
     bio?: string | null;
     custom_status?: string | null;
+    /**
+     * Empty string is allowed (new accounts start blank until set).
+     */
     display_name?: string | null;
     presence_status?: null | PresenceStatus;
 };
@@ -764,6 +835,166 @@ export type UploadCommunityIconResponses = {
 
 export type UploadCommunityIconResponse = UploadCommunityIconResponses[keyof UploadCommunityIconResponses];
 
+export type ListCommunityInvitesData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invites';
+};
+
+export type ListCommunityInvitesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Community not found
+     */
+    404: ErrorBody;
+};
+
+export type ListCommunityInvitesError = ListCommunityInvitesErrors[keyof ListCommunityInvitesErrors];
+
+export type ListCommunityInvitesResponses = {
+    /**
+     * Invites
+     */
+    200: InviteListResponse;
+};
+
+export type ListCommunityInvitesResponse = ListCommunityInvitesResponses[keyof ListCommunityInvitesResponses];
+
+export type CreateCommunityInviteData = {
+    body: CreateInviteRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invites';
+};
+
+export type CreateCommunityInviteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Community not found
+     */
+    404: ErrorBody;
+};
+
+export type CreateCommunityInviteError = CreateCommunityInviteErrors[keyof CreateCommunityInviteErrors];
+
+export type CreateCommunityInviteResponses = {
+    /**
+     * Invite created
+     */
+    201: InviteResponse;
+};
+
+export type CreateCommunityInviteResponse = CreateCommunityInviteResponses[keyof CreateCommunityInviteResponses];
+
+export type RevokeCommunityInviteData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Invite id
+         */
+        invite_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invites/{invite_id}';
+};
+
+export type RevokeCommunityInviteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type RevokeCommunityInviteError = RevokeCommunityInviteErrors[keyof RevokeCommunityInviteErrors];
+
+export type RevokeCommunityInviteResponses = {
+    /**
+     * Revoked
+     */
+    204: void;
+};
+
+export type RevokeCommunityInviteResponse = RevokeCommunityInviteResponses[keyof RevokeCommunityInviteResponses];
+
+export type UpdateCommunityInviteData = {
+    body: UpdateInviteRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Invite id
+         */
+        invite_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invites/{invite_id}';
+};
+
+export type UpdateCommunityInviteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateCommunityInviteError = UpdateCommunityInviteErrors[keyof UpdateCommunityInviteErrors];
+
+export type UpdateCommunityInviteResponses = {
+    /**
+     * Updated
+     */
+    200: InviteResponse;
+};
+
+export type UpdateCommunityInviteResponse = UpdateCommunityInviteResponses[keyof UpdateCommunityInviteResponses];
+
 export type JoinCommunityData = {
     body?: never;
     path: {
@@ -998,6 +1229,82 @@ export type UpdateInstanceSettingsResponses = {
 };
 
 export type UpdateInstanceSettingsResponse = UpdateInstanceSettingsResponses[keyof UpdateInstanceSettingsResponses];
+
+export type GetInvitePreviewData = {
+    body?: never;
+    path: {
+        /**
+         * Invite code
+         */
+        code: string;
+    };
+    query?: never;
+    url: '/api/v1/invites/{code}';
+};
+
+export type GetInvitePreviewErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetInvitePreviewError = GetInvitePreviewErrors[keyof GetInvitePreviewErrors];
+
+export type GetInvitePreviewResponses = {
+    /**
+     * Invite preview
+     */
+    200: InvitePreviewResponse;
+};
+
+export type GetInvitePreviewResponse = GetInvitePreviewResponses[keyof GetInvitePreviewResponses];
+
+export type AcceptInviteData = {
+    body?: never;
+    path: {
+        /**
+         * Invite code
+         */
+        code: string;
+    };
+    query?: never;
+    url: '/api/v1/invites/{code}/accept';
+};
+
+export type AcceptInviteErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Invite not usable
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Already a member
+     */
+    409: ErrorBody;
+};
+
+export type AcceptInviteError = AcceptInviteErrors[keyof AcceptInviteErrors];
+
+export type AcceptInviteResponses = {
+    /**
+     * Joined
+     */
+    201: CommunityMemberResponse;
+};
+
+export type AcceptInviteResponse = AcceptInviteResponses[keyof AcceptInviteResponses];
 
 export type GetMyProfileData = {
     body?: never;
