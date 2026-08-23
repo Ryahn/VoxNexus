@@ -109,6 +109,7 @@ async fn register_user(router: &axum::Router, email: &str) -> axum::response::Re
 }
 
 async fn reset_instance(pool: &PgPool) {
+    clear_instance_admins(pool).await;
     update_instance(
         pool,
         InstancePatch {
@@ -119,6 +120,20 @@ async fn reset_instance(pool: &PgPool) {
     )
     .await
     .expect("reset instance");
+}
+
+/// CI shares one Postgres across integration tests; clear admins so bootstrap grants admin to the next registrant.
+async fn clear_instance_admins(pool: &PgPool) {
+    sqlx::query(
+        r"
+        UPDATE accounts
+        SET is_instance_admin = FALSE, updated_at = NOW()
+        WHERE is_instance_admin = TRUE AND deleted_at IS NULL
+        ",
+    )
+    .execute(pool)
+    .await
+    .expect("clear instance admins");
 }
 
 fn instance_test_lock() -> &'static Mutex<()> {
