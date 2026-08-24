@@ -14,6 +14,7 @@ import { readApiErrorMessage } from '../lib/apiError';
 import { useUI } from '../store';
 import type { Category, Channel } from '../types';
 import { ChannelCategory } from './ChannelCategory';
+import { ChannelPermissionsModal } from './ChannelPermissionsModal';
 import { CreateCategoryModal } from './CreateCategoryModal';
 import { CreateChannelModal } from './CreateChannelModal';
 
@@ -147,6 +148,8 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
                   category={sidebarCat}
                   channels={channelsForCategory(cat.id)}
                   onAddChannel={isOwner ? () => setCreateChannelFor(cat.id) : undefined}
+                  communityId={communityId}
+                  canManage={isOwner}
                 />
               </div>
             );
@@ -175,6 +178,7 @@ export function LiveCategoryList({ communityId, spaceId, spaceName }: Props) {
           }}
         />
       ) : null}
+      <ChannelPermissionsModal />
     </div>
   );
 }

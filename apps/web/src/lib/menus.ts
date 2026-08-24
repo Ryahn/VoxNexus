@@ -39,6 +39,7 @@ export function menuFor(kind: 'community' | 'channel' | 'group', label: string):
     { label: 'Mute Channel', icon: 'bell-off', shortcut: '', onSelect: noop },
     { label: 'Notification Settings', icon: 'bell', onSelect: noop },
     { separator: true },
+    { label: 'Edit Permissions', icon: 'shield', onSelect: noop },
     { label: 'Edit Channel', icon: 'edit', onSelect: noop },
     { label: 'Duplicate Channel', icon: 'copy', onSelect: noop },
     { label: 'Delete Channel', icon: 'trash', danger: true, onSelect: noop },

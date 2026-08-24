@@ -7,8 +7,9 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
 use uuid::Uuid;
 use voxnexus_auth::{
-    delete_override as persist_delete, get_channel, get_membership, get_role,
-    list_channel_overrides as persist_list, upsert_channel_member_override,
+    delete_override as persist_delete, get_category, get_channel, get_membership, get_role,
+    list_category_overrides as persist_list_category, list_channel_overrides as persist_list_channel,
+    upsert_category_member_override, upsert_category_role_override, upsert_channel_member_override,
     upsert_channel_role_override, PermissionOverride,
 };
 use voxnexus_protocol::error_codes;
@@ -51,7 +52,7 @@ pub async fn list_channel_permission_overrides(
         &request_id,
     )
     .await?;
-    let rows = persist_list(&state.pool, channel.id, channel.category_id)
+    let rows = persist_list_channel(&state.pool, channel.id, channel.category_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?;
     Ok(Json(PermissionOverrideListResponse {
@@ -200,12 +201,166 @@ pub async fn delete_permission_override(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// List permission overrides for a category.
+#[utoipa::path(
+    get,
+    path = "/api/v1/categories/{category_id}/permission-overrides",
+    operation_id = "listCategoryPermissionOverrides",
+    tag = "categories",
+    params(("category_id" = Uuid, Path, description = "Category id")),
+    responses(
+        (status = 200, description = "Override list", body = PermissionOverrideListResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not allowed", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn list_category_permission_overrides(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(category_id): Path<Uuid>,
+) -> Result<Json<PermissionOverrideListResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let category = load_category(&state, category_id, &request_id).await?;
+    require_manage_channels(
+        &state,
+        category.community_id,
+        user.account_id,
+        &request_id,
+    )
+    .await?;
+    let rows = persist_list_category(&state.pool, category.id)
+        .await
+        .map_err(|error| map_auth(&error, request_id.clone()))?;
+    Ok(Json(PermissionOverrideListResponse {
+        overrides: rows.into_iter().map(to_response).collect(),
+    }))
+}
+
+/// Upsert a role override on a category.
+#[utoipa::path(
+    put,
+    path = "/api/v1/categories/{category_id}/permission-overrides/roles/{role_id}",
+    operation_id = "upsertCategoryRolePermissionOverride",
+    tag = "categories",
+    params(
+        ("category_id" = Uuid, Path, description = "Category id"),
+        ("role_id" = Uuid, Path, description = "Role id")
+    ),
+    request_body = UpsertPermissionOverrideRequest,
+    responses(
+        (status = 200, description = "Override saved", body = PermissionOverrideResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not allowed", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn upsert_category_role_permission_override(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path((category_id, role_id)): Path<(Uuid, Uuid)>,
+    ValidatedJson(body): ValidatedJson<UpsertPermissionOverrideRequest>,
+) -> Result<Json<PermissionOverrideResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let category = load_category(&state, category_id, &request_id).await?;
+    require_manage_channels(
+        &state,
+        category.community_id,
+        user.account_id,
+        &request_id,
+    )
+    .await?;
+    let role = get_role(&state.pool, role_id)
+        .await
+        .map_err(|error| map_auth(&error, request_id.clone()))?
+        .ok_or_else(|| not_found(request_id.clone()))?;
+    if role.community_id != category.community_id {
+        return Err(not_found(request_id));
+    }
+    let row = upsert_category_role_override(
+        &state.pool,
+        category.community_id,
+        category.id,
+        role_id,
+        body.permissions,
+    )
+    .await
+    .map_err(|error| map_auth(&error, request_id.clone()))?;
+    invalidate_community(&state, category.community_id);
+    Ok(Json(to_response(row)))
+}
+
+/// Upsert a member override on a category.
+#[utoipa::path(
+    put,
+    path = "/api/v1/categories/{category_id}/permission-overrides/members/{account_id}",
+    operation_id = "upsertCategoryMemberPermissionOverride",
+    tag = "categories",
+    params(
+        ("category_id" = Uuid, Path, description = "Category id"),
+        ("account_id" = Uuid, Path, description = "Member account id")
+    ),
+    request_body = UpsertPermissionOverrideRequest,
+    responses(
+        (status = 200, description = "Override saved", body = PermissionOverrideResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not allowed", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn upsert_category_member_permission_override(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path((category_id, account_id)): Path<(Uuid, Uuid)>,
+    ValidatedJson(body): ValidatedJson<UpsertPermissionOverrideRequest>,
+) -> Result<Json<PermissionOverrideResponse>, ApiError> {
+    let request_id = request_id_from_headers(&headers);
+    let category = load_category(&state, category_id, &request_id).await?;
+    require_manage_channels(
+        &state,
+        category.community_id,
+        user.account_id,
+        &request_id,
+    )
+    .await?;
+    let membership = get_membership(&state.pool, category.community_id, account_id)
+        .await
+        .map_err(|error| map_auth(&error, request_id.clone()))?
+        .ok_or_else(|| not_found(request_id.clone()))?;
+    let _ = membership;
+    let row = upsert_category_member_override(
+        &state.pool,
+        category.community_id,
+        category.id,
+        account_id,
+        body.permissions,
+    )
+    .await
+    .map_err(|error| map_auth(&error, request_id.clone()))?;
+    invalidate_community(&state, category.community_id);
+    Ok(Json(to_response(row)))
+}
+
 async fn load_channel(
     state: &AppState,
     channel_id: Uuid,
     request_id: &str,
 ) -> Result<voxnexus_domain::Channel, ApiError> {
     get_channel(&state.pool, channel_id)
+        .await
+        .map_err(|error| map_auth(&error, request_id.to_owned()))?
+        .ok_or_else(|| not_found(request_id.to_owned()))
+}
+
+async fn load_category(
+    state: &AppState,
+    category_id: Uuid,
+    request_id: &str,
+) -> Result<voxnexus_domain::ChannelCategory, ApiError> {
+    get_category(&state.pool, category_id)
         .await
         .map_err(|error| map_auth(&error, request_id.to_owned()))?
         .ok_or_else(|| not_found(request_id.to_owned()))

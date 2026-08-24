@@ -20,6 +20,21 @@ export interface Anchor {
   bottom?: boolean;
 }
 
+export type PermissionOverrideTarget =
+  | {
+      scope: 'channel';
+      communityId: string;
+      channelId: string;
+      name: string;
+      categoryId: string | null;
+    }
+  | {
+      scope: 'category';
+      communityId: string;
+      categoryId: string;
+      name: string;
+    };
+
 interface UIState {
   // navigation
   activeCommunity: string;
@@ -99,6 +114,11 @@ interface UIState {
   // community settings (join mode, etc.)
   communitySettingsOpen: boolean;
   setCommunitySettingsOpen: (v: boolean) => void;
+
+  // permission overrides (F030)
+  permissionOverrides: PermissionOverrideTarget | null;
+  openPermissionOverrides: (target: PermissionOverrideTarget) => void;
+  closePermissionOverrides: () => void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -174,4 +194,8 @@ export const useUI = create<UIState>((set) => ({
 
   communitySettingsOpen: false,
   setCommunitySettingsOpen: (v) => set({ communitySettingsOpen: v }),
+
+  permissionOverrides: null,
+  openPermissionOverrides: (target) => set({ permissionOverrides: target }),
+  closePermissionOverrides: () => set({ permissionOverrides: null }),
 }));

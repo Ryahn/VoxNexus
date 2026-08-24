@@ -265,6 +265,11 @@ pub fn invalidate_community(state: &AppState, community_id: Uuid) {
 }
 
 fn merge_role_grants(roles: &[voxnexus_domain::CommunityRole]) -> GrantSet {
+    merge_role_grants_public(roles)
+}
+
+/// Collapse assigned roles into effective grants (for explain / debug).
+pub fn merge_role_grants_public(roles: &[voxnexus_domain::CommunityRole]) -> GrantSet {
     let pairs: Vec<(i32, voxnexus_permissions::RolePermissionSet)> = roles
         .iter()
         .map(|role| (role.weight, parse_role_permissions(&role.permissions)))

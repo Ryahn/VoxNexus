@@ -47,8 +47,9 @@ pub use invite::{
 pub use oidc::{resolve_oidc_login, OidcIdentity};
 pub use password::{hash_password, verify_password, PasswordError};
 pub use permission_override::{
-    delete_override, list_channel_overrides, override_bundle_for_channel,
-    upsert_channel_member_override, upsert_channel_role_override, PermissionOverride,
+    delete_override, list_category_overrides, list_channel_overrides, override_bundle_for_channel,
+    upsert_category_member_override, upsert_category_role_override, upsert_channel_member_override,
+    upsert_channel_role_override, PermissionOverride,
 };
 pub use profile::{
     delete_object_meta, ensure_profile, ensure_profile_with_name, get_object, get_profile,

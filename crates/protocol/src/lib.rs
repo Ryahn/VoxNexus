@@ -5,6 +5,7 @@ mod category;
 mod channel;
 mod community;
 mod error;
+mod explain;
 mod gateway;
 mod instance;
 mod meta;
@@ -33,6 +34,9 @@ pub use community::{
     TransferCommunityRequest, UpdateCommunityRequest, UpdateInviteRequest, UpdateNicknameRequest,
 };
 pub use error::{error_codes, ErrorBody};
+pub use explain::{
+    ExplainPermissionRequest, ExplainPermissionResponse, PermissionExplainStep,
+};
 pub use gateway::{
     gateway_schema, gateway_schema_json, CommunityRolePayload, DevPingPayload, DevPongPayload,
     Envelope, EventScope, EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload,

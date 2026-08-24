@@ -764,3 +764,199 @@ async fn channel_override_deny_everyone_allow_role_grants_view() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+async fn explain_other_member_requires_manage_channels() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let (owner, owner_id) = register(
+        &router,
+        &format!("explain-gate-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Explain Gate").await;
+    let (member, _) = register(
+        &router,
+        &format!("explain-gate-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join");
+    assert_eq!(join.status(), StatusCode::CREATED);
+
+    let explain = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/permissions/explain")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::from(format!(
+                    r#"{{"community_id":"{}","account_id":"{}","permission":"text.view"}}"#,
+                    community.id, owner_id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("explain");
+    assert_eq!(explain.status(), StatusCode::FORBIDDEN);
+
+    unlock_instance_mode(&pool).await;
+}
+
+#[tokio::test]
+async fn explain_trace_matches_channel_override_deny() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let (owner, _) = register(
+        &router,
+        &format!("explain-trace-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Explain Trace").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel =
+        create_text_channel(&router, &owner, community.id, space.id, category.id, "locked").await;
+
+    let roles = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/roles", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("list roles");
+    let role_list: voxnexus_protocol::RoleListResponse =
+        serde_json::from_slice(&json_body(roles).await).expect("roles");
+    let everyone = role_list
+        .roles
+        .iter()
+        .find(|role| role.is_everyone)
+        .expect("@everyone");
+
+    let deny = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(format!(
+                    "/api/v1/channels/{}/permission-overrides/roles/{}",
+                    channel.id, everyone.id
+                ))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("deny");
+    assert_eq!(deny.status(), StatusCode::OK);
+
+    let (member, member_id) = register(
+        &router,
+        &format!("explain-trace-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join");
+    assert_eq!(join.status(), StatusCode::CREATED);
+
+    let explain = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/permissions/explain")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"community_id":"{}","account_id":"{}","permission":"text.view","channel_id":"{}"}}"#,
+                    community.id, member_id, channel.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("explain");
+    assert_eq!(explain.status(), StatusCode::OK);
+    let body: voxnexus_protocol::ExplainPermissionResponse =
+        serde_json::from_slice(&json_body(explain).await).expect("explain body");
+    assert!(!body.allowed);
+    assert!(
+        body.steps
+            .iter()
+            .any(|step| step.stage == "channel_override"),
+        "expected channel_override step"
+    );
+
+    unlock_instance_mode(&pool).await;
+}

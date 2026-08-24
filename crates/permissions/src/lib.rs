@@ -1,5 +1,6 @@
 //! Permission evaluation, caching, and stable codes (F029).
 
+mod explain;
 mod override_layer;
 mod cache;
 mod code;
@@ -7,6 +8,7 @@ mod eval;
 mod family;
 mod grants;
 
+pub use explain::{resolve_traced, ExplainStep};
 pub use override_layer::{apply_override_layers, OverrideBundle};
 pub use cache::PermissionCache;
 pub use code::PermissionCode;

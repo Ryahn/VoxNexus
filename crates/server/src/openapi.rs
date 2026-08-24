@@ -18,13 +18,15 @@ use voxnexus_protocol::{
     UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
     UpdateNicknameRequest, UpdateProfileRequest, UpdateRoleGroupRequest, UpdateRoleRequest,
     UpdateSpaceRequest, BulkAssignRoleGroupRequest, PermissionOverrideListResponse,
-    PermissionOverrideResponse, UpsertPermissionOverrideRequest,
+    PermissionOverrideResponse, UpsertPermissionOverrideRequest, ExplainPermissionRequest,
+    ExplainPermissionResponse, PermissionExplainStep,
 };
 
 use crate::auth;
 use crate::categories;
 use crate::channels;
 use crate::communities;
+use crate::explain;
 use crate::http;
 use crate::instance;
 use crate::invites;
@@ -94,6 +96,9 @@ use crate::spaces;
         categories::get_category_by_id,
         categories::update_category,
         categories::delete_category,
+        permission_overrides::list_category_permission_overrides,
+        permission_overrides::upsert_category_role_permission_override,
+        permission_overrides::upsert_category_member_permission_override,
         channels::create_channel,
         channels::list_channels,
         channels::reorder_channels,
@@ -107,6 +112,7 @@ use crate::spaces;
         permission_overrides::upsert_channel_role_permission_override,
         permission_overrides::upsert_channel_member_permission_override,
         permission_overrides::delete_permission_override,
+        explain::explain_permission,
         roles::create_role,
         roles::list_roles,
         roles::reorder_roles,
@@ -180,6 +186,9 @@ use crate::spaces;
         PermissionOverrideResponse,
         PermissionOverrideListResponse,
         UpsertPermissionOverrideRequest,
+        ExplainPermissionRequest,
+        ExplainPermissionResponse,
+        PermissionExplainStep,
         RoleResponse,
         RoleListResponse,
         CreateRoleRequest,
@@ -212,6 +221,7 @@ use crate::spaces;
         (name = "categories", description = "Channel sidebar categories"),
         (name = "channels", description = "Channels within a community"),
         (name = "roles", description = "Community roles and assignments"),
+        (name = "permissions", description = "Permission explain and debug"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

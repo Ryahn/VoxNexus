@@ -6,11 +6,18 @@ import { useUI } from '../store';
 import type { Channel } from '../types';
 import { Avatar } from './ui/Avatar';
 
-export function ChannelItem({ channel }: { channel: Channel }) {
+type Props = {
+  channel: Channel;
+  communityId?: string;
+  canManage?: boolean;
+};
+
+export function ChannelItem({ channel, communityId, canManage }: Props) {
   const active = useUI((s) => s.activeChannel);
   const setChannel = useUI((s) => s.setChannel);
   const connectVoice = useUI((s) => s.connectVoice);
   const openMenu = useUI((s) => s.openMenu);
+  const openPermissionOverrides = useUI((s) => s.openPermissionOverrides);
   const { Icon } = channelMeta[channel.type];
 
   const isActive = active === channel.id;
@@ -23,6 +30,23 @@ export function ChannelItem({ channel }: { channel: Channel }) {
     else setChannel(channel.id);
   };
 
+  const menuItems = menuFor('channel', channel.name).map((item) => {
+    if (item.label === 'Edit Permissions' && communityId && canManage) {
+      return {
+        ...item,
+        onSelect: () =>
+          openPermissionOverrides({
+            scope: 'channel',
+            communityId,
+            channelId: channel.id,
+            name: channel.name,
+            categoryId: channel.categoryId ?? null,
+          }),
+      };
+    }
+    return item;
+  });
+
   return (
     <div className="flex flex-col">
       <button
@@ -30,7 +54,7 @@ export function ChannelItem({ channel }: { channel: Channel }) {
         onClick={select}
         onContextMenu={(e) => {
           e.preventDefault();
-          openMenu({ x: e.clientX, y: e.clientY }, menuFor('channel', channel.name));
+          openMenu({ x: e.clientX, y: e.clientY }, menuItems);
         }}
         aria-current={isActive}
         className={`group relative flex items-center gap-1.5 rounded-md px-2 py-[5px] text-left transition-colors duration-150 ${

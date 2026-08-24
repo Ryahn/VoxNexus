@@ -274,6 +274,27 @@ export type ErrorBody = {
 };
 
 /**
+ * Explain why an actor has or lacks a permission.
+ */
+export type ExplainPermissionRequest = {
+    account_id: string;
+    channel_id?: string | null;
+    community_id: string;
+    permission: string;
+};
+
+/**
+ * Permission explain result.
+ */
+export type ExplainPermissionResponse = {
+    account_id: string;
+    allowed: boolean;
+    channel_id?: string | null;
+    permission: string;
+    steps: Array<PermissionExplainStep>;
+};
+
+/**
  * Instance settings visible to instance admins.
  */
 export type InstanceSettingsResponse = {
@@ -386,6 +407,15 @@ export type MetaResponse = {
     password_login_enabled: boolean;
     registration_mode: RegistrationMode;
     version: string;
+};
+
+/**
+ * One step in an explanation chain.
+ */
+export type PermissionExplainStep = {
+    detail: string;
+    outcome: string;
+    stage: string;
 };
 
 /**
@@ -1063,6 +1093,128 @@ export type UpdateCategoryResponses = {
 };
 
 export type UpdateCategoryResponse = UpdateCategoryResponses[keyof UpdateCategoryResponses];
+
+export type ListCategoryPermissionOverridesData = {
+    body?: never;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}/permission-overrides';
+};
+
+export type ListCategoryPermissionOverridesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListCategoryPermissionOverridesError = ListCategoryPermissionOverridesErrors[keyof ListCategoryPermissionOverridesErrors];
+
+export type ListCategoryPermissionOverridesResponses = {
+    /**
+     * Override list
+     */
+    200: PermissionOverrideListResponse;
+};
+
+export type ListCategoryPermissionOverridesResponse = ListCategoryPermissionOverridesResponses[keyof ListCategoryPermissionOverridesResponses];
+
+export type UpsertCategoryMemberPermissionOverrideData = {
+    body: UpsertPermissionOverrideRequest;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+        /**
+         * Member account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}/permission-overrides/members/{account_id}';
+};
+
+export type UpsertCategoryMemberPermissionOverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpsertCategoryMemberPermissionOverrideError = UpsertCategoryMemberPermissionOverrideErrors[keyof UpsertCategoryMemberPermissionOverrideErrors];
+
+export type UpsertCategoryMemberPermissionOverrideResponses = {
+    /**
+     * Override saved
+     */
+    200: PermissionOverrideResponse;
+};
+
+export type UpsertCategoryMemberPermissionOverrideResponse = UpsertCategoryMemberPermissionOverrideResponses[keyof UpsertCategoryMemberPermissionOverrideResponses];
+
+export type UpsertCategoryRolePermissionOverrideData = {
+    body: UpsertPermissionOverrideRequest;
+    path: {
+        /**
+         * Category id
+         */
+        category_id: string;
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/categories/{category_id}/permission-overrides/roles/{role_id}';
+};
+
+export type UpsertCategoryRolePermissionOverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpsertCategoryRolePermissionOverrideError = UpsertCategoryRolePermissionOverrideErrors[keyof UpsertCategoryRolePermissionOverrideErrors];
+
+export type UpsertCategoryRolePermissionOverrideResponses = {
+    /**
+     * Override saved
+     */
+    200: PermissionOverrideResponse;
+};
+
+export type UpsertCategoryRolePermissionOverrideResponse = UpsertCategoryRolePermissionOverrideResponses[keyof UpsertCategoryRolePermissionOverrideResponses];
 
 export type DeleteChannelData = {
     body?: never;
@@ -3220,6 +3372,39 @@ export type GetMetaResponses = {
 };
 
 export type GetMetaResponse = GetMetaResponses[keyof GetMetaResponses];
+
+export type ExplainPermissionData = {
+    body: ExplainPermissionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/permissions/explain';
+};
+
+export type ExplainPermissionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ExplainPermissionError = ExplainPermissionErrors[keyof ExplainPermissionErrors];
+
+export type ExplainPermissionResponses = {
+    /**
+     * Explanation
+     */
+    200: ExplainPermissionResponse;
+};
+
+export type ExplainPermissionResponse2 = ExplainPermissionResponses[keyof ExplainPermissionResponses];
 
 export type ListPresenceData = {
     body?: never;
