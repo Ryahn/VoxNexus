@@ -11,6 +11,7 @@ export function menuFor(kind: 'community' | 'channel' | 'group', label: string):
     return [
       { label: 'Community Settings', icon: 'settings', shortcut: '', onSelect: noop },
       { label: 'Invite People', icon: 'user-plus', onSelect: noop },
+      { label: 'View As…', icon: 'eye', onSelect: noop },
       { label: 'Create Channel', icon: 'plus', onSelect: noop },
       { label: 'Create Group', icon: 'folder-plus', onSelect: noop },
       { separator: true },

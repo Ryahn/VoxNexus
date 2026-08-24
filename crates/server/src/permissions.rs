@@ -124,6 +124,23 @@ pub async fn allowed_for_channel(
     Ok(resolve(&ctx, permission).is_allow())
 }
 
+/// Resolve `permission` for a pre-built context (View As), applying channel overrides.
+pub async fn allowed_for_channel_ctx(
+    state: &AppState,
+    channel: &Channel,
+    mut ctx: ActorContext,
+    role_ids: &[Uuid],
+    member_account_id: Option<Uuid>,
+    permission: PermissionCode,
+) -> Result<bool, ApiError> {
+    let override_account = member_account_id.unwrap_or(Uuid::nil());
+    ctx.grants =
+        apply_channel_overrides(state, channel, ctx.grants, role_ids, override_account).await?;
+    // Keep space gate aligned with the channel under evaluation.
+    ctx.space_id = channel.space_id;
+    Ok(resolve(&ctx, permission).is_allow())
+}
+
 async fn effective_grants_for_channel(
     state: &AppState,
     channel: &Channel,
@@ -137,6 +154,16 @@ async fn effective_grants_for_channel(
             internal("permission role load")
         })?;
     let role_ids: Vec<Uuid> = roles.iter().map(|role| role.id).collect();
+    apply_channel_overrides(state, channel, base, &role_ids, account_id).await
+}
+
+async fn apply_channel_overrides(
+    state: &AppState,
+    channel: &Channel,
+    base: GrantSet,
+    role_ids: &[Uuid],
+    account_id: Uuid,
+) -> Result<GrantSet, ApiError> {
     let bundle =
         override_bundle_for_channel(&state.pool, channel.id, channel.category_id, account_id)
             .await
@@ -144,7 +171,7 @@ async fn effective_grants_for_channel(
                 tracing::error!(error = %error, "override load failed");
                 internal("permission override load")
             })?;
-    Ok(apply_override_layers(base, &bundle, &role_ids))
+    Ok(apply_override_layers(base, &bundle, role_ids))
 }
 
 /// Require `permission` or return 403 (404 when the community does not exist).

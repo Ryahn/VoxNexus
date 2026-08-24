@@ -7,6 +7,7 @@ mod explain;
 mod family;
 mod grants;
 mod override_layer;
+mod view_as;
 
 pub use cache::PermissionCache;
 pub use code::PermissionCode;
@@ -19,6 +20,7 @@ pub use grants::{
     permissions_with_manage_roles, RolePermissionSet,
 };
 pub use override_layer::{apply_override_layers, OverrideBundle};
+pub use view_as::{roles_context, visitor_context};
 
 /// Product crate name.
 pub const CRATE_NAME: &str = "voxnexus-permissions";

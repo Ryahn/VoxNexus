@@ -36,5 +36,6 @@ Live integration tests need `DATABASE_URL_TEST` / `REDIS_URL_TEST` (optional `S3
 | Gateway event | `crates/protocol` + `crates/realtime`, then `pnpm codegen` |
 | Schema | `migrations/*.up.sql` + `*.down.sql`; types in `crates/domain` |
 | Session / password / OIDC | `crates/auth`, handlers in `crates/server` |
+| Permission codes / eval / overrides | `crates/permissions`, gates in `crates/server` |
 | Web UI | `apps/web` via `@voxnexus/api-client` / `@voxnexus/protocol` |
 | Operator docs | `apps/site/content/*.md` + `nav.ts` / `content.ts` / `App.tsx` |

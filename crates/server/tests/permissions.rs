@@ -15,7 +15,7 @@ use voxnexus_domain::CommunityCreationMode;
 use voxnexus_jobs::{connect, RedisConn};
 use voxnexus_protocol::{
     AuthSessionResponse, CategoryResponse, ChannelListResponse, ChannelResponse, CommunityResponse,
-    SpaceResponse,
+    SpaceResponse, ViewAsChannelsResponse,
 };
 use voxnexus_search::{MemorySearchEngine, SearchEngine};
 use voxnexus_storage::{MemoryObjectStore, ObjectStore};
@@ -994,6 +994,198 @@ async fn explain_trace_matches_channel_override_deny() {
             .any(|step| step.stage == "channel_override"),
         "expected channel_override step"
     );
+
+    unlock_instance_mode(&pool).await;
+}
+
+#[tokio::test]
+async fn view_as_visitor_hides_private_channels() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let (owner, _) = register(
+        &router,
+        &format!("view-as-visitor-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "View As Visitor").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "general",
+    )
+    .await;
+
+    let roles = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/roles", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("roles");
+    assert_eq!(roles.status(), StatusCode::OK);
+    let role_list: voxnexus_protocol::RoleListResponse =
+        serde_json::from_slice(&json_body(roles).await).expect("roles");
+    let everyone = role_list
+        .roles
+        .iter()
+        .find(|role| role.is_everyone)
+        .expect("@everyone");
+
+    let deny = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(format!(
+                    "/api/v1/channels/{}/permission-overrides/roles/{}",
+                    channel.id, everyone.id
+                ))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(
+                    r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#,
+                ))
+                .expect("request"),
+        )
+        .await
+        .expect("deny");
+    assert_eq!(deny.status(), StatusCode::OK);
+
+    let view_as = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/permissions/view-as/channels")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"community_id":"{}","space_id":"{}","mode":"visitor","role_ids":[]}}"#,
+                    community.id, space.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("view-as");
+    assert_eq!(view_as.status(), StatusCode::OK);
+    let body: ViewAsChannelsResponse =
+        serde_json::from_slice(&json_body(view_as).await).expect("view-as body");
+    assert!(body.channels.is_empty(), "visitor should see no channels");
+
+    unlock_instance_mode(&pool).await;
+}
+
+#[tokio::test]
+async fn view_as_simulation_does_not_change_real_actor_posts() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let (owner, _) = register(
+        &router,
+        &format!("view-as-real-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "View As Real").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let _ = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "general",
+    )
+    .await;
+
+    let view_as = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/permissions/view-as/channels")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"community_id":"{}","space_id":"{}","mode":"visitor","role_ids":[]}}"#,
+                    community.id, space.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("view-as");
+    assert_eq!(view_as.status(), StatusCode::OK);
+
+    // Mutating request still uses the real owner session (not the visitor simulation).
+    let create = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/channels", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(
+                    r#"{{"name":"after-view-as","type":"text","space_id":"{}","category_id":"{}"}}"#,
+                    space.id, category.id
+                )))
+                .expect("request"),
+        )
+        .await
+        .expect("create");
+    assert_eq!(create.status(), StatusCode::CREATED);
 
     unlock_instance_mode(&pool).await;
 }

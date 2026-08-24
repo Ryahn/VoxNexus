@@ -1,6 +1,7 @@
 import apiMd from '../../content/api.md?raw';
 import architectureMd from '../../content/architecture.md?raw';
 import authMd from '../../content/auth.md?raw';
+import channelsMd from '../../content/channels.md?raw';
 import ciMd from '../../content/ci.md?raw';
 import codegenMd from '../../content/codegen.md?raw';
 import communitiesMd from '../../content/communities.md?raw';
@@ -14,7 +15,9 @@ import invitesMd from '../../content/invites.md?raw';
 import jobsMd from '../../content/jobs.md?raw';
 import observabilityMd from '../../content/observability.md?raw';
 import oidcMd from '../../content/oidc.md?raw';
+import permissionsMd from '../../content/permissions.md?raw';
 import profilesMd from '../../content/profiles.md?raw';
+import rolesMd from '../../content/roles.md?raw';
 import searchMd from '../../content/search.md?raw';
 import spacesMd from '../../content/spaces.md?raw';
 import storageMd from '../../content/storage.md?raw';
@@ -46,6 +49,9 @@ export const docPages: Record<string, DocEntry> = {
   'guides/communities': { slug: 'guides/communities', title: 'Communities', body: communitiesMd },
   'guides/invites': { slug: 'guides/invites', title: 'Invites', body: invitesMd },
   'guides/spaces': { slug: 'guides/spaces', title: 'Spaces', body: spacesMd },
+  'guides/channels': { slug: 'guides/channels', title: 'Categories & channels', body: channelsMd },
+  'guides/roles': { slug: 'guides/roles', title: 'Roles', body: rolesMd },
+  'guides/permissions': { slug: 'guides/permissions', title: 'Permissions', body: permissionsMd },
   'guides/codegen': { slug: 'guides/codegen', title: 'Codegen', body: codegenMd },
   'guides/gateway': { slug: 'guides/gateway', title: 'Gateway', body: gatewayMd },
   'guides/observability': {

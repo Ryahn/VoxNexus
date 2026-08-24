@@ -35,6 +35,11 @@ export type PermissionOverrideTarget =
       name: string;
     };
 
+export type ViewAsSession =
+  | { mode: 'visitor' }
+  | { mode: 'member'; accountId: string }
+  | { mode: 'roles'; roleIds: string[] };
+
 interface UIState {
   // navigation
   activeCommunity: string;
@@ -119,6 +124,12 @@ interface UIState {
   permissionOverrides: PermissionOverrideTarget | null;
   openPermissionOverrides: (target: PermissionOverrideTarget) => void;
   closePermissionOverrides: () => void;
+
+  // View As simulation (F032) — display only; mutations still use the real session
+  viewAsOpen: boolean;
+  setViewAsOpen: (v: boolean) => void;
+  viewAs: ViewAsSession | null;
+  setViewAs: (session: ViewAsSession | null) => void;
 }
 
 export const useUI = create<UIState>((set) => ({
@@ -198,4 +209,9 @@ export const useUI = create<UIState>((set) => ({
   permissionOverrides: null,
   openPermissionOverrides: (target) => set({ permissionOverrides: target }),
   closePermissionOverrides: () => set({ permissionOverrides: null }),
+
+  viewAsOpen: false,
+  setViewAsOpen: (v) => set({ viewAsOpen: v }),
+  viewAs: null,
+  setViewAs: (session) => set({ viewAs: session, viewAsOpen: session !== null }),
 }));

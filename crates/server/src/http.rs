@@ -240,6 +240,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
             crate::permission_overrides::delete_permission_override
         ))
         .routes(routes!(crate::explain::explain_permission))
+        .routes(routes!(crate::view_as::view_as_channels))
         .routes(routes!(crate::roles::create_role))
         .routes(routes!(crate::roles::list_roles))
         .routes(routes!(crate::roles::reorder_roles))

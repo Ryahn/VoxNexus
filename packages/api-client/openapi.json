@@ -4540,6 +4540,77 @@
         }
       }
     },
+    "/api/v1/permissions/view-as/channels": {
+      "post": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Simulate which channels a member / role set / visitor can see.",
+        "operationId": "viewAsChannels",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewAsChannelsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Simulated channel list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewAsChannelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/presence": {
       "get": {
         "tags": [
@@ -7903,6 +7974,80 @@
         "properties": {
           "permissions": {}
         }
+      },
+      "ViewAsChannelsRequest": {
+        "type": "object",
+        "description": "Request a simulated channel list for an admin preview.",
+        "required": [
+          "community_id",
+          "mode"
+        ],
+        "properties": {
+          "account_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Required when `mode` is `member`."
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ViewAsMode"
+          },
+          "role_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Extra role ids when `mode` is `roles` (`@everyone` is always included)."
+          },
+          "space_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Limit simulation to one Space (recommended for the sidebar)."
+          }
+        }
+      },
+      "ViewAsChannelsResponse": {
+        "type": "object",
+        "description": "Simulated channel visibility for View As (read-only; does not change the session).",
+        "required": [
+          "mode",
+          "label",
+          "channels"
+        ],
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelResponse"
+            }
+          },
+          "label": {
+            "type": "string",
+            "description": "Short label for the toolbar (e.g. member display name or role names)."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ViewAsMode"
+          }
+        }
+      },
+      "ViewAsMode": {
+        "type": "string",
+        "description": "How to build the synthetic actor for View As.",
+        "enum": [
+          "member",
+          "roles",
+          "visitor"
+        ]
       }
     }
   },
@@ -7941,7 +8086,7 @@
     },
     {
       "name": "permissions",
-      "description": "Permission explain and debug"
+      "description": "Permission explain, View As, and overrides"
     },
     {
       "name": "auth",

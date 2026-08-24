@@ -34,7 +34,7 @@ Interactive OpenAPI: [/docs/api](/docs/api). Generated client: `@voxnexus/api-cl
 
 ## Pagination
 
-Cursor params in `crates/protocol`: `before`, `after`, `limit` (default **50**, max **100**). List payloads use `items` + `has_more` (or domain wrappers like `communities` / `spaces` — see OpenAPI).
+Cursor params in `crates/protocol`: `before`, `after`, `limit` (default **50**, max **100**). List payloads use `items` + `has_more` (or domain wrappers like `communities` / `spaces` / `channels` — see OpenAPI).
 
 ## Limits and middleware
 
@@ -55,4 +55,7 @@ Prefer validated JSON extractors so clients always see this error shape.
 | Communities / members | [Communities](/docs/guides/communities) |
 | Invites | [Invites](/docs/guides/invites) |
 | Spaces | [Spaces](/docs/guides/spaces) |
+| Categories / channels | [Channels](/docs/guides/channels) |
+| Roles | [Roles](/docs/guides/roles) |
+| Permissions / overrides | [Permissions](/docs/guides/permissions) |
 | Gateway | [Gateway](/docs/guides/gateway) |

@@ -1,6 +1,6 @@
 # Communities
 
-A community is the top-level social container on an instance (name, slug, description, timezone, join mode, icon/banner).
+A community is the top-level social container on an instance (name, slug, description, timezone, join mode, icon/banner, cosmetics).
 
 ## Creation policy
 
@@ -19,8 +19,28 @@ Creator becomes **owner** and a member. Optional bootstrap via `BOOTSTRAP_ADMIN_
 | `join_mode` | Behavior |
 |---|---|
 | `open` | Members can `POST …/join` |
-| `invite` | Join only via invite accept (or owner paths) |
-| `application` | Reserved; not directly joinable yet |
+| `invite` | Join only via invite accept |
+| `application` | Reserved; create/update rejects setting this mode for now |
+
+## Ownership and delete
+
+| Method | Path | Who |
+|---|---|---|
+| `POST` | `/api/v1/communities/{id}/transfer` | Owner; body `{ "account_id" }` (must already be a member) |
+| `POST` | `/api/v1/communities/{id}/delete` | Owner; irreversible cascade |
+
+Owners cannot leave until they transfer ownership.
+
+## Cosmetics
+
+In addition to icon and banner:
+
+| Method | Path |
+|---|---|
+| `PUT` / `GET` | `/api/v1/communities/{id}/tag-badge` |
+| `PUT` / `GET` | `/api/v1/communities/{id}/invite-splash` |
+
+Owner uploads; members can fetch. URLs appear on the community response when set.
 
 ## HTTP
 
@@ -30,15 +50,15 @@ Creator becomes **owner** and a member. Optional bootstrap via `BOOTSTRAP_ADMIN_
 | `GET` | `/api/v1/communities` | Session; lists communities you belong to |
 | `GET` | `/api/v1/communities/{id}` | Member |
 | `PATCH` | `/api/v1/communities/{id}` | Owner |
-| `PUT` | `/api/v1/communities/{id}/icon` · `/banner` | Owner (image upload) |
+| `PUT` | `/api/v1/communities/{id}/icon` · `/banner` | Owner |
 | `GET` | `/api/v1/communities/{id}/icon` · `/banner` | Member |
 | `POST` | `/api/v1/communities/{id}/join` | Session; open communities |
-| `POST` | `/api/v1/communities/{id}/leave` | Member (owner leave blocked until ownership transfer exists) |
+| `POST` | `/api/v1/communities/{id}/leave` | Member (not owner) |
 | `GET` | `/api/v1/communities/{id}/members` | Member; cursor page |
 | `PATCH` | `/api/v1/communities/{id}/members/me` | Member; nickname |
 
-Member roles today: `owner` \| `member`. Custom roles and a full permission engine are not available yet.
+Membership role column: `owner` \| `member`. Custom [Roles](/docs/guides/roles) and [Permissions](/docs/guides/permissions) grant capabilities beyond that.
 
 ## Web UI
 
-Community rail, create/join modals, settings, member list, and icon/banner uploads live in `apps/web`. Chat UI beyond that is still largely mock.
+Community rail, create/join modals, settings (including transfer/delete), member list, and media uploads live in `apps/web`.

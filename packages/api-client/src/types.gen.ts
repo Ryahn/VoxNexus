@@ -761,6 +761,43 @@ export type UpsertPermissionOverrideRequest = {
     permissions: unknown;
 };
 
+/**
+ * Request a simulated channel list for an admin preview.
+ */
+export type ViewAsChannelsRequest = {
+    /**
+     * Required when `mode` is `member`.
+     */
+    account_id?: string | null;
+    community_id: string;
+    mode: ViewAsMode;
+    /**
+     * Extra role ids when `mode` is `roles` (`@everyone` is always included).
+     */
+    role_ids?: Array<string>;
+    /**
+     * Limit simulation to one Space (recommended for the sidebar).
+     */
+    space_id?: string | null;
+};
+
+/**
+ * Simulated channel visibility for View As (read-only; does not change the session).
+ */
+export type ViewAsChannelsResponse = {
+    channels: Array<ChannelResponse>;
+    /**
+     * Short label for the toolbar (e.g. member display name or role names).
+     */
+    label: string;
+    mode: ViewAsMode;
+};
+
+/**
+ * How to build the synthetic actor for View As.
+ */
+export type ViewAsMode = 'member' | 'roles' | 'visitor';
+
 export type LoginData = {
     body: LoginRequest;
     path?: never;
@@ -3405,6 +3442,43 @@ export type ExplainPermissionResponses = {
 };
 
 export type ExplainPermissionResponse2 = ExplainPermissionResponses[keyof ExplainPermissionResponses];
+
+export type ViewAsChannelsData = {
+    body: ViewAsChannelsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/permissions/view-as/channels';
+};
+
+export type ViewAsChannelsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ViewAsChannelsError = ViewAsChannelsErrors[keyof ViewAsChannelsErrors];
+
+export type ViewAsChannelsResponses = {
+    /**
+     * Simulated channel list
+     */
+    200: ViewAsChannelsResponse;
+};
+
+export type ViewAsChannelsResponse2 = ViewAsChannelsResponses[keyof ViewAsChannelsResponses];
 
 export type ListPresenceData = {
     body?: never;

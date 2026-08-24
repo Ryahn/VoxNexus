@@ -24,7 +24,7 @@ Prefer Compose for the full dependency set — [Docker Compose](/docs/setup/comp
 
 Reversible SQLx files: `{version}_{name}.up.sql` / `.down.sql` at repo-root `migrations/`. Applied versions live in `_sqlx_migrations`.
 
-Current product tables include accounts/sessions, profiles/presence columns, instance settings, communities/members, invites, and spaces.
+Product tables include accounts/sessions, profiles/presence, instance settings, communities/members, invites, spaces/space members, categories, channels, roles/role groups/assignments, community cosmetics, and permission overrides.
 
 ## Tests
 

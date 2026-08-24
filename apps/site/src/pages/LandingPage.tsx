@@ -34,7 +34,7 @@ export function LandingPage() {
         </h1>
         <p className="mb-8 max-w-2xl text-lg leading-relaxed text-ink-2">
           VoxNexus is a Rust + React stack for private community instances — auth, profiles,
-          communities, Spaces, and gateway realtime.
+          communities, Spaces, channels, roles, permissions, and gateway realtime.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link

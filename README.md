@@ -13,23 +13,24 @@ Plain-language FAQ: [LICENSE.md](LICENSE.md). Short form: [NOTICE](NOTICE).
 
 ## What works today
 
-Rust binary `voxnexus` plus a Vite/React SPA:
+Rust binary `voxnexus` plus a Vite/React SPA. Operator docs: [`apps/site`](apps/site) (`pnpm dev:site`).
 
 | Surface | Behavior |
 |---|---|
-| `GET /health` | Liveness |
-| `GET /ready` | Postgres + Redis + SeaweedFS + Typesense |
-| `GET /api/v1/meta` | Instance name + version |
-| `POST /api/v1/auth/register` · `login` · `logout` · `GET …/me` | Local email/password sessions (cookie) |
-| `POST …/auth/me/password` · `PATCH …/auth/me/email` | Change password (re-auth) and email (immediate until SMTP) |
-| `GET/PATCH /api/v1/me/profile` · avatar/banner upload | Own profile; images stored in SeaweedFS |
-| `GET /api/v1/profiles/{id}` · `/avatar` · `/banner` | Read profiles/images (session required) |
-| `GET /api/v1/gateway` | WebSocket gateway; session cookie required; IDENTIFY → READY (resume token) |
-| `GET /metrics` | Prometheus scrape when `METRICS_ENABLED=true` |
-| SPA | VOX UI shell (communities/chat chrome on mock data) + session auth + live profile settings. Served by Axum when `WEB_DIST` is set (Compose), or via Vite in dev |
-| Object storage | S3 client to SeaweedFS; bucket created on startup if missing |
-| Jobs | Apalis workers on Redis; sample `HealthPing` job |
-| Search | Typesense client; `messages` / `users` / `channels` collections ensured |
+| Health / ready / metrics | Liveness; Postgres + Redis + SeaweedFS + Typesense readiness; optional Prometheus |
+| Auth / OIDC | Email/password sessions (cookie + CSRF); OIDC RP; password/email change |
+| Profiles / presence | Own profile + avatar/banner; public profile reads; presence over gateway |
+| Instance | Registration mode, community-creation policy, OIDC settings |
+| Communities | Create/join/leave, members, invites, transfer/delete, icon/banner/cosmetics |
+| Spaces | Flat groups; open/restricted membership; join/leave/admin add |
+| Categories / channels | CRUD, reorder, archive/restore/clone; `text` / `voice` / `forum` types |
+| Roles | Custom roles, `@everyone`, groups, assignments, icons |
+| Permissions | Grant engine, category/channel overrides, `POST /api/v1/permissions/explain` |
+| Gateway | WebSocket; IDENTIFY → READY (resume token); presence |
+| Platform | SeaweedFS media, Apalis/Redis jobs, Typesense collections (indexing later) |
+| SPA | Live communities/Spaces/channels/roles UI + session auth. Served by Axum when `WEB_DIST` is set, or Vite in dev |
+
+Message fanout and live voice are not available yet. Full HTTP map: local docs site (`pnpm dev:site` → `/docs/api`) or the published Pages deploy from `.github/workflows/pages.yml`.
 
 Docker Compose stack: [`deploy/docker`](deploy/docker). Config keys and options: [`config.README.md`](config.README.md).
 
@@ -47,13 +48,15 @@ apps/web             Vite + React SPA (VOX UI shell + auth)
 crates/server        voxnexus binary (HTTP + gateway + workers)
 crates/config        file + env configuration
 crates/db            PostgreSQL pool and migrations
-crates/auth          sessions + password auth
+crates/auth          sessions + password auth + community/space helpers
+crates/permissions   permission codes, grants, overrides, explain
 crates/protocol      shared HTTP/gateway types (Rust)
 crates/realtime      WebSocket session loop
 crates/storage       S3 / SeaweedFS object store
 crates/jobs          Apalis workers + Redis queue
 crates/search        Typesense client
-crates/*             other domain crates (permissions, media, …)
+crates/*             other domain crates (domain, media, …)
+apps/site            Vite docs site (markdown guides + OpenAPI UI)
 packages/api-client  generated OpenAPI TypeScript client
 packages/protocol    generated gateway types + WS client
 packages/ui          shared presentational primitives (extract from shell over time)

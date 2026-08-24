@@ -22,7 +22,8 @@ type Props = {
   open: boolean;
   communityId: string;
   spaceId: string;
-  categoryId: string;
+  /** Omit or null for an uncategorized (loose) channel in the space. */
+  categoryId?: string | null;
   onClose: () => void;
   onCreated: (channelId: string) => void;
 };
@@ -31,7 +32,7 @@ export function CreateChannelModal({
   open,
   communityId,
   spaceId,
-  categoryId,
+  categoryId = null,
   onClose,
   onCreated,
 }: Props) {
@@ -76,7 +77,7 @@ export function CreateChannelModal({
         name: trimmed,
         type: uiTypeToApi(channelType),
         space_id: spaceId,
-        category_id: categoryId,
+        ...(categoryId ? { category_id: categoryId } : {}),
       },
     });
     setPending(false);
@@ -106,7 +107,11 @@ export function CreateChannelModal({
           <h2 id="create-channel-title" className="mb-1 text-lg font-semibold text-ink">
             New channel
           </h2>
-          <p className="mb-4 text-sm text-ink-3">Shell only — messaging comes later.</p>
+          <p className="mb-4 text-sm text-ink-3">
+            {categoryId
+              ? 'Shell only — messaging comes later.'
+              : 'Uncategorized in this space. Shell only — messaging comes later.'}
+          </p>
           <label className="mb-3 block text-xs font-medium uppercase tracking-wide text-ink-3">
             Type
             <select

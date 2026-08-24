@@ -13,6 +13,7 @@ export function CommunityHeader() {
   const setCommunity = useUI((s) => s.setCommunity);
   const setInviteManagerOpen = useUI((s) => s.setInviteManagerOpen);
   const setCommunitySettingsOpen = useUI((s) => s.setCommunitySettingsOpen);
+  const setViewAsOpen = useUI((s) => s.setViewAsOpen);
   const community = communities.find((c) => c.id === activeId) ?? {
     id: activeId,
     name: 'Community',
@@ -35,6 +36,12 @@ export function CommunityHeader() {
       return {
         ...item,
         onSelect: () => setInviteManagerOpen(true),
+      };
+    }
+    if (item.label === 'View As…' && isLive) {
+      return {
+        ...item,
+        onSelect: () => setViewAsOpen(true),
       };
     }
     if (item.label?.startsWith('Leave ') && isLive) {

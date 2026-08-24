@@ -29,6 +29,9 @@ export const docsNav: NavSection[] = [
       { label: 'Communities', to: '/docs/guides/communities' },
       { label: 'Invites', to: '/docs/guides/invites' },
       { label: 'Spaces', to: '/docs/guides/spaces' },
+      { label: 'Channels', to: '/docs/guides/channels' },
+      { label: 'Roles', to: '/docs/guides/roles' },
+      { label: 'Permissions', to: '/docs/guides/permissions' },
     ],
   },
   {

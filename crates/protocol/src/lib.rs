@@ -14,6 +14,7 @@ mod permission_override;
 mod profile;
 mod role;
 mod space;
+mod view_as;
 
 pub use auth::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, LoginRequest,
@@ -59,3 +60,4 @@ pub use space::{
     AddSpaceMemberRequest, CreateSpaceRequest, SpaceListResponse, SpaceMemberListResponse,
     SpaceMemberResponse, SpaceResponse, UpdateSpaceRequest,
 };
+pub use view_as::{ViewAsChannelsRequest, ViewAsChannelsResponse, ViewAsMode};

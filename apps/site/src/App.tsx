@@ -37,6 +37,12 @@ function DocsLayout() {
         <Route path="guides/communities" element={<MarkdownDocRoute slug="guides/communities" />} />
         <Route path="guides/invites" element={<MarkdownDocRoute slug="guides/invites" />} />
         <Route path="guides/spaces" element={<MarkdownDocRoute slug="guides/spaces" />} />
+        <Route path="guides/channels" element={<MarkdownDocRoute slug="guides/channels" />} />
+        <Route path="guides/roles" element={<MarkdownDocRoute slug="guides/roles" />} />
+        <Route
+          path="guides/permissions"
+          element={<MarkdownDocRoute slug="guides/permissions" />}
+        />
         <Route path="guides/codegen" element={<MarkdownDocRoute slug="guides/codegen" />} />
         <Route path="guides/gateway" element={<MarkdownDocRoute slug="guides/gateway" />} />
         <Route

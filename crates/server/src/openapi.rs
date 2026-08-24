@@ -19,7 +19,8 @@ use voxnexus_protocol::{
     SpaceMemberResponse, SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest,
     UpdateChannelRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
     UpdateInviteRequest, UpdateNicknameRequest, UpdateProfileRequest, UpdateRoleGroupRequest,
-    UpdateRoleRequest, UpdateSpaceRequest, UpsertPermissionOverrideRequest,
+    UpdateRoleRequest, UpdateSpaceRequest, UpsertPermissionOverrideRequest, ViewAsChannelsRequest,
+    ViewAsChannelsResponse, ViewAsMode,
 };
 
 use crate::auth;
@@ -36,6 +37,7 @@ use crate::presence;
 use crate::profile;
 use crate::roles;
 use crate::spaces;
+use crate::view_as;
 
 /// Generated OpenAPI 3 document for `/api/v1`.
 #[derive(OpenApi)]
@@ -113,6 +115,7 @@ use crate::spaces;
         permission_overrides::upsert_channel_member_permission_override,
         permission_overrides::delete_permission_override,
         explain::explain_permission,
+        view_as::view_as_channels,
         roles::create_role,
         roles::list_roles,
         roles::reorder_roles,
@@ -189,6 +192,9 @@ use crate::spaces;
         ExplainPermissionRequest,
         ExplainPermissionResponse,
         PermissionExplainStep,
+        ViewAsChannelsRequest,
+        ViewAsChannelsResponse,
+        ViewAsMode,
         RoleResponse,
         RoleListResponse,
         CreateRoleRequest,
@@ -221,7 +227,7 @@ use crate::spaces;
         (name = "categories", description = "Channel sidebar categories"),
         (name = "channels", description = "Channels within a community"),
         (name = "roles", description = "Community roles and assignments"),
-        (name = "permissions", description = "Permission explain and debug"),
+        (name = "permissions", description = "Permission explain, View As, and overrides"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

@@ -40,7 +40,7 @@ export function ChannelItem({ channel, communityId, canManage }: Props) {
             communityId,
             channelId: channel.id,
             name: channel.name,
-            categoryId: channel.categoryId ?? null,
+            categoryId: channel.categoryId || null,
           }),
       };
     }
