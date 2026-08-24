@@ -1,5 +1,7 @@
 //! Permission engine integration (F029).
 
+#![allow(clippy::too_many_lines)]
+
 use std::sync::Arc;
 
 use axum::body::Body;
