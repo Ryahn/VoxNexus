@@ -69,14 +69,12 @@ fn merge_role_into_layer(
     ] {
         let allow = perms.allow.get(family);
         let deny = perms.deny.get(family);
+        // Within one role overwrite, deny wins over allow on the same bit.
         let effective_allow = allow & !deny;
+        // Across roles, OR allows and denies independently; apply_layer lets
+        // allow restore bits that another role denied (Discord semantics).
         layer_deny.merge_family(family, deny);
         layer_allow.merge_family(family, effective_allow);
-        let overlap = layer_allow.get(family) & layer_deny.get(family);
-        if overlap != 0 {
-            let cleaned = layer_allow.get(family) & !overlap;
-            layer_allow.set_family(family, cleaned);
-        }
     }
 }
 
@@ -90,15 +88,19 @@ fn apply_member_overwrite(layer: &mut RolePermissionSet, member: &RolePermission
         let deny = member.deny.get(family);
         let allow = member.allow.get(family) & !deny;
         if deny != 0 {
-            let current = layer.allow.get(family);
-            layer.allow.set_family(family, current & !deny);
+            layer
+                .allow
+                .set_family(family, layer.allow.get(family) & !deny);
             layer.deny.merge_family(family, deny);
         }
         if allow != 0 {
-            let current_deny = layer.deny.get(family);
+            // Member allow clears prior role deny on the same bits.
+            layer
+                .deny
+                .set_family(family, layer.deny.get(family) & !allow);
             layer
                 .allow
-                .set_family(family, (layer.allow.get(family) & !current_deny) | allow);
+                .set_family(family, layer.allow.get(family) | allow);
         }
     }
 }
@@ -111,8 +113,10 @@ fn apply_layer(mut grants: GrantSet, layer: &RolePermissionSet) -> GrantSet {
         Family::Voice,
     ] {
         let deny = layer.deny.get(family);
-        let allow = layer.allow.get(family) & !deny;
+        let allow = layer.allow.get(family);
         let current = grants.get(family);
+        // Deny first, then allow — so a role allow can restore after another
+        // role's deny in the same layer.
         let next = (current & !deny) | allow;
         grants.set_family(family, next);
     }
@@ -157,5 +161,45 @@ mod tests {
         };
         let effective = apply_override_layers(grants, &bundle, &[role_id]);
         assert!(effective.has(Family::Text, text::SEND));
+    }
+
+    #[test]
+    fn role_allow_beats_everyone_deny_on_same_channel() {
+        let grants = GrantSet::new().with_family(Family::Text, text::VIEW);
+        let everyone = Uuid::now_v7();
+        let vip = Uuid::now_v7();
+        let bundle = OverrideBundle {
+            channel_roles: vec![
+                (
+                    everyone,
+                    RolePermissionSet::new().with_deny(Family::Text, text::VIEW),
+                ),
+                (
+                    vip,
+                    RolePermissionSet::new().with_allow(Family::Text, text::VIEW),
+                ),
+            ],
+            ..Default::default()
+        };
+        let without_vip = apply_override_layers(grants, &bundle, &[everyone]);
+        assert!(!without_vip.has(Family::Text, text::VIEW));
+        let with_vip = apply_override_layers(grants, &bundle, &[everyone, vip]);
+        assert!(with_vip.has(Family::Text, text::VIEW));
+    }
+
+    #[test]
+    fn member_allow_beats_role_deny_on_same_channel() {
+        let grants = GrantSet::new().with_family(Family::Text, text::VIEW);
+        let everyone = Uuid::now_v7();
+        let bundle = OverrideBundle {
+            channel_roles: vec![(
+                everyone,
+                RolePermissionSet::new().with_deny(Family::Text, text::VIEW),
+            )],
+            channel_member: Some(RolePermissionSet::new().with_allow(Family::Text, text::VIEW)),
+            ..Default::default()
+        };
+        let effective = apply_override_layers(grants, &bundle, &[everyone]);
+        assert!(effective.has(Family::Text, text::VIEW));
     }
 }
