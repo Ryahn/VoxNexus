@@ -1,5 +1,6 @@
 //! HTTP DTOs and gateway event types.
 
+mod audit;
 mod auth;
 mod category;
 mod channel;
@@ -16,6 +17,7 @@ mod role;
 mod space;
 mod view_as;
 
+pub use audit::{AuditEventListResponse, AuditEventResponse, ListAuditEventsQuery};
 pub use auth::{
     AccountResponse, AuthSessionResponse, ChangeEmailRequest, ChangePasswordRequest, LoginRequest,
     RegisterRequest,

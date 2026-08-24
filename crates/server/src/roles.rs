@@ -93,6 +93,16 @@ pub async fn create_role(
     let response = to_response(&role);
     invalidate_community(&state, community_id);
     broadcast_role_create(&state, &response).await;
+    crate::audit::emit_audit_simple(
+        &state,
+        community_id,
+        user.account_id,
+        "role.create",
+        format!("Created role {}", response.name),
+        Some("role"),
+        Some(response.id),
+    )
+    .await;
     Ok((StatusCode::CREATED, Json(response)))
 }
 
@@ -334,6 +344,16 @@ pub async fn update_role(
     let response = to_response(&role);
     invalidate_community(&state, current.community_id);
     broadcast_role_update(&state, &response).await;
+    crate::audit::emit_audit_simple(
+        &state,
+        current.community_id,
+        user.account_id,
+        "role.update",
+        format!("Updated role {}", response.name),
+        Some("role"),
+        Some(response.id),
+    )
+    .await;
     Ok(Json(response))
 }
 
@@ -375,6 +395,16 @@ pub async fn delete_role(
     }
     invalidate_community(&state, current.community_id);
     broadcast_role_delete(&state, current.community_id, role_id).await;
+    crate::audit::emit_audit_simple(
+        &state,
+        current.community_id,
+        user.account_id,
+        "role.delete",
+        format!("Deleted role {}", current.name),
+        Some("role"),
+        Some(role_id),
+    )
+    .await;
     Ok(StatusCode::NO_CONTENT)
 }
 

@@ -1,5 +1,6 @@
 //! Shared domain types with no I/O.
 
+mod audit;
 mod community;
 mod instance;
 mod presence;
@@ -8,6 +9,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use audit::AuditEvent;
 pub use community::{
     Channel, ChannelCategory, ChannelType, Community, CommunityInvite, CommunityMember,
     CommunityMemberRole, CommunityRole, CommunityRoleGroup, JoinMode, Space, SpaceMember,

@@ -9,6 +9,7 @@ Authz lives in `crates/permissions`. Handlers call `require_permission` / `requi
 | `community.administrator` | | Bypass most checks (not owner-only paths) |
 | `community.manage_channels` | | Categories, channels, overrides |
 | `community.manage_roles` | | Roles, groups, assignments |
+| `community.view_audit` | | Read community audit log |
 | `text.view` | `channel.view` | See a channel (lists and GET) |
 | `text.send` | `message.send` | Send in a channel (enforced when messaging ships; stripped under timeout) |
 
@@ -69,6 +70,14 @@ Simulate the channel list for:
 Optional `space_id` scopes the list. Response: `{ mode, label, channels }` using the **same** `resolve` + override path as live checks.
 
 **Simulation only:** View As does not change the session. Mutating APIs always use the real actor. The web client shows a toolbar (community menu → **View As…**) and filters the sidebar; create/reorder stay disabled while previewing.
+
+## Audit log
+
+`GET /api/v1/communities/{id}/audit-events` (requires `community.view_audit`; owners and administrators always can)
+
+Query: `before` / `after` (UUIDv7 cursors), `limit`, optional `action`, `actor_account_id`, `space_id`.
+
+Rows are append-only. Mutations emit actions such as `role.create`, `channel.update`, `permission_override.upsert`, `community.update`. Community Settings → **Audit Log** lists them.
 
 ## Still owner-only
 

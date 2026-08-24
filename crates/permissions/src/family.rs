@@ -42,6 +42,7 @@ pub mod community {
     pub const ADMINISTRATOR: u64 = 1 << 0;
     pub const MANAGE_ROLES: u64 = 1 << 2;
     pub const MANAGE_CHANNELS: u64 = 1 << 3;
+    pub const VIEW_AUDIT: u64 = 1 << 4;
 }
 
 /// Text-channel bits.

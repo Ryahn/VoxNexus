@@ -228,6 +228,16 @@ pub async fn update_community_settings(
     )
     .await
     .map_err(|error| map_auth(error, request_id))?;
+    crate::audit::emit_audit_simple(
+        &state,
+        community_id,
+        user.account_id,
+        "community.update",
+        format!("Updated community settings for {}", community.name),
+        Some("community"),
+        Some(community_id),
+    )
+    .await;
     Ok(Json(to_response(&community)))
 }
 

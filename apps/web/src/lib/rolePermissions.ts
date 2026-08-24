@@ -12,6 +12,7 @@ export const PERM_BITS: { family: string; bit: number; code: string; label: stri
   { family: 'text', bit: 2, code: 'text.send', label: 'Send messages' },
   { family: 'community', bit: 8, code: 'community.manage_channels', label: 'Manage channels' },
   { family: 'community', bit: 4, code: 'community.manage_roles', label: 'Manage roles' },
+  { family: 'community', bit: 16, code: 'community.view_audit', label: 'View audit log' },
   { family: 'community', bit: 1, code: 'community.administrator', label: 'Administrator' },
 ];
 

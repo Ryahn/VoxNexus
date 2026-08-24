@@ -77,7 +77,20 @@ pub async fn create_channel(
     )
     .await
     .map_err(|error| map_auth(&error, request_id))?;
-    Ok((StatusCode::CREATED, Json(to_response(&channel))))
+    let response = to_response(&channel);
+    crate::audit::emit_audit(
+        &state,
+        community_id,
+        user.account_id,
+        "channel.create",
+        format!("Created channel #{}", response.name),
+        Some("channel"),
+        Some(response.id),
+        response.space_id,
+        json!({ "type": response.channel_type }),
+    )
+    .await;
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 /// List channels in a community scope.
@@ -302,7 +315,20 @@ pub async fn update_channel(
     )
     .await
     .map_err(|error| map_auth(&error, request_id))?;
-    Ok(Json(to_response(&channel)))
+    let response = to_response(&channel);
+    crate::audit::emit_audit(
+        &state,
+        channel.community_id,
+        user.account_id,
+        "channel.update",
+        format!("Updated channel #{}", response.name),
+        Some("channel"),
+        Some(response.id),
+        response.space_id,
+        json!({}),
+    )
+    .await;
+    Ok(Json(response))
 }
 
 /// Delete a channel (owner until F029).
@@ -337,6 +363,18 @@ pub async fn delete_channel(
     if !deleted {
         return Err(not_found(request_id));
     }
+    crate::audit::emit_audit(
+        &state,
+        current.community_id,
+        user.account_id,
+        "channel.delete",
+        format!("Deleted channel #{}", current.name),
+        Some("channel"),
+        Some(channel_id),
+        current.space_id,
+        json!({}),
+    )
+    .await;
     Ok(StatusCode::NO_CONTENT)
 }
 

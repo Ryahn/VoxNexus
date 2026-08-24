@@ -1610,6 +1610,141 @@
         }
       }
     },
+    "/api/v1/communities/{community_id}/audit-events": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List community audit events (newest first). Requires `community.view_audit`.",
+        "operationId": "listAuditEvents",
+        "parameters": [
+          {
+            "name": "community_id",
+            "in": "path",
+            "description": "Community id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "actor_account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "space_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/communities/{community_id}/banner": {
       "get": {
         "tags": [
@@ -5911,6 +6046,87 @@
           }
         }
       },
+      "AuditEventListResponse": {
+        "type": "object",
+        "description": "Cursor page of audit events (newest first).",
+        "required": [
+          "items",
+          "has_more"
+        ],
+        "properties": {
+          "has_more": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventResponse"
+            }
+          }
+        }
+      },
+      "AuditEventResponse": {
+        "type": "object",
+        "description": "One audit log entry.",
+        "required": [
+          "id",
+          "community_id",
+          "action",
+          "summary",
+          "metadata",
+          "created_at"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actor_account_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "space_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "target_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "target_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "AuthSessionResponse": {
         "type": "object",
         "description": "Authenticated session payload.",
@@ -6885,6 +7101,54 @@
           "invite",
           "application"
         ]
+      },
+      "ListAuditEventsQuery": {
+        "type": "object",
+        "description": "Query filters for community audit log listing.",
+        "properties": {
+          "action": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor_account_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "after": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "before": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "limit": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "space_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
       },
       "ListCategoriesQuery": {
         "type": "object",
@@ -8087,6 +8351,10 @@
     {
       "name": "permissions",
       "description": "Permission explain, View As, and overrides"
+    },
+    {
+      "name": "audit",
+      "description": "Community audit log"
     },
     {
       "name": "auth",

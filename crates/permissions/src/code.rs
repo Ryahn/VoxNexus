@@ -26,6 +26,11 @@ impl PermissionCode {
         bit: community::MANAGE_ROLES,
         owner_only: false,
     };
+    pub const COMMUNITY_VIEW_AUDIT: Self = Self {
+        family: Family::Community,
+        bit: community::VIEW_AUDIT,
+        owner_only: false,
+    };
     pub const TEXT_VIEW: Self = Self {
         family: Family::Text,
         bit: text::VIEW,
@@ -44,6 +49,7 @@ impl PermissionCode {
             "community.administrator" => Some(Self::COMMUNITY_ADMINISTRATOR),
             "community.manage_channels" => Some(Self::COMMUNITY_MANAGE_CHANNELS),
             "community.manage_roles" => Some(Self::COMMUNITY_MANAGE_ROLES),
+            "community.view_audit" => Some(Self::COMMUNITY_VIEW_AUDIT),
             "text.view" | "channel.view" => Some(Self::TEXT_VIEW),
             "text.send" | "message.send" => Some(Self::TEXT_SEND),
             _ => None,
@@ -56,6 +62,7 @@ impl PermissionCode {
             Self::COMMUNITY_ADMINISTRATOR => "community.administrator",
             Self::COMMUNITY_MANAGE_CHANNELS => "community.manage_channels",
             Self::COMMUNITY_MANAGE_ROLES => "community.manage_roles",
+            Self::COMMUNITY_VIEW_AUDIT => "community.view_audit",
             Self::TEXT_VIEW => "text.view",
             Self::TEXT_SEND => "text.send",
             Self { .. } => "unknown",

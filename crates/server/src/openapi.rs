@@ -3,15 +3,16 @@
 use utoipa::OpenApi;
 use voxnexus_domain::{ChannelType, CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
-    AccountResponse, AddSpaceMemberRequest, AssignRoleRequest, AuthSessionResponse,
-    BulkAssignRoleGroupRequest, CategoryListResponse, CategoryResponse, ChangeEmailRequest,
-    ChangePasswordRequest, ChannelListResponse, ChannelResponse, CommunityListResponse,
-    CommunityMemberListResponse, CommunityMemberResponse, CommunityResponse, CreateCategoryRequest,
-    CreateChannelRequest, CreateCommunityRequest, CreateInviteRequest, CreateRoleGroupRequest,
-    CreateRoleRequest, CreateSpaceRequest, DeleteCommunityRequest, ErrorBody,
-    ExplainPermissionRequest, ExplainPermissionResponse, InstanceSettingsResponse,
-    InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
-    ListCategoriesQuery, ListChannelsQuery, LoginRequest, MetaResponse, PermissionExplainStep,
+    AccountResponse, AddSpaceMemberRequest, AssignRoleRequest, AuditEventListResponse,
+    AuditEventResponse, AuthSessionResponse, BulkAssignRoleGroupRequest, CategoryListResponse,
+    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, ChannelListResponse,
+    ChannelResponse, CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse,
+    CommunityResponse, CreateCategoryRequest, CreateChannelRequest, CreateCommunityRequest,
+    CreateInviteRequest, CreateRoleGroupRequest, CreateRoleRequest, CreateSpaceRequest,
+    DeleteCommunityRequest, ErrorBody, ExplainPermissionRequest, ExplainPermissionResponse,
+    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
+    InvitePreviewResponse, InviteResponse, ListAuditEventsQuery, ListCategoriesQuery,
+    ListChannelsQuery, LoginRequest, MetaResponse, PermissionExplainStep,
     PermissionOverrideListResponse, PermissionOverrideResponse, PresenceEntry,
     PresenceListResponse, ProfileResponse, RegisterRequest, ReorderCategoriesRequest,
     ReorderChannelsRequest, ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse,
@@ -23,6 +24,7 @@ use voxnexus_protocol::{
     ViewAsChannelsResponse, ViewAsMode,
 };
 
+use crate::audit;
 use crate::auth;
 use crate::categories;
 use crate::channels;
@@ -76,6 +78,7 @@ use crate::view_as;
         communities::leave_community,
         communities::list_community_members,
         communities::update_my_nickname,
+        audit::list_community_audit_events,
         invites::create_community_invite,
         invites::list_community_invites,
         invites::revoke_community_invite,
@@ -195,6 +198,9 @@ use crate::view_as;
         ViewAsChannelsRequest,
         ViewAsChannelsResponse,
         ViewAsMode,
+        AuditEventResponse,
+        AuditEventListResponse,
+        ListAuditEventsQuery,
         RoleResponse,
         RoleListResponse,
         CreateRoleRequest,
@@ -228,6 +234,7 @@ use crate::view_as;
         (name = "channels", description = "Channels within a community"),
         (name = "roles", description = "Community roles and assignments"),
         (name = "permissions", description = "Permission explain, View As, and overrides"),
+        (name = "audit", description = "Community audit log"),
         (name = "auth", description = "Registration, login, logout, and session"),
         (name = "profiles", description = "Account profiles, avatars, and banners"),
         (name = "presence", description = "Instance-wide online presence")

@@ -12,11 +12,21 @@ import {
   uploadCommunityInviteSplash,
   uploadCommunityTagBadge,
 } from '@voxnexus/api-client';
-import { ImagePlus, type LucideIcon, Settings2, Shield, Trash2, Users, X } from 'lucide-react';
+import {
+  ImagePlus,
+  type LucideIcon,
+  ScrollText,
+  Settings2,
+  Shield,
+  Trash2,
+  Users,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 import { readApiErrorMessage } from '../lib/apiError';
 import { useUI } from '../store';
+import { CommunityAuditPanel } from './CommunityAuditPanel';
 import { CommunityRolesPanel } from './CommunityRolesPanel';
 import { Portal } from './ui/Portal';
 
@@ -24,7 +34,7 @@ type Props = {
   communityId: string;
 };
 
-type Section = 'overview' | 'roles' | 'members' | 'danger';
+type Section = 'overview' | 'roles' | 'members' | 'audit' | 'danger';
 
 const credentials = { credentials: 'include' as const };
 
@@ -57,6 +67,7 @@ const nav: { id: Section; label: string; Icon: LucideIcon; group: string }[] = [
   { id: 'overview', label: 'Overview', Icon: Settings2, group: 'COMMUNITY' },
   { id: 'roles', label: 'Roles', Icon: Shield, group: 'COMMUNITY' },
   { id: 'members', label: 'Members', Icon: Users, group: 'COMMUNITY' },
+  { id: 'audit', label: 'Audit Log', Icon: ScrollText, group: 'COMMUNITY' },
   { id: 'danger', label: 'Danger Zone', Icon: Trash2, group: 'DANGER' },
 ];
 
@@ -454,6 +465,8 @@ export function CommunitySettingsModal({ communityId }: Props) {
 
           {section === 'roles' ? (
             <CommunityRolesPanel communityId={communityId} canManage={isOwner} />
+          ) : section === 'audit' ? (
+            <CommunityAuditPanel communityId={communityId} canView={isOwner} />
           ) : (
             <div className="h-full overflow-y-auto px-8 py-6 pr-16">
               <h1 className="mb-1 text-xl font-semibold text-ink">

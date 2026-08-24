@@ -29,6 +29,32 @@ export type AssignRoleRequest = {
 };
 
 /**
+ * Cursor page of audit events (newest first).
+ */
+export type AuditEventListResponse = {
+    has_more: boolean;
+    items: Array<AuditEventResponse>;
+};
+
+/**
+ * One audit log entry.
+ */
+export type AuditEventResponse = {
+    action: string;
+    actor_account_id?: string | null;
+    community_id: string;
+    created_at: string;
+    id: string;
+    metadata: {
+        [key: string]: unknown;
+    };
+    space_id?: string | null;
+    summary: string;
+    target_id?: string | null;
+    target_type?: string | null;
+};
+
+/**
  * Authenticated session payload.
  */
 export type AuthSessionResponse = {
@@ -366,6 +392,18 @@ export type InviteResponse = {
  * How accounts may join a community (invites/applications expand in later features).
  */
 export type JoinMode = 'open' | 'invite' | 'application';
+
+/**
+ * Query filters for community audit log listing.
+ */
+export type ListAuditEventsQuery = {
+    action?: string | null;
+    actor_account_id?: string | null;
+    after?: string | null;
+    before?: string | null;
+    limit?: number | null;
+    space_id?: string | null;
+};
 
 /**
  * List categories query (`space_id` omitted = community-level).
@@ -1744,6 +1782,51 @@ export type UpdateCommunityResponses = {
 };
 
 export type UpdateCommunityResponse = UpdateCommunityResponses[keyof UpdateCommunityResponses];
+
+export type ListAuditEventsData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: {
+        before?: string | null;
+        after?: string | null;
+        limit?: number | null;
+        actor_account_id?: string | null;
+        action?: string | null;
+        space_id?: string | null;
+    };
+    url: '/api/v1/communities/{community_id}/audit-events';
+};
+
+export type ListAuditEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListAuditEventsError = ListAuditEventsErrors[keyof ListAuditEventsErrors];
+
+export type ListAuditEventsResponses = {
+    /**
+     * Audit page
+     */
+    200: AuditEventListResponse;
+};
+
+export type ListAuditEventsResponse = ListAuditEventsResponses[keyof ListAuditEventsResponses];
 
 export type GetCommunityBannerData = {
     body?: never;

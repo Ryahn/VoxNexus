@@ -5,6 +5,7 @@
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
+use serde_json::json;
 use uuid::Uuid;
 use voxnexus_auth::{
     delete_override as persist_delete, get_category, get_channel, get_membership, get_role,
@@ -100,6 +101,18 @@ pub async fn upsert_channel_role_permission_override(
     .await
     .map_err(|error| map_auth(&error, request_id.clone()))?;
     invalidate_community(&state, channel.community_id);
+    crate::audit::emit_audit(
+        &state,
+        channel.community_id,
+        user.account_id,
+        "permission_override.upsert",
+        format!("Updated channel permission override on #{}", channel.name),
+        Some("permission_override"),
+        Some(row.id),
+        channel.space_id,
+        json!({ "channel_id": channel.id, "role_id": role_id }),
+    )
+    .await;
     Ok(Json(to_response(row)))
 }
 
@@ -181,6 +194,16 @@ pub async fn delete_permission_override(
         return Err(not_found(request_id));
     }
     invalidate_community(&state, community_id);
+    crate::audit::emit_audit_simple(
+        &state,
+        community_id,
+        user.account_id,
+        "permission_override.delete",
+        "Deleted a permission override",
+        Some("permission_override"),
+        Some(override_id),
+    )
+    .await;
     Ok(StatusCode::NO_CONTENT)
 }
 

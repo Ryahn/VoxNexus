@@ -1,5 +1,6 @@
 //! Passwords, sessions, and account persistence.
 
+mod audit;
 mod category;
 mod channel;
 mod community;
@@ -19,6 +20,10 @@ use sqlx::postgres::Postgres;
 use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
+
+pub use audit::{
+    get_audit_event, insert_audit_event, list_audit_events, AuditEventsPage, NewAuditEvent,
+};
 
 pub use category::{
     create_category, delete_category, get_category, list_categories, update_category,

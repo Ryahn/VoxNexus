@@ -187,6 +187,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::communities::leave_community))
         .routes(routes!(crate::communities::list_community_members))
         .routes(routes!(crate::communities::update_my_nickname))
+        .routes(routes!(crate::audit::list_community_audit_events))
         .routes(routes!(crate::invites::create_community_invite))
         .routes(routes!(crate::invites::list_community_invites))
         .routes(routes!(crate::invites::revoke_community_invite))
