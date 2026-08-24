@@ -488,8 +488,8 @@ pub async fn update_community(
     let invite_path = match patch.invite_path {
         None => current.invite_path,
         Some(None) => None,
-        Some(Some(path)) => {
-            let normalized = slugify(&path);
+        Some(Some(raw_invite_path)) => {
+            let normalized = slugify(&raw_invite_path);
             if normalized.is_empty() {
                 None
             } else {
