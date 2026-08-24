@@ -36,6 +36,14 @@ export type AuthSessionResponse = {
 };
 
 /**
+ * Bulk assign roles to a group (or ungroup when `group_id` is null).
+ */
+export type BulkAssignRoleGroupRequest = {
+    group_id?: string | null;
+    role_ids: Array<string>;
+};
+
+/**
  * Categories in a community scope.
  */
 export type CategoryListResponse = {
@@ -154,10 +162,15 @@ export type CommunityResponse = {
     discoverable_on_instance: boolean;
     icon_url?: string | null;
     id: string;
+    invite_path?: string | null;
+    invite_splash_url?: string | null;
     join_mode: JoinMode;
     name: string;
     owner_account_id: string;
     slug: string;
+    tag_badge_url?: string | null;
+    tag_color: string;
+    tag_name: string;
     timezone: string;
     updated_at: string;
 };
@@ -206,14 +219,28 @@ export type CreateInviteRequest = {
 };
 
 /**
+ * Create a role group.
+ */
+export type CreateRoleGroupRequest = {
+    name: string;
+};
+
+/**
  * Create a custom role.
  */
 export type CreateRoleRequest = {
     color?: string | null;
+    gradient?: string | null;
+    group_id?: string | null;
     hoist?: boolean | null;
+    icon_emoji?: string | null;
     manage_roles?: boolean | null;
     mentionable?: boolean | null;
     name: string;
+    permissions?: unknown;
+    role_card?: unknown;
+    short_tag?: string | null;
+    weight?: number | null;
 };
 
 /**
@@ -431,10 +458,29 @@ export type ReorderChannelsRequest = {
 };
 
 /**
- * Reorder roles by id list (`@everyone` stays at position 0).
+ * Reorder roles by id list (display `position` only; does not change weight).
  */
 export type ReorderRolesRequest = {
     role_ids: Array<string>;
+};
+
+/**
+ * List of role groups.
+ */
+export type RoleGroupListResponse = {
+    groups: Array<RoleGroupResponse>;
+};
+
+/**
+ * Role group (organizational).
+ */
+export type RoleGroupResponse = {
+    community_id: string;
+    created_at: string;
+    display_order: number;
+    id: string;
+    name: string;
+    updated_at: string;
 };
 
 /**
@@ -451,14 +497,27 @@ export type RoleResponse = {
     color: string;
     community_id: string;
     created_at: string;
+    gradient?: string | null;
+    group_id?: string | null;
     hoist: boolean;
+    icon_emoji?: string | null;
+    icon_object_key?: string | null;
     id: string;
     is_everyone: boolean;
     mentionable: boolean;
     name: string;
     permissions: unknown;
+    /**
+     * Display order only (drag-reorder).
+     */
     position: number;
+    role_card: unknown;
+    short_tag: string;
     updated_at: string;
+    /**
+     * Unique 1–1000; lower = higher priority.
+     */
+    weight: number;
 };
 
 /**
@@ -547,8 +606,11 @@ export type UpdateChannelRequest = {
 export type UpdateCommunityRequest = {
     description?: string | null;
     discoverable_on_instance?: boolean | null;
+    invite_path?: string | null;
     join_mode?: null | JoinMode;
     name?: string | null;
+    tag_color?: string | null;
+    tag_name?: string | null;
     timezone?: string | null;
 };
 
@@ -593,15 +655,39 @@ export type UpdateProfileRequest = {
 };
 
 /**
+ * Update a role group.
+ */
+export type UpdateRoleGroupRequest = {
+    display_order?: number | null;
+    name?: string | null;
+};
+
+/**
  * Update a role.
  */
 export type UpdateRoleRequest = {
+    clear_gradient?: boolean | null;
+    /**
+     * When true, remove the role from its group.
+     */
+    clear_group?: boolean | null;
+    /**
+     * Set true to clear icon emoji.
+     */
+    clear_icon_emoji?: boolean | null;
     color?: string | null;
+    gradient?: string | null;
+    group_id?: string | null;
     hoist?: boolean | null;
+    icon_emoji?: string | null;
     manage_roles?: boolean | null;
     mentionable?: boolean | null;
     name?: string | null;
+    permissions?: unknown;
     position?: number | null;
+    role_card?: unknown;
+    short_tag?: string | null;
+    weight?: number | null;
 };
 
 /**
@@ -1739,6 +1825,74 @@ export type UploadCommunityIconResponses = {
 
 export type UploadCommunityIconResponse = UploadCommunityIconResponses[keyof UploadCommunityIconResponses];
 
+export type GetCommunityInviteSplashData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invite-splash';
+};
+
+export type GetCommunityInviteSplashErrors = {
+    /**
+     * No splash
+     */
+    404: ErrorBody;
+};
+
+export type GetCommunityInviteSplashError = GetCommunityInviteSplashErrors[keyof GetCommunityInviteSplashErrors];
+
+export type GetCommunityInviteSplashResponses = {
+    /**
+     * Image bytes
+     */
+    200: Blob | File;
+};
+
+export type GetCommunityInviteSplashResponse = GetCommunityInviteSplashResponses[keyof GetCommunityInviteSplashResponses];
+
+export type UploadCommunityInviteSplashData = {
+    body?: unknown;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/invite-splash';
+};
+
+export type UploadCommunityInviteSplashErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UploadCommunityInviteSplashError = UploadCommunityInviteSplashErrors[keyof UploadCommunityInviteSplashErrors];
+
+export type UploadCommunityInviteSplashResponses = {
+    /**
+     * Updated community
+     */
+    200: CommunityResponse;
+};
+
+export type UploadCommunityInviteSplashResponse = UploadCommunityInviteSplashResponses[keyof UploadCommunityInviteSplashResponses];
+
 export type ListCommunityInvitesData = {
     body?: never;
     path: {
@@ -2202,6 +2356,112 @@ export type RemoveMemberRoleResponses = {
 
 export type RemoveMemberRoleResponse = RemoveMemberRoleResponses[keyof RemoveMemberRoleResponses];
 
+export type ListRoleGroupsData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/role-groups';
+};
+
+export type ListRoleGroupsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not a member
+     */
+    403: ErrorBody;
+};
+
+export type ListRoleGroupsError = ListRoleGroupsErrors[keyof ListRoleGroupsErrors];
+
+export type ListRoleGroupsResponses = {
+    /**
+     * Group list
+     */
+    200: RoleGroupListResponse;
+};
+
+export type ListRoleGroupsResponse = ListRoleGroupsResponses[keyof ListRoleGroupsResponses];
+
+export type CreateRoleGroupData = {
+    body: CreateRoleGroupRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/role-groups';
+};
+
+export type CreateRoleGroupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Name taken
+     */
+    409: ErrorBody;
+};
+
+export type CreateRoleGroupError = CreateRoleGroupErrors[keyof CreateRoleGroupErrors];
+
+export type CreateRoleGroupResponses = {
+    /**
+     * Group created
+     */
+    201: RoleGroupResponse;
+};
+
+export type CreateRoleGroupResponse = CreateRoleGroupResponses[keyof CreateRoleGroupResponses];
+
+export type BulkAssignRoleGroupData = {
+    body: BulkAssignRoleGroupRequest;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/role-groups/bulk-assign';
+};
+
+export type BulkAssignRoleGroupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+};
+
+export type BulkAssignRoleGroupError = BulkAssignRoleGroupErrors[keyof BulkAssignRoleGroupErrors];
+
+export type BulkAssignRoleGroupResponses = {
+    /**
+     * Updated roles
+     */
+    200: RoleListResponse;
+};
+
+export type BulkAssignRoleGroupResponse = BulkAssignRoleGroupResponses[keyof BulkAssignRoleGroupResponses];
+
 export type ListRolesData = {
     body?: never;
     path: {
@@ -2395,6 +2655,74 @@ export type CreateSpaceResponses = {
 };
 
 export type CreateSpaceResponse = CreateSpaceResponses[keyof CreateSpaceResponses];
+
+export type GetCommunityTagBadgeData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/tag-badge';
+};
+
+export type GetCommunityTagBadgeErrors = {
+    /**
+     * No badge
+     */
+    404: ErrorBody;
+};
+
+export type GetCommunityTagBadgeError = GetCommunityTagBadgeErrors[keyof GetCommunityTagBadgeErrors];
+
+export type GetCommunityTagBadgeResponses = {
+    /**
+     * Image bytes
+     */
+    200: Blob | File;
+};
+
+export type GetCommunityTagBadgeResponse = GetCommunityTagBadgeResponses[keyof GetCommunityTagBadgeResponses];
+
+export type UploadCommunityTagBadgeData = {
+    body?: unknown;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/tag-badge';
+};
+
+export type UploadCommunityTagBadgeErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not the owner
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UploadCommunityTagBadgeError = UploadCommunityTagBadgeErrors[keyof UploadCommunityTagBadgeErrors];
+
+export type UploadCommunityTagBadgeResponses = {
+    /**
+     * Updated community
+     */
+    200: CommunityResponse;
+};
+
+export type UploadCommunityTagBadgeResponse = UploadCommunityTagBadgeResponses[keyof UploadCommunityTagBadgeResponses];
 
 export type TransferCommunityData = {
     body: TransferCommunityRequest;
@@ -2823,6 +3151,82 @@ export type GetProfileBannerResponses = {
     200: unknown;
 };
 
+export type DeleteRoleGroupData = {
+    body?: never;
+    path: {
+        /**
+         * Group id
+         */
+        group_id: string;
+    };
+    query?: never;
+    url: '/api/v1/role-groups/{group_id}';
+};
+
+export type DeleteRoleGroupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteRoleGroupError = DeleteRoleGroupErrors[keyof DeleteRoleGroupErrors];
+
+export type DeleteRoleGroupResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteRoleGroupResponse = DeleteRoleGroupResponses[keyof DeleteRoleGroupResponses];
+
+export type UpdateRoleGroupData = {
+    body: UpdateRoleGroupRequest;
+    path: {
+        /**
+         * Group id
+         */
+        group_id: string;
+    };
+    query?: never;
+    url: '/api/v1/role-groups/{group_id}';
+};
+
+export type UpdateRoleGroupErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateRoleGroupError = UpdateRoleGroupErrors[keyof UpdateRoleGroupErrors];
+
+export type UpdateRoleGroupResponses = {
+    /**
+     * Updated group
+     */
+    200: RoleGroupResponse;
+};
+
+export type UpdateRoleGroupResponse = UpdateRoleGroupResponses[keyof UpdateRoleGroupResponses];
+
 export type DeleteRoleData = {
     body?: never;
     path: {
@@ -2974,6 +3378,114 @@ export type CloneRoleResponses = {
 };
 
 export type CloneRoleResponse = CloneRoleResponses[keyof CloneRoleResponses];
+
+export type DeleteRoleIconData = {
+    body?: never;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}/icon';
+};
+
+export type DeleteRoleIconErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteRoleIconError = DeleteRoleIconErrors[keyof DeleteRoleIconErrors];
+
+export type DeleteRoleIconResponses = {
+    /**
+     * Updated role
+     */
+    200: RoleResponse;
+};
+
+export type DeleteRoleIconResponse = DeleteRoleIconResponses[keyof DeleteRoleIconResponses];
+
+export type GetRoleIconData = {
+    body?: never;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}/icon';
+};
+
+export type GetRoleIconErrors = {
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type GetRoleIconError = GetRoleIconErrors[keyof GetRoleIconErrors];
+
+export type GetRoleIconResponses = {
+    /**
+     * Image bytes
+     */
+    200: unknown;
+};
+
+export type UploadRoleIconData = {
+    body?: unknown;
+    path: {
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/roles/{role_id}/icon';
+};
+
+export type UploadRoleIconErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+    /**
+     * Validation error
+     */
+    422: ErrorBody;
+};
+
+export type UploadRoleIconError = UploadRoleIconErrors[keyof UploadRoleIconErrors];
+
+export type UploadRoleIconResponses = {
+    /**
+     * Updated role
+     */
+    200: RoleResponse;
+};
+
+export type UploadRoleIconResponse = UploadRoleIconResponses[keyof UploadRoleIconResponses];
 
 export type DeleteSpaceData = {
     body?: never;

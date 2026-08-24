@@ -45,6 +45,7 @@ fn oidc_state(pool: PgPool, redis: RedisConn, public_url: &str, secret: &str) ->
         oidc_client_secret: Some(Secret::new(secret.to_owned())),
         oidc_only: false,
         oidc_link_by_email: true,
+        permission_cache: Arc::new(voxnexus_permissions::PermissionCache::default()),
     }
 }
 

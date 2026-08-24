@@ -4322,6 +4322,7 @@ dependencies = [
  "voxnexus-domain",
  "voxnexus-jobs",
  "voxnexus-media",
+ "voxnexus-permissions",
  "voxnexus-protocol",
  "voxnexus-realtime",
  "voxnexus-search",
@@ -4345,6 +4346,7 @@ dependencies = [
  "uuid",
  "voxnexus-db",
  "voxnexus-domain",
+ "voxnexus-permissions",
 ]
 
 [[package]]
@@ -4409,6 +4411,13 @@ version = "0.1.0"
 [[package]]
 name = "voxnexus-permissions"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "uuid",
+]
 
 [[package]]
 name = "voxnexus-protocol"

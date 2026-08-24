@@ -18,6 +18,11 @@ pub struct CommunityResponse {
     pub owner_account_id: uuid::Uuid,
     pub icon_url: Option<String>,
     pub banner_url: Option<String>,
+    pub tag_name: String,
+    pub tag_color: String,
+    pub tag_badge_url: Option<String>,
+    pub invite_splash_url: Option<String>,
+    pub invite_path: Option<String>,
     pub discoverable_on_instance: bool,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
@@ -51,6 +56,12 @@ pub struct UpdateCommunityRequest {
     pub timezone: Option<String>,
     pub join_mode: Option<JoinMode>,
     pub discoverable_on_instance: Option<bool>,
+    #[validate(length(max = 8))]
+    pub tag_name: Option<String>,
+    #[validate(length(max = 32))]
+    pub tag_color: Option<String>,
+    #[validate(length(max = 48))]
+    pub invite_path: Option<String>,
 }
 
 /// List wrapper for communities the caller belongs to.

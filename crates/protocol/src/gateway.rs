@@ -199,11 +199,18 @@ pub struct CommunityRolePayload {
     pub community_id: Uuid,
     pub name: String,
     pub position: i32,
+    pub weight: i32,
+    pub group_id: Option<Uuid>,
     pub color: String,
     pub hoist: bool,
     pub mentionable: bool,
     pub permissions: Value,
     pub is_everyone: bool,
+    pub short_tag: String,
+    pub icon_emoji: Option<String>,
+    pub icon_object_key: Option<String>,
+    pub gradient: Option<String>,
+    pub role_card: Value,
 }
 
 /// Server → client when a role is deleted (F028).

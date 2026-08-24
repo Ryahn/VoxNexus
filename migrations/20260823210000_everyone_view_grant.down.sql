@@ -1,0 +1,1 @@
+-- Revert is lossy; leave @everyone permissions unchanged on down.

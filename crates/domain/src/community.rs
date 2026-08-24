@@ -101,6 +101,11 @@ pub struct Community {
     pub owner_account_id: Uuid,
     pub icon_object_id: Option<Uuid>,
     pub banner_object_id: Option<Uuid>,
+    pub tag_name: String,
+    pub tag_color: String,
+    pub tag_badge_object_id: Option<Uuid>,
+    pub invite_splash_object_id: Option<Uuid>,
+    pub invite_path: Option<String>,
     pub discoverable_on_instance: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -249,18 +254,38 @@ pub struct Channel {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Custom role within a community (F028). `@everyone` is implicit for all members.
+/// Custom role within a community (F028 / F030-A). `@everyone` is implicit for all members.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CommunityRole {
     pub id: Uuid,
     pub community_id: Uuid,
     pub name: String,
+    /// Display order only (drag-reorder); not permission hierarchy.
     pub position: i32,
+    /// Unique 1–1000; lower = higher priority.
+    pub weight: i32,
+    pub group_id: Option<Uuid>,
     pub color: String,
     pub hoist: bool,
     pub mentionable: bool,
     pub permissions: serde_json::Value,
     pub is_everyone: bool,
+    pub short_tag: String,
+    pub icon_emoji: Option<String>,
+    pub icon_object_key: Option<String>,
+    pub gradient: Option<String>,
+    pub role_card: serde_json::Value,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// Organizational role group (no permissions).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunityRoleGroup {
+    pub id: Uuid,
+    pub community_id: Uuid,
+    pub name: String,
+    pub display_order: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

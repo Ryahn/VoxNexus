@@ -81,13 +81,20 @@ export interface GatewaySchemaCatalog {
 export interface CommunityRolePayload {
   color: string;
   community_id: string;
+  gradient?: string | null;
+  group_id?: string | null;
   hoist: boolean;
+  icon_emoji?: string | null;
+  icon_object_key?: string | null;
   id: string;
   is_everyone: boolean;
   mentionable: boolean;
   name: string;
   permissions: unknown;
   position: number;
+  role_card: unknown;
+  short_tag: string;
+  weight: number;
   [k: string]: unknown;
 }
 /**

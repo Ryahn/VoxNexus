@@ -1,4 +1,4 @@
-import type { ChannelResponse } from '@voxnexus/api-client';
+import type { ChannelResponse, ChannelType as ApiChannelType } from '@voxnexus/api-client';
 import type { Channel, ChannelType } from '../types';
 
 const UI_TYPES: ChannelType[] = [
@@ -33,14 +33,23 @@ export function apiTypeToUi(type: string): ChannelType {
 }
 
 /** Map sidebar pickers to API channel type strings. */
-export function uiTypeToApi(type: ChannelType): string {
+export function uiTypeToApi(type: ChannelType): ApiChannelType {
   switch (type) {
     case 'events':
       return 'scheduling';
     case 'stream':
       return 'streaming';
-    default:
+    case 'text':
+    case 'voice':
+    case 'forum':
+    case 'announcement':
+    case 'calendar':
+    case 'docs':
+    case 'tasks':
+    case 'media':
       return type;
+    default:
+      return 'text';
   }
 }
 

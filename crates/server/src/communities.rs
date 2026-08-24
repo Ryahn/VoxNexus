@@ -13,7 +13,8 @@ use voxnexus_auth::{
     create_community as persist_community, delete_community as persist_delete, delete_object_meta,
     get_community, get_instance, get_membership, get_object, get_profile, insert_object,
     join_community as persist_join, leave_community as persist_leave, list_communities_for_account,
-    list_member_account_ids, list_members, set_community_banner, set_community_icon, set_nickname,
+    list_member_account_ids, list_members, set_community_banner, set_community_icon,
+    set_community_invite_splash, set_community_tag_badge, set_nickname,
     slugify, transfer_community as persist_transfer, unique_slug, update_community, CommunityPatch,
     CreateCommunityInput, MemberListItem,
 };
@@ -213,6 +214,16 @@ pub async fn update_community_settings(
             timezone: body.timezone.map(|value| value.trim().to_owned()),
             join_mode: body.join_mode,
             discoverable_on_instance: body.discoverable_on_instance,
+            tag_name: body.tag_name.map(|value| value.trim().to_owned()),
+            tag_color: body.tag_color.map(|value| value.trim().to_owned()),
+            invite_path: body.invite_path.as_ref().map(|value| {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_owned())
+                }
+            }),
         },
     )
     .await
@@ -356,6 +367,56 @@ pub async fn upload_community_banner(
     upload_image(&state, user, headers, community_id, body, ImageSlot::Banner).await
 }
 
+/// Upload community tag badge (owner).
+#[utoipa::path(
+    put,
+    path = "/api/v1/communities/{community_id}/tag-badge",
+    operation_id = "uploadCommunityTagBadge",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    request_body(content_type = "application/octet-stream"),
+    responses(
+        (status = 200, description = "Updated community", body = CommunityResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not the owner", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn upload_community_tag_badge(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    body: Bytes,
+) -> Result<Json<CommunityResponse>, ApiError> {
+    upload_image(&state, user, headers, community_id, body, ImageSlot::TagBadge).await
+}
+
+/// Upload community invite splash (owner).
+#[utoipa::path(
+    put,
+    path = "/api/v1/communities/{community_id}/invite-splash",
+    operation_id = "uploadCommunityInviteSplash",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    request_body(content_type = "application/octet-stream"),
+    responses(
+        (status = 200, description = "Updated community", body = CommunityResponse),
+        (status = 401, description = "Not authenticated", body = voxnexus_protocol::ErrorBody),
+        (status = 403, description = "Not the owner", body = voxnexus_protocol::ErrorBody),
+        (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn upload_community_invite_splash(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+    body: Bytes,
+) -> Result<Json<CommunityResponse>, ApiError> {
+    upload_image(&state, user, headers, community_id, body, ImageSlot::InviteSplash).await
+}
+
 /// Serve community icon bytes.
 #[utoipa::path(
     get,
@@ -394,6 +455,46 @@ pub async fn get_community_banner(
     Path(community_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, ApiError> {
     serve_image(&state, headers, community_id, ImageSlot::Banner).await
+}
+
+/// Serve community tag badge bytes.
+#[utoipa::path(
+    get,
+    path = "/api/v1/communities/{community_id}/tag-badge",
+    operation_id = "getCommunityTagBadge",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    responses(
+        (status = 200, description = "Image bytes", content_type = "application/octet-stream"),
+        (status = 404, description = "No badge", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn get_community_tag_badge(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    serve_image(&state, headers, community_id, ImageSlot::TagBadge).await
+}
+
+/// Serve community invite splash bytes.
+#[utoipa::path(
+    get,
+    path = "/api/v1/communities/{community_id}/invite-splash",
+    operation_id = "getCommunityInviteSplash",
+    tag = "communities",
+    params(("community_id" = Uuid, Path, description = "Community id")),
+    responses(
+        (status = 200, description = "Image bytes", content_type = "application/octet-stream"),
+        (status = 404, description = "No splash", body = voxnexus_protocol::ErrorBody)
+    )
+)]
+pub async fn get_community_invite_splash(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(community_id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    serve_image(&state, headers, community_id, ImageSlot::InviteSplash).await
 }
 
 /// Join an open community.
@@ -596,13 +697,15 @@ pub async fn update_my_nickname(
 enum ImageSlot {
     Icon,
     Banner,
+    TagBadge,
+    InviteSplash,
 }
 
 impl ImageSlot {
     fn max_bytes(self) -> usize {
         match self {
-            Self::Icon => AVATAR_MAX_BYTES,
-            Self::Banner => BANNER_MAX_BYTES,
+            Self::Icon | Self::TagBadge => AVATAR_MAX_BYTES,
+            Self::Banner | Self::InviteSplash => BANNER_MAX_BYTES,
         }
     }
 
@@ -610,6 +713,8 @@ impl ImageSlot {
         match self {
             Self::Icon => "community-icons",
             Self::Banner => "community-banners",
+            Self::TagBadge => "community-tag-badges",
+            Self::InviteSplash => "community-invite-splashes",
         }
     }
 }
@@ -673,6 +778,10 @@ async fn upload_image(
     let previous = match slot {
         ImageSlot::Icon => set_community_icon(&state.pool, community_id, object_id).await,
         ImageSlot::Banner => set_community_banner(&state.pool, community_id, object_id).await,
+        ImageSlot::TagBadge => set_community_tag_badge(&state.pool, community_id, object_id).await,
+        ImageSlot::InviteSplash => {
+            set_community_invite_splash(&state.pool, community_id, object_id).await
+        }
     }
     .map_err(|error| map_auth(error, request_id.clone()))?;
 
@@ -709,6 +818,8 @@ async fn serve_image(
     let object_id = match slot {
         ImageSlot::Icon => community.icon_object_id,
         ImageSlot::Banner => community.banner_object_id,
+        ImageSlot::TagBadge => community.tag_badge_object_id,
+        ImageSlot::InviteSplash => community.invite_splash_object_id,
     }
     .ok_or_else(|| not_found(request_id.clone()))?;
     let meta = get_object(&state.pool, object_id)
@@ -810,6 +921,15 @@ fn to_response(community: &Community) -> CommunityResponse {
         banner_url: community
             .banner_object_id
             .map(|_| format!("/api/v1/communities/{}/banner", community.id)),
+        tag_name: community.tag_name.clone(),
+        tag_color: community.tag_color.clone(),
+        tag_badge_url: community
+            .tag_badge_object_id
+            .map(|_| format!("/api/v1/communities/{}/tag-badge", community.id)),
+        invite_splash_url: community
+            .invite_splash_object_id
+            .map(|_| format!("/api/v1/communities/{}/invite-splash", community.id)),
+        invite_path: community.invite_path.clone(),
         discoverable_on_instance: community.discoverable_on_instance,
         created_at: community.created_at,
         updated_at: community.updated_at,
@@ -836,7 +956,7 @@ fn map_auth(error: voxnexus_auth::AuthError, request_id: String) -> ApiError {
         voxnexus_auth::AuthError::SlugTaken => ApiError::new(
             StatusCode::CONFLICT,
             error_codes::VALIDATION_ERROR,
-            "Community slug is already taken.",
+            "That slug or invite path is already taken.",
             None,
             request_id,
         ),

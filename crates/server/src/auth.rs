@@ -326,6 +326,10 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         | AuthError::CategoryScopeMismatch
         | AuthError::ChannelScopeMismatch
         | AuthError::RoleNameTaken
+        | AuthError::RoleWeightTaken
+        | AuthError::InvalidRoleWeight
+        | AuthError::RoleGroupNotFound
+        | AuthError::RoleGroupNameTaken
         | AuthError::RoleScopeMismatch
         | AuthError::EveryoneRoleImmutable
         | AuthError::RoleHierarchyDenied

@@ -30,6 +30,7 @@ use voxnexus_config::{Secret, Url};
 use voxnexus_db::PgPool;
 use voxnexus_jobs::RedisConn;
 use voxnexus_protocol::MetaResponse;
+use voxnexus_permissions::PermissionCache;
 use voxnexus_realtime::{PresenceHub, ResumeStore};
 use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
@@ -80,6 +81,8 @@ pub struct AppState {
     pub oidc_only: bool,
     /// Link OIDC logins to existing accounts by verified email.
     pub oidc_link_by_email: bool,
+    /// Cached permission snapshots per community member (F029).
+    pub permission_cache: Arc<PermissionCache>,
 }
 
 #[derive(Serialize)]
@@ -173,8 +176,12 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::communities::delete_community))
         .routes(routes!(crate::communities::upload_community_icon))
         .routes(routes!(crate::communities::upload_community_banner))
+        .routes(routes!(crate::communities::upload_community_tag_badge))
+        .routes(routes!(crate::communities::upload_community_invite_splash))
         .routes(routes!(crate::communities::get_community_icon))
         .routes(routes!(crate::communities::get_community_banner))
+        .routes(routes!(crate::communities::get_community_tag_badge))
+        .routes(routes!(crate::communities::get_community_invite_splash))
         .routes(routes!(crate::communities::join_community))
         .routes(routes!(crate::communities::leave_community))
         .routes(routes!(crate::communities::list_community_members))
@@ -220,6 +227,14 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::roles::list_member_roles))
         .routes(routes!(crate::roles::assign_member_role))
         .routes(routes!(crate::roles::remove_member_role))
+        .routes(routes!(crate::roles::create_role_group))
+        .routes(routes!(crate::roles::list_role_groups))
+        .routes(routes!(crate::roles::update_role_group))
+        .routes(routes!(crate::roles::delete_role_group))
+        .routes(routes!(crate::roles::bulk_assign_role_group))
+        .routes(routes!(crate::roles::upload_role_icon))
+        .routes(routes!(crate::roles::get_role_icon))
+        .routes(routes!(crate::roles::delete_role_icon))
         .routes(routes!(crate::profile::get_my_profile))
         .routes(routes!(crate::profile::update_my_profile))
         .routes(routes!(crate::profile::upload_my_avatar))

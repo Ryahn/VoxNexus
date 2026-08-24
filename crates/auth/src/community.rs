@@ -43,6 +43,10 @@ pub struct CommunityPatch {
     pub timezone: Option<String>,
     pub join_mode: Option<JoinMode>,
     pub discoverable_on_instance: Option<bool>,
+    pub tag_name: Option<String>,
+    pub tag_color: Option<String>,
+    /// `None` = unchanged; `Some(None)` = clear; `Some(Some(path))` = set slugified path.
+    pub invite_path: Option<Option<String>>,
 }
 
 /// Count communities on the default instance.
@@ -186,6 +190,7 @@ pub async fn get_community(pool: &PgPool, id: Uuid) -> Result<Option<Community>,
         r"
         SELECT id, instance_id, name, slug, description, timezone, join_mode,
                owner_account_id, icon_object_id, banner_object_id,
+               tag_name, tag_color, tag_badge_object_id, invite_splash_object_id, invite_path,
                discoverable_on_instance, created_at, updated_at
         FROM communities
         WHERE id = $1
@@ -210,6 +215,7 @@ pub async fn list_communities_for_account(
         r"
         SELECT c.id, c.instance_id, c.name, c.slug, c.description, c.timezone, c.join_mode,
                c.owner_account_id, c.icon_object_id, c.banner_object_id,
+               c.tag_name, c.tag_color, c.tag_badge_object_id, c.invite_splash_object_id, c.invite_path,
                c.discoverable_on_instance, c.created_at, c.updated_at
         FROM communities c
         INNER JOIN community_members m ON m.community_id = c.id
@@ -477,12 +483,27 @@ pub async fn update_community(
     let discoverable = patch
         .discoverable_on_instance
         .unwrap_or(current.discoverable_on_instance);
+    let tag_name = patch.tag_name.unwrap_or(current.tag_name);
+    let tag_color = patch.tag_color.unwrap_or(current.tag_color);
+    let invite_path = match patch.invite_path {
+        None => current.invite_path,
+        Some(None) => None,
+        Some(Some(path)) => {
+            let normalized = slugify(&path);
+            if normalized.is_empty() {
+                None
+            } else {
+                Some(normalized)
+            }
+        }
+    };
     let now = Utc::now();
-    sqlx::query(
+    let result = sqlx::query(
         r"
         UPDATE communities
         SET name = $2, description = $3, timezone = $4, join_mode = $5,
-            discoverable_on_instance = $6, updated_at = $7
+            discoverable_on_instance = $6, tag_name = $7, tag_color = $8, invite_path = $9,
+            updated_at = $10
         WHERE id = $1
         ",
     )
@@ -492,9 +513,18 @@ pub async fn update_community(
     .bind(&timezone)
     .bind(join_mode.as_str())
     .bind(discoverable)
+    .bind(&tag_name)
+    .bind(&tag_color)
+    .bind(&invite_path)
     .bind(now)
     .execute(pool)
-    .await?;
+    .await;
+    if let Err(error) = result {
+        if is_unique_violation(&error) {
+            return Err(AuthError::SlugTaken);
+        }
+        return Err(error.into());
+    }
     get_community(pool, community_id)
         .await?
         .ok_or(AuthError::Db(sqlx::Error::RowNotFound))
@@ -656,6 +686,66 @@ pub async fn set_community_banner(
     Ok(previous)
 }
 
+/// Set community tag badge object; returns previous object id.
+///
+/// # Errors
+///
+/// Returns database errors.
+pub async fn set_community_tag_badge(
+    pool: &PgPool,
+    community_id: Uuid,
+    object_id: Uuid,
+) -> Result<Option<Uuid>, AuthError> {
+    let previous = sqlx::query_scalar::<_, Option<Uuid>>(
+        "SELECT tag_badge_object_id FROM communities WHERE id = $1",
+    )
+    .bind(community_id)
+    .fetch_one(pool)
+    .await?;
+    let now = Utc::now();
+    sqlx::query(
+        r"
+        UPDATE communities SET tag_badge_object_id = $2, updated_at = $3 WHERE id = $1
+        ",
+    )
+    .bind(community_id)
+    .bind(object_id)
+    .bind(now)
+    .execute(pool)
+    .await?;
+    Ok(previous)
+}
+
+/// Set community invite splash object; returns previous object id.
+///
+/// # Errors
+///
+/// Returns database errors.
+pub async fn set_community_invite_splash(
+    pool: &PgPool,
+    community_id: Uuid,
+    object_id: Uuid,
+) -> Result<Option<Uuid>, AuthError> {
+    let previous = sqlx::query_scalar::<_, Option<Uuid>>(
+        "SELECT invite_splash_object_id FROM communities WHERE id = $1",
+    )
+    .bind(community_id)
+    .fetch_one(pool)
+    .await?;
+    let now = Utc::now();
+    sqlx::query(
+        r"
+        UPDATE communities SET invite_splash_object_id = $2, updated_at = $3 WHERE id = $1
+        ",
+    )
+    .bind(community_id)
+    .bind(object_id)
+    .bind(now)
+    .execute(pool)
+    .await?;
+    Ok(previous)
+}
+
 /// Whether `slug` is already taken on this instance.
 ///
 /// # Errors
@@ -748,6 +838,11 @@ struct CommunityRow {
     owner_account_id: Uuid,
     icon_object_id: Option<Uuid>,
     banner_object_id: Option<Uuid>,
+    tag_name: String,
+    tag_color: String,
+    tag_badge_object_id: Option<Uuid>,
+    invite_splash_object_id: Option<Uuid>,
+    invite_path: Option<String>,
     discoverable_on_instance: bool,
     created_at: chrono::DateTime<Utc>,
     updated_at: chrono::DateTime<Utc>,
@@ -772,6 +867,11 @@ impl CommunityRow {
             owner_account_id: self.owner_account_id,
             icon_object_id: self.icon_object_id,
             banner_object_id: self.banner_object_id,
+            tag_name: self.tag_name,
+            tag_color: self.tag_color,
+            tag_badge_object_id: self.tag_badge_object_id,
+            invite_splash_object_id: self.invite_splash_object_id,
+            invite_path: self.invite_path,
             discoverable_on_instance: self.discoverable_on_instance,
             created_at: self.created_at,
             updated_at: self.updated_at,

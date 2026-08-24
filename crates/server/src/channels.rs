@@ -13,7 +13,7 @@ use voxnexus_auth::{
     get_membership, get_space, list_channels as persist_list, restore_channel as persist_restore,
     update_channel as persist_update, ChannelPatch, CreateChannelInput,
 };
-use voxnexus_domain::{Channel, CommunityMemberRole};
+use voxnexus_domain::Channel;
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
     ChannelListResponse, ChannelResponse, CreateChannelRequest, ListChannelsQuery,
@@ -24,6 +24,7 @@ use crate::error::ApiError;
 use crate::extract::ValidatedJson;
 use crate::extract_auth::AuthUser;
 use crate::http::{request_id_from_headers, AppState};
+use crate::permissions::{require_channel_view, visible_channels};
 
 /// Create a channel (owner / manage_channels until F029).
 #[utoipa::path(
@@ -129,8 +130,9 @@ pub async fn list_channels(
     .await
     .map_err(|error| {
         tracing::error!(error = %error, "list channels failed");
-        internal(request_id)
+        internal(request_id.clone())
     })?;
+    let channels = visible_channels(&state, community_id, user.account_id, channels).await?;
     Ok(Json(ChannelListResponse {
         channels: channels.iter().map(to_response).collect(),
     }))
@@ -242,7 +244,7 @@ pub async fn get_channel_by_id(
             internal(request_id.clone())
         })?
         .ok_or_else(|| not_found(request_id.clone()))?;
-    require_channel_visible(&state, &channel, user.account_id, &request_id).await?;
+    require_channel_view(&state, &channel, user.account_id, request_id.clone()).await?;
     Ok(Json(to_response(&channel)))
 }
 
@@ -470,34 +472,13 @@ async fn require_manage_channels(
     account_id: Uuid,
     request_id: &str,
 ) -> Result<(), ApiError> {
-    let membership = get_membership(&state.pool, community_id, account_id)
-        .await
-        .map_err(|error| {
-            tracing::error!(error = %error, "membership lookup failed");
-            internal(request_id.to_owned())
-        })?;
-    match membership {
-        Some(member) if member.role == CommunityMemberRole::Owner => Ok(()),
-        Some(_) => Err(ApiError::permission_denied(
-            request_id.to_owned(),
-            "Only the community owner can manage channels.",
-        )),
-        None => {
-            if get_community(&state.pool, community_id)
-                .await
-                .ok()
-                .flatten()
-                .is_none()
-            {
-                Err(not_found(request_id.to_owned()))
-            } else {
-                Err(ApiError::permission_denied(
-                    request_id.to_owned(),
-                    "Only the community owner can manage channels.",
-                ))
-            }
-        }
-    }
+    crate::permissions::require_manage_channels(
+        state,
+        community_id,
+        account_id,
+        request_id.to_owned(),
+    )
+    .await
 }
 
 async fn require_space_visible(
@@ -514,26 +495,6 @@ async fn require_space_visible(
         })?;
     if !visible {
         return Err(not_found(request_id.to_owned()));
-    }
-    Ok(())
-}
-
-async fn require_channel_visible(
-    state: &AppState,
-    channel: &Channel,
-    account_id: Uuid,
-    request_id: &str,
-) -> Result<(), ApiError> {
-    require_member(state, channel.community_id, account_id, request_id).await?;
-    if let Some(space_id) = channel.space_id {
-        let space = get_space(&state.pool, space_id)
-            .await
-            .map_err(|error| {
-                tracing::error!(error = %error, "get space failed");
-                internal(request_id.to_owned())
-            })?
-            .ok_or_else(|| not_found(request_id.to_owned()))?;
-        require_space_visible(state, &space, account_id, request_id).await?;
     }
     Ok(())
 }

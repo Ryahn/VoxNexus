@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, AddSpaceMemberData, AddSpaceMemberErrors, AddSpaceMemberResponses, ArchiveChannelData, ArchiveChannelErrors, ArchiveChannelResponses, AssignMemberRoleData, AssignMemberRoleErrors, AssignMemberRoleResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CloneChannelData, CloneChannelErrors, CloneChannelResponses, CloneRoleData, CloneRoleErrors, CloneRoleResponses, CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateChannelData, CreateChannelErrors, CreateChannelResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateRoleData, CreateRoleErrors, CreateRoleResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteChannelData, DeleteChannelErrors, DeleteChannelResponses, DeleteCommunityData, DeleteCommunityErrors, DeleteCommunityResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCategoryData, GetCategoryErrors, GetCategoryResponses, GetChannelData, GetChannelErrors, GetChannelResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetRoleData, GetRoleErrors, GetRoleResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, JoinSpaceData, JoinSpaceErrors, JoinSpaceResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, LeaveSpaceData, LeaveSpaceErrors, LeaveSpaceResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListChannelsData, ListChannelsErrors, ListChannelsResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListMemberRolesData, ListMemberRolesErrors, ListMemberRolesResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListRolesData, ListRolesErrors, ListRolesResponses, ListSpaceMembersData, ListSpaceMembersErrors, ListSpaceMembersResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveMemberRoleData, RemoveMemberRoleErrors, RemoveMemberRoleResponses, RemoveSpaceMemberData, RemoveSpaceMemberErrors, RemoveSpaceMemberResponses, ReorderCategoriesData, ReorderCategoriesErrors, ReorderCategoriesResponses, ReorderChannelsData, ReorderChannelsErrors, ReorderChannelsResponses, ReorderRolesData, ReorderRolesErrors, ReorderRolesResponses, RestoreChannelData, RestoreChannelErrors, RestoreChannelResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, TransferCommunityData, TransferCommunityErrors, TransferCommunityResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateChannelData, UpdateChannelErrors, UpdateChannelResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses } from './types.gen';
+import type { AcceptInviteData, AcceptInviteErrors, AcceptInviteResponses, AddSpaceMemberData, AddSpaceMemberErrors, AddSpaceMemberResponses, ArchiveChannelData, ArchiveChannelErrors, ArchiveChannelResponses, AssignMemberRoleData, AssignMemberRoleErrors, AssignMemberRoleResponses, BulkAssignRoleGroupData, BulkAssignRoleGroupErrors, BulkAssignRoleGroupResponses, ChangeMyEmailData, ChangeMyEmailErrors, ChangeMyEmailResponses, ChangeMyPasswordData, ChangeMyPasswordErrors, ChangeMyPasswordResponses, CloneChannelData, CloneChannelErrors, CloneChannelResponses, CloneRoleData, CloneRoleErrors, CloneRoleResponses, CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateChannelData, CreateChannelErrors, CreateChannelResponses, CreateCommunityData, CreateCommunityErrors, CreateCommunityInviteData, CreateCommunityInviteErrors, CreateCommunityInviteResponses, CreateCommunityResponses, CreateRoleData, CreateRoleErrors, CreateRoleGroupData, CreateRoleGroupErrors, CreateRoleGroupResponses, CreateRoleResponses, CreateSpaceData, CreateSpaceErrors, CreateSpaceResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteChannelData, DeleteChannelErrors, DeleteChannelResponses, DeleteCommunityData, DeleteCommunityErrors, DeleteCommunityResponses, DeleteRoleData, DeleteRoleErrors, DeleteRoleGroupData, DeleteRoleGroupErrors, DeleteRoleGroupResponses, DeleteRoleIconData, DeleteRoleIconErrors, DeleteRoleIconResponses, DeleteRoleResponses, DeleteSpaceData, DeleteSpaceErrors, DeleteSpaceResponses, GetCategoryData, GetCategoryErrors, GetCategoryResponses, GetChannelData, GetChannelErrors, GetChannelResponses, GetCommunityBannerData, GetCommunityBannerErrors, GetCommunityBannerResponses, GetCommunityData, GetCommunityErrors, GetCommunityIconData, GetCommunityIconErrors, GetCommunityIconResponses, GetCommunityInviteSplashData, GetCommunityInviteSplashErrors, GetCommunityInviteSplashResponses, GetCommunityResponses, GetCommunityTagBadgeData, GetCommunityTagBadgeErrors, GetCommunityTagBadgeResponses, GetInstanceSettingsData, GetInstanceSettingsErrors, GetInstanceSettingsResponses, GetInvitePreviewData, GetInvitePreviewErrors, GetInvitePreviewResponses, GetMeData, GetMeErrors, GetMeResponses, GetMetaData, GetMetaResponses, GetMyProfileData, GetMyProfileErrors, GetMyProfileResponses, GetProfileAvatarData, GetProfileAvatarErrors, GetProfileAvatarResponses, GetProfileBannerData, GetProfileBannerErrors, GetProfileBannerResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetRoleData, GetRoleErrors, GetRoleIconData, GetRoleIconErrors, GetRoleIconResponses, GetRoleResponses, GetSpaceData, GetSpaceErrors, GetSpaceResponses, JoinCommunityData, JoinCommunityErrors, JoinCommunityResponses, JoinSpaceData, JoinSpaceErrors, JoinSpaceResponses, LeaveCommunityData, LeaveCommunityErrors, LeaveCommunityResponses, LeaveSpaceData, LeaveSpaceErrors, LeaveSpaceResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListChannelsData, ListChannelsErrors, ListChannelsResponses, ListCommunitiesData, ListCommunitiesErrors, ListCommunitiesResponses, ListCommunityInvitesData, ListCommunityInvitesErrors, ListCommunityInvitesResponses, ListCommunityMembersData, ListCommunityMembersErrors, ListCommunityMembersResponses, ListMemberRolesData, ListMemberRolesErrors, ListMemberRolesResponses, ListPresenceData, ListPresenceErrors, ListPresenceResponses, ListRoleGroupsData, ListRoleGroupsErrors, ListRoleGroupsResponses, ListRolesData, ListRolesErrors, ListRolesResponses, ListSpaceMembersData, ListSpaceMembersErrors, ListSpaceMembersResponses, ListSpacesData, ListSpacesErrors, ListSpacesResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutResponses, OidcCallbackData, OidcCallbackErrors, OidcCallbackResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveMemberRoleData, RemoveMemberRoleErrors, RemoveMemberRoleResponses, RemoveSpaceMemberData, RemoveSpaceMemberErrors, RemoveSpaceMemberResponses, ReorderCategoriesData, ReorderCategoriesErrors, ReorderCategoriesResponses, ReorderChannelsData, ReorderChannelsErrors, ReorderChannelsResponses, ReorderRolesData, ReorderRolesErrors, ReorderRolesResponses, RestoreChannelData, RestoreChannelErrors, RestoreChannelResponses, RevokeCommunityInviteData, RevokeCommunityInviteErrors, RevokeCommunityInviteResponses, StartOidcLoginData, StartOidcLoginErrors, StartOidcLoginResponses, TransferCommunityData, TransferCommunityErrors, TransferCommunityResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateChannelData, UpdateChannelErrors, UpdateChannelResponses, UpdateCommunityData, UpdateCommunityErrors, UpdateCommunityInviteData, UpdateCommunityInviteErrors, UpdateCommunityInviteResponses, UpdateCommunityResponses, UpdateInstanceSettingsData, UpdateInstanceSettingsErrors, UpdateInstanceSettingsResponses, UpdateMyCommunityNicknameData, UpdateMyCommunityNicknameErrors, UpdateMyCommunityNicknameResponses, UpdateMyProfileData, UpdateMyProfileErrors, UpdateMyProfileResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleGroupData, UpdateRoleGroupErrors, UpdateRoleGroupResponses, UpdateRoleResponses, UpdateSpaceData, UpdateSpaceErrors, UpdateSpaceResponses, UploadCommunityBannerData, UploadCommunityBannerErrors, UploadCommunityBannerResponses, UploadCommunityIconData, UploadCommunityIconErrors, UploadCommunityIconResponses, UploadCommunityInviteSplashData, UploadCommunityInviteSplashErrors, UploadCommunityInviteSplashResponses, UploadCommunityTagBadgeData, UploadCommunityTagBadgeErrors, UploadCommunityTagBadgeResponses, UploadMyAvatarData, UploadMyAvatarErrors, UploadMyAvatarResponses, UploadMyBannerData, UploadMyBannerErrors, UploadMyBannerResponses, UploadRoleIconData, UploadRoleIconErrors, UploadRoleIconResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -286,6 +286,24 @@ export const uploadCommunityIcon = <ThrowOnError extends boolean = false>(option
 });
 
 /**
+ * Serve community invite splash bytes.
+ */
+export const getCommunityInviteSplash = <ThrowOnError extends boolean = false>(options: Options<GetCommunityInviteSplashData, ThrowOnError>): RequestResult<GetCommunityInviteSplashResponses, GetCommunityInviteSplashErrors, ThrowOnError> => (options.client ?? client).get<GetCommunityInviteSplashResponses, GetCommunityInviteSplashErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/invite-splash', ...options });
+
+/**
+ * Upload community invite splash (owner).
+ */
+export const uploadCommunityInviteSplash = <ThrowOnError extends boolean = false>(options: Options<UploadCommunityInviteSplashData, ThrowOnError>): RequestResult<UploadCommunityInviteSplashResponses, UploadCommunityInviteSplashErrors, ThrowOnError> => (options.client ?? client).put<UploadCommunityInviteSplashResponses, UploadCommunityInviteSplashErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/communities/{community_id}/invite-splash',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
+
+/**
  * List active (non-revoked) invites for a community.
  */
 export const listCommunityInvites = <ThrowOnError extends boolean = false>(options: Options<ListCommunityInvitesData, ThrowOnError>): RequestResult<ListCommunityInvitesResponses, ListCommunityInvitesErrors, ThrowOnError> => (options.client ?? client).get<ListCommunityInvitesResponses, ListCommunityInvitesErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/invites', ...options });
@@ -369,6 +387,35 @@ export const assignMemberRole = <ThrowOnError extends boolean = false>(options: 
 export const removeMemberRole = <ThrowOnError extends boolean = false>(options: Options<RemoveMemberRoleData, ThrowOnError>): RequestResult<RemoveMemberRoleResponses, RemoveMemberRoleErrors, ThrowOnError> => (options.client ?? client).delete<RemoveMemberRoleResponses, RemoveMemberRoleErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/members/{account_id}/roles/{role_id}', ...options });
 
 /**
+ * List role groups.
+ */
+export const listRoleGroups = <ThrowOnError extends boolean = false>(options: Options<ListRoleGroupsData, ThrowOnError>): RequestResult<ListRoleGroupsResponses, ListRoleGroupsErrors, ThrowOnError> => (options.client ?? client).get<ListRoleGroupsResponses, ListRoleGroupsErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/role-groups', ...options });
+
+/**
+ * Create a role group.
+ */
+export const createRoleGroup = <ThrowOnError extends boolean = false>(options: Options<CreateRoleGroupData, ThrowOnError>): RequestResult<CreateRoleGroupResponses, CreateRoleGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateRoleGroupResponses, CreateRoleGroupErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/role-groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Bulk move roles into a group (or ungroup).
+ */
+export const bulkAssignRoleGroup = <ThrowOnError extends boolean = false>(options: Options<BulkAssignRoleGroupData, ThrowOnError>): RequestResult<BulkAssignRoleGroupResponses, BulkAssignRoleGroupErrors, ThrowOnError> => (options.client ?? client).post<BulkAssignRoleGroupResponses, BulkAssignRoleGroupErrors, ThrowOnError>({
+    url: '/api/v1/communities/{community_id}/role-groups/bulk-assign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List roles in a community.
  */
 export const listRoles = <ThrowOnError extends boolean = false>(options: Options<ListRolesData, ThrowOnError>): RequestResult<ListRolesResponses, ListRolesErrors, ThrowOnError> => (options.client ?? client).get<ListRolesResponses, ListRolesErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/roles', ...options });
@@ -410,6 +457,24 @@ export const createSpace = <ThrowOnError extends boolean = false>(options: Optio
     ...options,
     headers: {
         'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Serve community tag badge bytes.
+ */
+export const getCommunityTagBadge = <ThrowOnError extends boolean = false>(options: Options<GetCommunityTagBadgeData, ThrowOnError>): RequestResult<GetCommunityTagBadgeResponses, GetCommunityTagBadgeErrors, ThrowOnError> => (options.client ?? client).get<GetCommunityTagBadgeResponses, GetCommunityTagBadgeErrors, ThrowOnError>({ url: '/api/v1/communities/{community_id}/tag-badge', ...options });
+
+/**
+ * Upload community tag badge (owner).
+ */
+export const uploadCommunityTagBadge = <ThrowOnError extends boolean = false>(options: Options<UploadCommunityTagBadgeData, ThrowOnError>): RequestResult<UploadCommunityTagBadgeResponses, UploadCommunityTagBadgeErrors, ThrowOnError> => (options.client ?? client).put<UploadCommunityTagBadgeResponses, UploadCommunityTagBadgeErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/communities/{community_id}/tag-badge',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
         ...options.headers
     }
 });
@@ -522,6 +587,23 @@ export const getProfileAvatar = <ThrowOnError extends boolean = false>(options: 
 export const getProfileBanner = <ThrowOnError extends boolean = false>(options: Options<GetProfileBannerData, ThrowOnError>): RequestResult<GetProfileBannerResponses, GetProfileBannerErrors, ThrowOnError> => (options.client ?? client).get<GetProfileBannerResponses, GetProfileBannerErrors, ThrowOnError>({ url: '/api/v1/profiles/{account_id}/banner', ...options });
 
 /**
+ * Delete a role group (roles become ungrouped).
+ */
+export const deleteRoleGroup = <ThrowOnError extends boolean = false>(options: Options<DeleteRoleGroupData, ThrowOnError>): RequestResult<DeleteRoleGroupResponses, DeleteRoleGroupErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRoleGroupResponses, DeleteRoleGroupErrors, ThrowOnError>({ url: '/api/v1/role-groups/{group_id}', ...options });
+
+/**
+ * Update a role group.
+ */
+export const updateRoleGroup = <ThrowOnError extends boolean = false>(options: Options<UpdateRoleGroupData, ThrowOnError>): RequestResult<UpdateRoleGroupResponses, UpdateRoleGroupErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRoleGroupResponses, UpdateRoleGroupErrors, ThrowOnError>({
+    url: '/api/v1/role-groups/{group_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Delete a custom role.
  */
 export const deleteRole = <ThrowOnError extends boolean = false>(options: Options<DeleteRoleData, ThrowOnError>): RequestResult<DeleteRoleResponses, DeleteRoleErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRoleResponses, DeleteRoleErrors, ThrowOnError>({ url: '/api/v1/roles/{role_id}', ...options });
@@ -547,6 +629,29 @@ export const updateRole = <ThrowOnError extends boolean = false>(options: Option
  * Clone a role shell.
  */
 export const cloneRole = <ThrowOnError extends boolean = false>(options: Options<CloneRoleData, ThrowOnError>): RequestResult<CloneRoleResponses, CloneRoleErrors, ThrowOnError> => (options.client ?? client).post<CloneRoleResponses, CloneRoleErrors, ThrowOnError>({ url: '/api/v1/roles/{role_id}/clone', ...options });
+
+/**
+ * Clear a role's custom icon.
+ */
+export const deleteRoleIcon = <ThrowOnError extends boolean = false>(options: Options<DeleteRoleIconData, ThrowOnError>): RequestResult<DeleteRoleIconResponses, DeleteRoleIconErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRoleIconResponses, DeleteRoleIconErrors, ThrowOnError>({ url: '/api/v1/roles/{role_id}/icon', ...options });
+
+/**
+ * Serve a role's custom icon.
+ */
+export const getRoleIcon = <ThrowOnError extends boolean = false>(options: Options<GetRoleIconData, ThrowOnError>): RequestResult<GetRoleIconResponses, GetRoleIconErrors, ThrowOnError> => (options.client ?? client).get<GetRoleIconResponses, GetRoleIconErrors, ThrowOnError>({ url: '/api/v1/roles/{role_id}/icon', ...options });
+
+/**
+ * Upload a custom role icon (JPEG/PNG/GIF/WebP).
+ */
+export const uploadRoleIcon = <ThrowOnError extends boolean = false>(options: Options<UploadRoleIconData, ThrowOnError>): RequestResult<UploadRoleIconResponses, UploadRoleIconErrors, ThrowOnError> => (options.client ?? client).post<UploadRoleIconResponses, UploadRoleIconErrors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/api/v1/roles/{role_id}/icon',
+    ...options,
+    headers: {
+        'Content-Type': 'application/octet-stream',
+        ...options.headers
+    }
+});
 
 /**
  * Delete a Space (owner until F029).

@@ -46,6 +46,7 @@ fn state(pool: PgPool, redis: RedisConn, allow_dev_ping: bool, heartbeat: Durati
         oidc_client_secret: None,
         oidc_only: false,
         oidc_link_by_email: true,
+        permission_cache: Arc::new(voxnexus_permissions::PermissionCache::default()),
     }
 }
 

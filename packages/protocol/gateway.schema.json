@@ -104,7 +104,10 @@
         "mentionable",
         "name",
         "permissions",
-        "position"
+        "position",
+        "role_card",
+        "short_tag",
+        "weight"
       ],
       "properties": {
         "color": {
@@ -114,8 +117,33 @@
           "type": "string",
           "format": "uuid"
         },
+        "gradient": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "group_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
         "hoist": {
           "type": "boolean"
+        },
+        "icon_emoji": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "icon_object_key": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "id": {
           "type": "string",
@@ -132,6 +160,14 @@
         },
         "permissions": true,
         "position": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "role_card": true,
+        "short_tag": {
+          "type": "string"
+        },
+        "weight": {
           "type": "integer",
           "format": "int32"
         }

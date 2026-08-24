@@ -4,7 +4,16 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "VoxNexus permission evaluation, Explain Access, and View As"
+description = "VoxNexus permission evaluation (F029)"
 
 [lints]
 workspace = true
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v7"] }
+
+[dev-dependencies]

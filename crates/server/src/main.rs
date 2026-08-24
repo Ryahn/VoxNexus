@@ -6,6 +6,7 @@ use voxnexus_auth::{ensure_instance, InstanceSeed};
 use voxnexus_config::Config;
 use voxnexus_domain::{CommunityCreationMode, RegistrationMode};
 use voxnexus_jobs::{connect, health_ping_storage, ping, run_health_ping_workers, RedisConn};
+use voxnexus_permissions::PermissionCache;
 use voxnexus_search::{SearchEngine, TypesenseClient, TypesenseConfig};
 use voxnexus_storage::{ObjectStore, S3ObjectStore, S3ObjectStoreConfig};
 
@@ -215,6 +216,7 @@ async fn run() -> Result<(), i32> {
         oidc_client_secret: config.oidc_client_secret.clone(),
         oidc_only: config.oidc_only,
         oidc_link_by_email: config.oidc_link_by_email,
+        permission_cache: std::sync::Arc::new(PermissionCache::default()),
     });
     let serve = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())

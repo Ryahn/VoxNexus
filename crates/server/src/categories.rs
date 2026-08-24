@@ -11,7 +11,7 @@ use voxnexus_auth::{
     get_category, get_community, get_membership, get_space, list_categories as persist_list,
     update_category as persist_update, CategoryPatch, CreateCategoryInput,
 };
-use voxnexus_domain::{ChannelCategory, CommunityMemberRole};
+use voxnexus_domain::ChannelCategory;
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
     CategoryListResponse, CategoryResponse, CreateCategoryRequest, ListCategoriesQuery,
@@ -350,34 +350,13 @@ async fn require_manage_channels(
     account_id: Uuid,
     request_id: &str,
 ) -> Result<(), ApiError> {
-    let membership = get_membership(&state.pool, community_id, account_id)
-        .await
-        .map_err(|error| {
-            tracing::error!(error = %error, "membership lookup failed");
-            internal(request_id.to_owned())
-        })?;
-    match membership {
-        Some(member) if member.role == CommunityMemberRole::Owner => Ok(()),
-        Some(_) => Err(ApiError::permission_denied(
-            request_id.to_owned(),
-            "Only the community owner can manage categories.",
-        )),
-        None => {
-            if get_community(&state.pool, community_id)
-                .await
-                .ok()
-                .flatten()
-                .is_none()
-            {
-                Err(not_found(request_id.to_owned()))
-            } else {
-                Err(ApiError::permission_denied(
-                    request_id.to_owned(),
-                    "Only the community owner can manage categories.",
-                ))
-            }
-        }
-    }
+    crate::permissions::require_manage_channels(
+        state,
+        community_id,
+        account_id,
+        request_id.to_owned(),
+    )
+    .await
 }
 
 async fn require_space_visible(

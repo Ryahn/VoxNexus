@@ -45,8 +45,9 @@ pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
 pub use role::{
-    AssignRoleRequest, CreateRoleRequest, ReorderRolesRequest, RoleListResponse, RoleResponse,
-    UpdateRoleRequest,
+    AssignRoleRequest, BulkAssignRoleGroupRequest, CreateRoleGroupRequest, CreateRoleRequest,
+    ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse, RoleListResponse, RoleResponse,
+    UpdateRoleGroupRequest, UpdateRoleRequest,
 };
 pub use space::{
     AddSpaceMemberRequest, CreateSpaceRequest, SpaceListResponse, SpaceMemberListResponse,

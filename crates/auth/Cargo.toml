@@ -28,6 +28,7 @@ serde_json = "1"
 thiserror = "2"
 uuid = { version = "1", features = ["v7"] }
 voxnexus-domain = { path = "../domain" }
+voxnexus-permissions = { path = "../permissions" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

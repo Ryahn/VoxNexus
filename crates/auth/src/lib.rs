@@ -9,6 +9,7 @@ mod oidc;
 mod password;
 mod profile;
 mod role;
+mod role_group;
 mod session;
 mod space;
 
@@ -30,7 +31,8 @@ pub use community::{
     count_communities, create_community, delete_community, ensure_bootstrap_community,
     first_instance_admin_id, get_community, get_membership, join_community, leave_community,
     list_communities_for_account, list_member_account_ids, list_members, set_community_banner,
-    set_community_icon, set_nickname, slug_taken, slugify, transfer_community, unique_slug,
+    set_community_icon, set_community_invite_splash, set_community_tag_badge, set_nickname,
+    slug_taken, slugify, transfer_community, unique_slug,
     update_community, CommunityPatch, CreateCommunityInput, MemberListItem, MembersPage,
 };
 pub use instance::{
@@ -48,10 +50,14 @@ pub use profile::{
     insert_object, set_avatar_object, set_banner_object, update_profile,
 };
 pub use role::{
-    assign_role, can_manage_role_position, clone_role, create_role, delete_role, get_role,
-    insert_everyone_role, list_member_roles, list_roles, permissions_manage_roles,
-    permissions_with_manage_roles, remove_role_assignment, role_actor, update_role,
-    CreateRoleInput, RoleActor, RolePatch,
+    assign_role, can_manage_role_position, can_manage_role_weight, clone_role, create_role,
+    delete_role, get_everyone_role, get_role, insert_everyone_role, list_member_roles, list_roles,
+    member_roles_for_grants, permissions_manage_roles, permissions_with_manage_roles,
+    remove_role_assignment, role_actor, set_role_icon, update_role, CreateRoleInput, RoleActor,
+    RolePatch,
+};
+pub use role_group::{
+    create_role_group, delete_role_group, get_role_group, list_role_groups, update_role_group,
 };
 pub use session::{
     clear_session_cookie, hash_session_token, new_session_token, session_cookie,
@@ -103,6 +109,14 @@ pub enum AuthError {
     ChannelScopeMismatch,
     #[error("role name already taken")]
     RoleNameTaken,
+    #[error("role weight already taken")]
+    RoleWeightTaken,
+    #[error("role weight must be between 1 and 1000")]
+    InvalidRoleWeight,
+    #[error("role group not found")]
+    RoleGroupNotFound,
+    #[error("role group name already taken")]
+    RoleGroupNameTaken,
     #[error("role scope mismatch")]
     RoleScopeMismatch,
     #[error("@everyone role cannot be deleted")]
