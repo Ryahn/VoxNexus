@@ -39,6 +39,9 @@ pub enum EventType {
     RoleUpdate,
     RoleDelete,
     MemberRoleUpdate,
+    MessageCreate,
+    MessageUpdate,
+    MessageDelete,
 }
 
 /// Subscription / fanout scope (connection-level events omit this).
@@ -228,6 +231,46 @@ pub struct MemberRoleUpdatePayload {
     pub role_ids: Vec<Uuid>,
 }
 
+/// Server → client when a text message is created (F035).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MessageCreatePayload {
+    pub id: Uuid,
+    pub channel_id: Uuid,
+    pub community_id: Uuid,
+    pub author_id: Uuid,
+    pub author_display_name: String,
+    pub content: String,
+    pub nonce: Option<String>,
+    pub referenced_message_id: Option<Uuid>,
+    pub reply_to: Option<crate::MessageReplyPreview>,
+    pub created_at: DateTime<Utc>,
+    pub edited_at: Option<DateTime<Utc>>,
+}
+
+/// Server → client when a text message is edited (F036).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MessageUpdatePayload {
+    pub id: Uuid,
+    pub channel_id: Uuid,
+    pub community_id: Uuid,
+    pub author_id: Uuid,
+    pub author_display_name: String,
+    pub content: String,
+    pub nonce: Option<String>,
+    pub referenced_message_id: Option<Uuid>,
+    pub reply_to: Option<crate::MessageReplyPreview>,
+    pub created_at: DateTime<Utc>,
+    pub edited_at: Option<DateTime<Utc>>,
+}
+
+/// Server → client when a text message is deleted (F036).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct MessageDeletePayload {
+    pub id: Uuid,
+    pub channel_id: Uuid,
+    pub community_id: Uuid,
+}
+
 /// Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
 #[derive(Debug, Clone, JsonSchema)]
 pub struct GatewaySchemaCatalog {
@@ -252,6 +295,9 @@ pub struct GatewaySchemaCatalog {
     pub community_role_payload: CommunityRolePayload,
     pub role_delete_payload: RoleDeletePayload,
     pub member_role_update_payload: MemberRoleUpdatePayload,
+    pub message_create_payload: MessageCreatePayload,
+    pub message_update_payload: MessageUpdatePayload,
+    pub message_delete_payload: MessageDeletePayload,
 }
 
 /// Root JSON Schema for gateway types (deterministic export).

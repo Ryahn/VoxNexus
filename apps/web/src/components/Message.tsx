@@ -2,13 +2,31 @@ import { Check, Copy, FileText, GitBranch, Pin, Reply } from 'lucide-react';
 import { nameColor, topRole } from '../data/roles';
 import { users } from '../data/users';
 import { useUI } from '../store';
-import type { Message as Msg, Reaction } from '../types';
+import type { Message as Msg, Reaction, User } from '../types';
 import { MessageActions } from './MessageActions';
 import { RichText } from './RichText';
 import { Avatar } from './ui/Avatar';
 
-export function Message({ message, grouped }: { message: Msg; grouped: boolean }) {
-  const author = users[message.authorId];
+export function Message({
+  message,
+  grouped,
+  author: authorProp,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+  onJumpToReply,
+}: {
+  message: Msg;
+  grouped: boolean;
+  author?: User;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onJumpToReply?: (messageId: string) => void;
+}) {
+  const author = authorProp ?? users[message.authorId];
   const compact = useUI((s) => s.compact);
   const openProfile = useUI((s) => s.openProfile);
   const setThreadOpen = useUI((s) => s.setThreadOpen);
@@ -24,6 +42,7 @@ export function Message({ message, grouped }: { message: Msg; grouped: boolean }
 
   return (
     <div
+      id={`msg-${message.id}`}
       className={`group/msg relative ${compact ? 'py-px' : grouped ? 'py-0.5' : 'mt-3.5 py-0.5'} ${
         message.mentionsMe ? 'bg-[rgb(var(--mention)/0.07)]' : 'hover:bg-surface/40'
       } transition-colors`}
@@ -37,7 +56,13 @@ export function Message({ message, grouped }: { message: Msg; grouped: boolean }
         </div>
       )}
 
-      <MessageActions message={message} />
+      <MessageActions
+        message={message}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
 
       <div className={`flex gap-3 ${compact ? 'px-4' : 'px-4'}`}>
         {/* gutter: avatar or hover-timestamp */}
@@ -56,7 +81,7 @@ export function Message({ message, grouped }: { message: Msg; grouped: boolean }
 
         <div className="min-w-0 flex-1">
           {/* reply context */}
-          {message.replyTo && <ReplyContext reply={message.replyTo} />}
+          {message.replyTo && <ReplyContext reply={message.replyTo} onJump={onJumpToReply} />}
 
           {/* header line */}
           {(!grouped || compact) && (
@@ -148,21 +173,32 @@ export function Message({ message, grouped }: { message: Msg; grouped: boolean }
   );
 }
 
-function ReplyContext({ reply }: { reply: NonNullable<Msg['replyTo']> }) {
+function ReplyContext({
+  reply,
+  onJump,
+}: {
+  reply: NonNullable<Msg['replyTo']>;
+  onJump?: (messageId: string) => void;
+}) {
   const author = users[reply.authorId];
+  const displayName =
+    reply.authorDisplayName ??
+    author?.displayName ??
+    (reply.deleted ? 'Deleted message' : 'Unknown');
   return (
     <button
       type="button"
+      onClick={() => onJump?.(reply.messageId)}
       className="group/r mb-0.5 flex w-full min-w-0 items-center gap-1.5 pl-1 text-left"
     >
       <span className="ml-[-4px] h-2.5 w-4 shrink-0 rounded-tl-md border-l-2 border-t-2 border-line-2/70" />
       {author && <Avatar user={author} size={16} rounded="rounded-full" />}
       <Reply size={11} className="shrink-0 text-ink-4" />
       <span className="shrink-0 text-[12px] font-semibold text-ink-2 group-hover/r:text-ink">
-        {author?.displayName}
+        {displayName}
       </span>
       <span className="truncate text-[12px] text-ink-3 group-hover/r:text-ink-2">
-        {reply.excerpt}
+        {reply.deleted ? 'Original message was deleted' : reply.excerpt}
       </span>
     </button>
   );

@@ -11,7 +11,8 @@ Authz lives in `crates/permissions`. Handlers call `require_permission` / `requi
 | `community.manage_roles` | | Roles, groups, assignments |
 | `community.view_audit` | | Read community audit log |
 | `text.view` | `channel.view` | See a channel (lists and GET) |
-| `text.send` | `message.send` | Send in a channel (enforced when messaging ships; stripped under timeout) |
+| `text.send` | `message.send` | Send messages in a text channel (stripped under timeout) |
+| `text.manage_messages` | `message.manage`, `manage_messages` | Delete others' messages (authors can always delete their own) |
 
 Unknown codes fail validation on Explain Access.
 
@@ -24,7 +25,7 @@ For a permission check (with optional channel context):
 3. **Restricted Space** — if the channel's Space is restricted and the actor is not a space member → deny.
 4. **Administrator** — `community.administrator` → allow (except owner-only permissions).
 5. **Timeout** — timed-out members cannot `text.send`.
-6. **Role grants** — merge assigned roles (including `@everyone`) by weight.
+6. **Role grants** — merge assigned roles (including `@everyone`) by weight. New communities grant `@everyone` `text.view` + `text.send` by default.
 7. **Overrides** — category layer, then channel layer. Within a layer: collapse role overrides for the actor's roles, then apply the member override (member allow/deny wins over role at that layer). Channel can restore what a category denied.
 
 Hidden channels return **404** (not 403) when the actor lacks `text.view`.

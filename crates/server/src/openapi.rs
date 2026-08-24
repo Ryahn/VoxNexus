@@ -8,20 +8,21 @@ use voxnexus_protocol::{
     CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, ChannelListResponse,
     ChannelResponse, CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse,
     CommunityResponse, CreateCategoryRequest, CreateChannelRequest, CreateCommunityRequest,
-    CreateInviteRequest, CreateRoleGroupRequest, CreateRoleRequest, CreateSpaceRequest,
-    DeleteCommunityRequest, ErrorBody, ExplainPermissionRequest, ExplainPermissionResponse,
-    InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit, InviteListResponse,
-    InvitePreviewResponse, InviteResponse, ListAuditEventsQuery, ListCategoriesQuery,
-    ListChannelsQuery, LoginRequest, MetaResponse, PermissionExplainStep,
+    CreateInviteRequest, CreateMessageRequest, CreateRoleGroupRequest, CreateRoleRequest,
+    CreateSpaceRequest, DeleteCommunityRequest, ErrorBody, ExplainPermissionRequest,
+    ExplainPermissionResponse, InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit,
+    InviteListResponse, InvitePreviewResponse, InviteResponse, ListAuditEventsQuery,
+    ListCategoriesQuery, ListChannelsQuery, ListMessagesQuery, LoginRequest, MessageListResponse,
+    MessageReplyPreview, MessageResponse, MetaResponse, PermissionExplainStep,
     PermissionOverrideListResponse, PermissionOverrideResponse, PresenceEntry,
     PresenceListResponse, ProfileResponse, RegisterRequest, ReorderCategoriesRequest,
     ReorderChannelsRequest, ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse,
     RoleListResponse, RoleResponse, SpaceListResponse, SpaceMemberListResponse,
     SpaceMemberResponse, SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest,
     UpdateChannelRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
-    UpdateInviteRequest, UpdateNicknameRequest, UpdateProfileRequest, UpdateRoleGroupRequest,
-    UpdateRoleRequest, UpdateSpaceRequest, UpsertPermissionOverrideRequest, ViewAsChannelsRequest,
-    ViewAsChannelsResponse, ViewAsMode,
+    UpdateInviteRequest, UpdateMessageRequest, UpdateNicknameRequest, UpdateProfileRequest,
+    UpdateRoleGroupRequest, UpdateRoleRequest, UpdateSpaceRequest, UpsertPermissionOverrideRequest,
+    ViewAsChannelsRequest, ViewAsChannelsResponse, ViewAsMode,
 };
 
 use crate::audit;
@@ -33,6 +34,7 @@ use crate::explain;
 use crate::http;
 use crate::instance;
 use crate::invites;
+use crate::messages;
 use crate::oidc;
 use crate::permission_overrides;
 use crate::presence;
@@ -113,6 +115,10 @@ use crate::view_as;
         channels::archive_channel,
         channels::restore_channel,
         channels::clone_channel,
+        messages::create_message,
+        messages::list_messages,
+        messages::update_message,
+        messages::delete_message,
         permission_overrides::list_channel_permission_overrides,
         permission_overrides::upsert_channel_role_permission_override,
         permission_overrides::upsert_channel_member_permission_override,
@@ -189,6 +195,12 @@ use crate::view_as;
         ReorderChannelsRequest,
         ListChannelsQuery,
         ChannelType,
+        MessageResponse,
+        MessageReplyPreview,
+        MessageListResponse,
+        CreateMessageRequest,
+        UpdateMessageRequest,
+        ListMessagesQuery,
         PermissionOverrideResponse,
         PermissionOverrideListResponse,
         UpsertPermissionOverrideRequest,
@@ -232,6 +244,7 @@ use crate::view_as;
         (name = "spaces", description = "Spaces (groups) within a community"),
         (name = "categories", description = "Channel sidebar categories"),
         (name = "channels", description = "Channels within a community"),
+        (name = "messages", description = "Text channel messages"),
         (name = "roles", description = "Community roles and assignments"),
         (name = "permissions", description = "Permission explain, View As, and overrides"),
         (name = "audit", description = "Community audit log"),

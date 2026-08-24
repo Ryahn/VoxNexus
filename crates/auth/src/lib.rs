@@ -6,6 +6,7 @@ mod channel;
 mod community;
 mod instance;
 mod invite;
+mod message;
 mod oidc;
 mod password;
 mod permission_override;
@@ -48,6 +49,11 @@ pub use instance::{
 pub use invite::{
     accept_invite, create_invite, get_invite, get_invite_by_code, list_invites, revoke_invite,
     update_invite, CreateInviteInput, InvitePatch,
+};
+pub use message::{
+    create_message, get_message, list_messages, soft_delete_message, update_message,
+    MessageReplyPreview, MessageWithAuthor, MessagesPage, MESSAGE_CONTENT_MAX,
+    MESSAGE_EDIT_WINDOW_SECS, MESSAGE_NONCE_MAX,
 };
 pub use oidc::{resolve_oidc_login, OidcIdentity};
 pub use password::{hash_password, verify_password, PasswordError};
@@ -156,6 +162,10 @@ pub enum AuthError {
     RegistrationClosed,
     #[error("invalid credentials")]
     InvalidCredentials,
+    #[error("invalid message")]
+    InvalidMessage,
+    #[error("invalid reply target")]
+    InvalidReplyTarget,
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }

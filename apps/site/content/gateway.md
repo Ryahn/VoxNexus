@@ -1,6 +1,6 @@
 # Gateway
 
-Authenticated WebSocket for presence and session resume. Chat event fanout is not implemented yet.
+Authenticated WebSocket for presence, community events, and text-channel message fanout.
 
 ## Endpoint
 
@@ -15,7 +15,7 @@ Requires a valid session cookie. Set `GATEWAY_ALLOW_UNAUTH=true` only for local 
 3. Server → `READY` `{ account_id, session_id, resume_token }`, then `PRESENCE_SYNC`
 4. Client → `HEARTBEAT`; server → `HEARTBEAT_ACK`
 5. Missing heartbeats for `2 × interval` closes the socket
-6. Reconnect: `RESUME` `{ session_id, last_sequence, resume_token }` → `RESUMED` or `INVALID_SESSION`
+6. Reconnect: `RESUME` `{ session_id, last_sequence, resume_token }` → replay missed fanout events from the in-memory ring (if still contiguous), then `RESUMED`, or `INVALID_SESSION`
 
 Envelope:
 
@@ -29,14 +29,20 @@ Envelope:
 }
 ```
 
-`event_type` is `SCREAMING_SNAKE_CASE`.
+`event_type` is `SCREAMING_SNAKE_CASE`. Community/channel fanout events include `scope: { "type": "community"|"channel", "id": "…" }`.
 
 ## Presence
 
 - Client `STATUS_UPDATE` — `{ status?, custom_status? }`
 - Server `PRESENCE_UPDATE` / `PRESENCE_SYNC` — see [Profiles](/docs/guides/profiles)
 
-`MEMBER_JOIN` / `MEMBER_LEAVE` exist on the enum for membership fanout where wired.
+`MEMBER_JOIN` / `MEMBER_LEAVE` and role events fan out to online community members.
+
+## Messages
+
+On successful `POST …/messages`, the server emits `MESSAGE_CREATE` (channel scope) to **online** members who can `text.view` that channel. Hidden members do not receive the event. `MESSAGE_UPDATE` / `MESSAGE_DELETE` fan out on edit/delete. Create/update payloads include `referenced_message_id` and `reply_to` when the message is a reply.
+
+Clients should HTTP-list history on open, then apply gateway creates. Resume replays buffered fanout envelopes while the ring still holds them (capacity 1000 per session).
 
 ## Types
 

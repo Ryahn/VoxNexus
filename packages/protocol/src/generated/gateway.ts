@@ -29,7 +29,10 @@ export type EventType =
   | 'ROLE_CREATE'
   | 'ROLE_UPDATE'
   | 'ROLE_DELETE'
-  | 'MEMBER_ROLE_UPDATE';
+  | 'MEMBER_ROLE_UPDATE'
+  | 'MESSAGE_CREATE'
+  | 'MESSAGE_UPDATE'
+  | 'MESSAGE_DELETE';
 /**
  * Presence exposed to clients (offline when disconnected or hidden from viewers).
  *
@@ -63,6 +66,9 @@ export interface GatewaySchemaCatalog {
   member_join_payload: MemberJoinPayload;
   member_leave_payload: MemberLeavePayload;
   member_role_update_payload: MemberRoleUpdatePayload;
+  message_create_payload: MessageCreatePayload;
+  message_delete_payload: MessageDeletePayload;
+  message_update_payload: MessageUpdatePayload;
   presence_sync_payload: PresenceSyncPayload;
   presence_update_payload: PresenceUpdatePayload;
   ready_payload: ReadyPayload;
@@ -227,6 +233,72 @@ export interface MemberRoleUpdatePayload {
   account_id: string;
   community_id: string;
   role_ids: string[];
+  [k: string]: unknown;
+}
+/**
+ * Server → client when a text message is created (F035).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MessageCreatePayload".
+ */
+export interface MessageCreatePayload {
+  author_display_name: string;
+  author_id: string;
+  channel_id: string;
+  community_id: string;
+  content: string;
+  created_at: string;
+  edited_at?: string | null;
+  id: string;
+  nonce?: string | null;
+  referenced_message_id?: string | null;
+  reply_to?: MessageReplyPreview | null;
+  [k: string]: unknown;
+}
+/**
+ * Preview of the message being replied to.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MessageReplyPreview".
+ */
+export interface MessageReplyPreview {
+  author_display_name: string;
+  author_id: string;
+  deleted: boolean;
+  excerpt: string;
+  message_id: string;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when a text message is deleted (F036).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MessageDeletePayload".
+ */
+export interface MessageDeletePayload {
+  channel_id: string;
+  community_id: string;
+  id: string;
+  [k: string]: unknown;
+}
+/**
+ * Server → client when a text message is edited (F036).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MessageUpdatePayload".
+ */
+export interface MessageUpdatePayload {
+  author_display_name: string;
+  author_id: string;
+  channel_id: string;
+  community_id: string;
+  content: string;
+  created_at: string;
+  edited_at?: string | null;
+  id: string;
+  nonce?: string | null;
+  referenced_message_id?: string | null;
+  reply_to?: MessageReplyPreview | null;
   [k: string]: unknown;
 }
 /**

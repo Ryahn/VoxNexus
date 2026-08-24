@@ -165,7 +165,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -181,7 +189,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -197,7 +213,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -213,7 +237,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -229,7 +261,15 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -245,7 +285,87 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             },
                             payload,
                         );
-                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MessageCreate(payload)) => {
+                        sequence += 1;
+                        let channel_id = payload.channel_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MessageCreate,
+                            EventScope {
+                                scope_type: "channel".to_owned(),
+                                id: channel_id,
+                            },
+                            payload,
+                        );
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MessageUpdate(payload)) => {
+                        sequence += 1;
+                        let channel_id = payload.channel_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MessageUpdate,
+                            EventScope {
+                                scope_type: "channel".to_owned(),
+                                id: channel_id,
+                            },
+                            payload,
+                        );
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    Some(PresenceHubMessage::MessageDelete(payload)) => {
+                        sequence += 1;
+                        let channel_id = payload.channel_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::MessageDelete,
+                            EventScope {
+                                scope_type: "channel".to_owned(),
+                                id: channel_id,
+                            },
+                            payload,
+                        );
+                        if send_fanout(
+                            &mut sink,
+                            &options.resume_store,
+                            &resume_token,
+                            envelope,
+                        )
+                        .await
+                        .is_err()
+                        {
                             break;
                         }
                     }
@@ -358,8 +478,21 @@ async fn handle_text(
                 .take_valid(&request.resume_token, options.account_id)
             {
                 Some(entry) if entry.gateway_session_id == request.session_id => {
-                    // F013: ring buffer may be empty; accept resume and reissue a token.
-                    let _ = request.last_sequence;
+                    let Some(missed) = entry.replay_after(request.last_sequence) else {
+                        *sequence += 1;
+                        let invalid = Envelope::new(
+                            *sequence,
+                            EventType::InvalidSession,
+                            InvalidSessionPayload { resumable: false },
+                        );
+                        send_envelope(sink, &invalid).await.map_err(|()| true)?;
+                        return Err(true);
+                    };
+                    *sequence = entry.last_sequence;
+                    for envelope in missed {
+                        *sequence = (*sequence).max(envelope.sequence);
+                        send_envelope(sink, &envelope).await.map_err(|()| true)?;
+                    }
                     *resume_token = new_resume_token();
                     options.resume_store.put(
                         resume_token.clone(),
@@ -459,7 +592,10 @@ async fn handle_text(
         | EventType::RoleCreate
         | EventType::RoleUpdate
         | EventType::RoleDelete
-        | EventType::MemberRoleUpdate => Err(false),
+        | EventType::MemberRoleUpdate
+        | EventType::MessageCreate
+        | EventType::MessageUpdate
+        | EventType::MessageDelete => Err(false),
     }
 }
 
@@ -467,6 +603,19 @@ fn new_resume_token() -> String {
     let mut bytes = [0_u8; 32];
     rand::thread_rng().fill_bytes(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
+}
+
+async fn send_fanout(
+    sink: &mut (impl SinkExt<Message> + Unpin),
+    resume_store: &ResumeStore,
+    resume_token: &str,
+    envelope: Envelope,
+) -> Result<(), ()> {
+    send_envelope(sink, &envelope).await?;
+    if !resume_token.is_empty() {
+        resume_store.append(resume_token, envelope);
+    }
+    Ok(())
 }
 
 async fn send_envelope(

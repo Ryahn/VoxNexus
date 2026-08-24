@@ -132,7 +132,13 @@ export interface Message {
   fullTs?: string; // hover tooltip
   content?: string;
   edited?: boolean;
-  replyTo?: { messageId: string; authorId: string; excerpt: string };
+  replyTo?: {
+    messageId: string;
+    authorId: string;
+    excerpt: string;
+    authorDisplayName?: string;
+    deleted?: boolean;
+  };
   reactions?: Reaction[];
   attachments?: Attachment[];
   embeds?: Embed[];

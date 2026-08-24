@@ -28,6 +28,19 @@ Optional `space_id` scopes a category to a Space. Omit for community-wide catego
 
 Categories are optional grouping. Channels do **not** require a category.
 
+## Messages (text channels)
+
+Members with `text.view` can list messages; `text.send` (alias `message.send`) is required to post. Hidden channels (no view) return **404** on list/send. View without send returns **403** on POST.
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/api/v1/channels/{channel_id}/messages` | Body `{ "content", "nonce"?, "referenced_message_id"? }`. Optional `Idempotency-Key` header. Content 1–4000 chars. Idempotent nonce → 200 with existing row. Reply target must be in the same channel (else 400). |
+| `GET` | `/api/v1/channels/{channel_id}/messages` | Newest first. Query: `before`, `after`, `limit` (default 50, max 100). Each item may include `reply_to` preview (`message_id`, author, excerpt, `deleted`). |
+| `PATCH` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author only. Body `{ "content" }`. Sets `edited_at`. Emits `MESSAGE_UPDATE`. |
+| `DELETE` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author or `text.manage_messages`. Soft-delete. Emits `MESSAGE_DELETE`. Parent replies keep a deleted preview. |
+
+`@everyone` defaults to view + send. Live clients receive `MESSAGE_CREATE` over the gateway (see [Gateway](/docs/guides/gateway)); HTTP list remains the history source of truth.
+
 ### HTTP
 
 | Method | Path | Who |
@@ -46,4 +59,4 @@ Community **owner** always satisfies manage/view checks. See [Permissions](/docs
 
 ## Web UI
 
-Channel sidebar lists uncategorized channels first, then categories. Create a channel from the Space header (`+`) without a category, or from a category’s `+`. Categories remain optional grouping.
+Channel sidebar lists uncategorized channels first, then categories. Create a channel from the Space header (`+`) without a category, or from a category’s `+`. Categories remain optional grouping. Live text channels show a message transcript and composer; new messages arrive over the gateway. Reply from a message’s action bar; the composer shows a parent preview and clickable jump on replies.

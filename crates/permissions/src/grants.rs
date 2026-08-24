@@ -33,14 +33,14 @@ impl RolePermissionSet {
 /// Default `@everyone` grants for new communities (view public text channels).
 #[must_use]
 pub fn default_everyone_grants() -> GrantSet {
-    GrantSet::new().with_family(Family::Text, text::VIEW)
+    GrantSet::new().with_family(Family::Text, text::VIEW | text::SEND)
 }
 
-/// Default `@everyone` permission JSON (allow text.view).
+/// Default `@everyone` permission JSON (allow text.view + text.send).
 #[must_use]
 pub fn default_everyone_permissions_json() -> Value {
     json!({
-        "allow": { "text": text::VIEW },
+        "allow": { "text": text::VIEW | text::SEND },
         "deny": {}
     })
 }

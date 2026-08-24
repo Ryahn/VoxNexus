@@ -41,6 +41,11 @@ impl PermissionCode {
         bit: text::SEND,
         owner_only: false,
     };
+    pub const TEXT_MANAGE_MESSAGES: Self = Self {
+        family: Family::Text,
+        bit: text::MANAGE_MESSAGES,
+        owner_only: false,
+    };
 
     /// Parse a stable API permission string.
     #[must_use]
@@ -52,6 +57,9 @@ impl PermissionCode {
             "community.view_audit" => Some(Self::COMMUNITY_VIEW_AUDIT),
             "text.view" | "channel.view" => Some(Self::TEXT_VIEW),
             "text.send" | "message.send" => Some(Self::TEXT_SEND),
+            "text.manage_messages" | "message.manage" | "manage_messages" => {
+                Some(Self::TEXT_MANAGE_MESSAGES)
+            }
             _ => None,
         }
     }
@@ -65,6 +73,7 @@ impl PermissionCode {
             Self::COMMUNITY_VIEW_AUDIT => "community.view_audit",
             Self::TEXT_VIEW => "text.view",
             Self::TEXT_SEND => "text.send",
+            Self::TEXT_MANAGE_MESSAGES => "text.manage_messages",
             Self { .. } => "unknown",
         }
     }

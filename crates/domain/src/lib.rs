@@ -3,6 +3,7 @@
 mod audit;
 mod community;
 mod instance;
+mod message;
 mod presence;
 
 use chrono::{DateTime, Utc};
@@ -16,6 +17,7 @@ pub use community::{
     SpaceVisibility,
 };
 pub use instance::{CommunityCreationMode, Instance, RegistrationMode};
+pub use message::Message;
 pub use presence::{PresenceStatus, PublicPresenceStatus};
 
 /// Product crate name (workspace placeholder until modules grow).

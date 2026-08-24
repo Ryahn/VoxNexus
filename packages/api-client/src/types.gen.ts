@@ -245,6 +245,18 @@ export type CreateInviteRequest = {
 };
 
 /**
+ * Create a message in a text channel.
+ */
+export type CreateMessageRequest = {
+    content: string;
+    nonce?: string | null;
+    /**
+     * Reply target; must be a message in the same channel.
+     */
+    referenced_message_id?: string | null;
+};
+
+/**
  * Create a role group.
  */
 export type CreateRoleGroupRequest = {
@@ -422,11 +434,56 @@ export type ListChannelsQuery = {
 };
 
 /**
+ * List messages query (`before` = older page, `after` = newer page).
+ */
+export type ListMessagesQuery = {
+    after?: string | null;
+    before?: string | null;
+    limit?: number | null;
+};
+
+/**
  * Login with email and password.
  */
 export type LoginRequest = {
     email: string;
     password: string;
+};
+
+/**
+ * Cursor page of messages (newest first).
+ */
+export type MessageListResponse = {
+    has_more: boolean;
+    items: Array<MessageResponse>;
+};
+
+/**
+ * Preview of the message being replied to.
+ */
+export type MessageReplyPreview = {
+    author_display_name: string;
+    author_id: string;
+    deleted: boolean;
+    excerpt: string;
+    message_id: string;
+};
+
+/**
+ * Public message representation.
+ */
+export type MessageResponse = {
+    author_display_name: string;
+    author_id: string;
+    channel_id: string;
+    community_id: string;
+    content: string;
+    created_at: string;
+    edited_at?: string | null;
+    id: string;
+    nonce?: string | null;
+    referenced_message_id?: string | null;
+    reply_to?: null | MessageReplyPreview;
 };
 
 /**
@@ -722,6 +779,13 @@ export type UpdateInstanceSettingsRequest = {
  */
 export type UpdateInviteRequest = {
     paused?: boolean | null;
+};
+
+/**
+ * Edit a message's content.
+ */
+export type UpdateMessageRequest = {
+    content: string;
 };
 
 /**
@@ -1480,6 +1544,182 @@ export type CloneChannelResponses = {
 };
 
 export type CloneChannelResponse = CloneChannelResponses[keyof CloneChannelResponses];
+
+export type ListMessagesData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: {
+        before?: string | null;
+        after?: string | null;
+        limit?: number | null;
+    };
+    url: '/api/v1/channels/{channel_id}/messages';
+};
+
+export type ListMessagesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListMessagesError = ListMessagesErrors[keyof ListMessagesErrors];
+
+export type ListMessagesResponses = {
+    /**
+     * Message page
+     */
+    200: MessageListResponse;
+};
+
+export type ListMessagesResponse = ListMessagesResponses[keyof ListMessagesResponses];
+
+export type CreateMessageData = {
+    body: CreateMessageRequest;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/messages';
+};
+
+export type CreateMessageErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type CreateMessageError = CreateMessageErrors[keyof CreateMessageErrors];
+
+export type CreateMessageResponses = {
+    /**
+     * Idempotent replay
+     */
+    200: MessageResponse;
+    /**
+     * Message created
+     */
+    201: MessageResponse;
+};
+
+export type CreateMessageResponse = CreateMessageResponses[keyof CreateMessageResponses];
+
+export type DeleteMessageData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+        /**
+         * Message id
+         */
+        message_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/messages/{message_id}';
+};
+
+export type DeleteMessageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeleteMessageError = DeleteMessageErrors[keyof DeleteMessageErrors];
+
+export type DeleteMessageResponses = {
+    /**
+     * Message deleted
+     */
+    204: void;
+};
+
+export type DeleteMessageResponse = DeleteMessageResponses[keyof DeleteMessageResponses];
+
+export type UpdateMessageData = {
+    body: UpdateMessageRequest;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+        /**
+         * Message id
+         */
+        message_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/messages/{message_id}';
+};
+
+export type UpdateMessageErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpdateMessageError = UpdateMessageErrors[keyof UpdateMessageErrors];
+
+export type UpdateMessageResponses = {
+    /**
+     * Message updated
+     */
+    200: MessageResponse;
+};
+
+export type UpdateMessageResponse = UpdateMessageResponses[keyof UpdateMessageResponses];
 
 export type ListChannelPermissionOverridesData = {
     body?: never;

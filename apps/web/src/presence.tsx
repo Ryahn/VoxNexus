@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { useAuth } from './auth';
 import { readApiErrorMessage } from './lib/apiError';
+import { dispatchGatewayEnvelope } from './lib/gatewayMessages';
 
 export type PresenceState = 'online' | 'idle' | 'dnd' | 'invisible' | 'offline';
 
@@ -106,6 +107,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     const client = createGatewayClient({
       url: `${origin}/api/v1/gateway`,
       onEnvelope: (envelope) => {
+        dispatchGatewayEnvelope(envelope);
         if (envelope.event_type === 'PRESENCE_SYNC') {
           const presences =
             (envelope.payload as { presences?: PresenceUpdatePayload[] }).presences ?? [];

@@ -18,6 +18,9 @@
     "member_join_payload",
     "member_leave_payload",
     "member_role_update_payload",
+    "message_create_payload",
+    "message_delete_payload",
+    "message_update_payload",
     "presence_sync_payload",
     "presence_update_payload",
     "ready_payload",
@@ -68,6 +71,15 @@
     },
     "member_role_update_payload": {
       "$ref": "#/definitions/MemberRoleUpdatePayload"
+    },
+    "message_create_payload": {
+      "$ref": "#/definitions/MessageCreatePayload"
+    },
+    "message_delete_payload": {
+      "$ref": "#/definitions/MessageDeletePayload"
+    },
+    "message_update_payload": {
+      "$ref": "#/definitions/MessageUpdatePayload"
     },
     "presence_sync_payload": {
       "$ref": "#/definitions/PresenceSyncPayload"
@@ -276,7 +288,10 @@
         "ROLE_CREATE",
         "ROLE_UPDATE",
         "ROLE_DELETE",
-        "MEMBER_ROLE_UPDATE"
+        "MEMBER_ROLE_UPDATE",
+        "MESSAGE_CREATE",
+        "MESSAGE_UPDATE",
+        "MESSAGE_DELETE"
       ]
     },
     "HeartbeatAckPayload": {
@@ -399,6 +414,201 @@
             "type": "string",
             "format": "uuid"
           }
+        }
+      }
+    },
+    "MessageCreatePayload": {
+      "description": "Server → client when a text message is created (F035).",
+      "type": "object",
+      "required": [
+        "author_display_name",
+        "author_id",
+        "channel_id",
+        "community_id",
+        "content",
+        "created_at",
+        "id"
+      ],
+      "properties": {
+        "author_display_name": {
+          "type": "string"
+        },
+        "author_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channel_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "edited_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nonce": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "referenced_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "reply_to": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MessageReplyPreview"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "MessageDeletePayload": {
+      "description": "Server → client when a text message is deleted (F036).",
+      "type": "object",
+      "required": [
+        "channel_id",
+        "community_id",
+        "id"
+      ],
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "MessageReplyPreview": {
+      "description": "Preview of the message being replied to.",
+      "type": "object",
+      "required": [
+        "author_display_name",
+        "author_id",
+        "deleted",
+        "excerpt",
+        "message_id"
+      ],
+      "properties": {
+        "author_display_name": {
+          "type": "string"
+        },
+        "author_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "excerpt": {
+          "type": "string"
+        },
+        "message_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "MessageUpdatePayload": {
+      "description": "Server → client when a text message is edited (F036).",
+      "type": "object",
+      "required": [
+        "author_display_name",
+        "author_id",
+        "channel_id",
+        "community_id",
+        "content",
+        "created_at",
+        "id"
+      ],
+      "properties": {
+        "author_display_name": {
+          "type": "string"
+        },
+        "author_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channel_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "community_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "content": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "edited_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nonce": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "referenced_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uuid"
+        },
+        "reply_to": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MessageReplyPreview"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },

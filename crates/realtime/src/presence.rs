@@ -10,7 +10,8 @@ use uuid::Uuid;
 use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
 use voxnexus_protocol::{
     CommunityRolePayload, MemberJoinPayload, MemberLeavePayload, MemberRoleUpdatePayload,
-    PresenceUpdatePayload, RoleDeletePayload,
+    MessageCreatePayload, MessageDeletePayload, MessageUpdatePayload, PresenceUpdatePayload,
+    RoleDeletePayload,
 };
 
 /// Outbound gateway fanout for one WebSocket connection.
@@ -35,6 +36,12 @@ pub enum PresenceHubMessage {
     RoleDelete(RoleDeletePayload),
     /// Member role assignments changed (F028).
     MemberRoleUpdate(MemberRoleUpdatePayload),
+    /// Text message created (F035).
+    MessageCreate(MessageCreatePayload),
+    /// Text message updated (F036).
+    MessageUpdate(MessageUpdatePayload),
+    /// Text message deleted (F036).
+    MessageDelete(MessageDeletePayload),
 }
 
 #[derive(Clone)]

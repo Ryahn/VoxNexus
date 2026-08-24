@@ -228,6 +228,10 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::channels::archive_channel))
         .routes(routes!(crate::channels::restore_channel))
         .routes(routes!(crate::channels::clone_channel))
+        .routes(routes!(crate::messages::create_message))
+        .routes(routes!(crate::messages::list_messages))
+        .routes(routes!(crate::messages::update_message))
+        .routes(routes!(crate::messages::delete_message))
         .routes(routes!(
             crate::permission_overrides::list_channel_permission_overrides
         ))

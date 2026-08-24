@@ -9,6 +9,7 @@ mod error;
 mod explain;
 mod gateway;
 mod instance;
+mod message;
 mod meta;
 mod pagination;
 mod permission_override;
@@ -42,11 +43,16 @@ pub use gateway::{
     gateway_schema, gateway_schema_json, CommunityRolePayload, DevPingPayload, DevPongPayload,
     Envelope, EventScope, EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload,
     HelloPayload, IdentifyPayload, InvalidSessionPayload, MemberJoinPayload, MemberLeavePayload,
-    MemberRoleUpdatePayload, PresenceSyncPayload, PresenceUpdatePayload, ReadyPayload,
-    ResumePayload, ResumedPayload, RoleDeletePayload, StatusUpdatePayload,
-    DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
+    MemberRoleUpdatePayload, MessageCreatePayload, MessageDeletePayload, MessageUpdatePayload,
+    PresenceSyncPayload, PresenceUpdatePayload, ReadyPayload, ResumePayload, ResumedPayload,
+    RoleDeletePayload, StatusUpdatePayload, DEFAULT_HEARTBEAT_INTERVAL_MS,
+    GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
 };
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
+pub use message::{
+    CreateMessageRequest, ListMessagesQuery, MessageListResponse, MessageReplyPreview,
+    MessageResponse, UpdateMessageRequest,
+};
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use permission_override::{

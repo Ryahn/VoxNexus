@@ -275,6 +275,24 @@ pub async fn require_channel_view(
     }
 }
 
+/// Require `text.view` + `text.send` (no view → 404; view without send → 403).
+pub async fn require_channel_send(
+    state: &AppState,
+    channel: &Channel,
+    account_id: Uuid,
+    request_id: String,
+) -> Result<(), ApiError> {
+    require_channel_view(state, channel, account_id, request_id.clone()).await?;
+    if allowed_for_channel(state, channel, account_id, PermissionCode::TEXT_SEND).await? {
+        Ok(())
+    } else {
+        Err(ApiError::permission_denied(
+            request_id,
+            "You do not have permission to send messages.",
+        ))
+    }
+}
+
 pub fn invalidate_community(state: &AppState, community_id: Uuid) {
     state.permission_cache.invalidate_community(community_id);
 }
