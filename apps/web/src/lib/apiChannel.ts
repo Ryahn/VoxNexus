@@ -1,4 +1,4 @@
-import type { ChannelResponse, ChannelType as ApiChannelType } from '@voxnexus/api-client';
+import type { ChannelType as ApiChannelType, ChannelResponse } from '@voxnexus/api-client';
 import type { Channel, ChannelType } from '../types';
 
 const UI_TYPES: ChannelType[] = [

@@ -1,11 +1,11 @@
 import {
   deletePermissionOverride,
+  type ExplainPermissionResponse,
   explainPermission,
   listCategoryPermissionOverrides,
   listChannelPermissionOverrides,
   listCommunityMembers,
   listRoles,
-  type ExplainPermissionResponse,
   type PermissionOverrideResponse,
   type RoleResponse,
   upsertCategoryRolePermissionOverride,
@@ -18,15 +18,15 @@ import { readApiErrorMessage } from '../lib/apiError';
 import {
   emptyPermissions,
   isEmptyPermissions,
-  parsePermissionJson,
   PERM_BITS,
+  type PermissionJson,
+  parsePermissionJson,
   readTri,
   writeTri,
-  type PermissionJson,
 } from '../lib/rolePermissions';
 import { type PermissionOverrideTarget, useUI } from '../store';
-import { Portal } from './ui/Portal';
 import { TriStateToggle } from './TriStateToggle';
+import { Portal } from './ui/Portal';
 
 function roleColorCss(color: string): string {
   return color.includes(' ') ? `rgb(${color})` : color;
@@ -45,9 +45,7 @@ function scopedOverrideForRole(
   roleId: string,
 ): PermissionOverrideResponse | undefined {
   if (target.scope === 'channel') {
-    return overrides.find(
-      (row) => row.channel_id === target.channelId && row.role_id === roleId,
-    );
+    return overrides.find((row) => row.channel_id === target.channelId && row.role_id === roleId);
   }
   return overrides.find(
     (row) => row.category_id === target.categoryId && !row.channel_id && row.role_id === roleId,
@@ -66,11 +64,12 @@ function inheritedCategoryOverride(
 }
 
 function summarizeOverride(permissions: PermissionJson): string {
-  const labels = PERM_BITS.filter((perm) => readTri(permissions, perm.family, perm.bit) !== 'inherit')
-    .map((perm) => {
-      const state = readTri(permissions, perm.family, perm.bit);
-      return `${perm.label} (${state})`;
-    });
+  const labels = PERM_BITS.filter(
+    (perm) => readTri(permissions, perm.family, perm.bit) !== 'inherit',
+  ).map((perm) => {
+    const state = readTri(permissions, perm.family, perm.bit);
+    return `${perm.label} (${state})`;
+  });
   return labels.length > 0 ? labels.join(', ') : 'No overrides set for this role.';
 }
 
@@ -266,7 +265,10 @@ export function ChannelPermissionsModal() {
               <Shield size={18} strokeWidth={1.9} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 id="permission-overrides-title" className="truncate text-lg font-semibold text-ink">
+              <h2
+                id="permission-overrides-title"
+                className="truncate text-lg font-semibold text-ink"
+              >
                 {title}
               </h2>
               <p className="truncate text-sm text-ink-3">{subtitle}</p>
@@ -361,7 +363,9 @@ export function ChannelPermissionsModal() {
                           className="rounded-md border border-line/40 px-3 py-2 text-[13px]"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono text-2xs uppercase text-ink-4">{step.stage}</span>
+                            <span className="font-mono text-2xs uppercase text-ink-4">
+                              {step.stage}
+                            </span>
                             <span className="font-mono text-2xs text-accent">{step.outcome}</span>
                           </div>
                           <p className="mt-1 text-ink-2">{step.detail}</p>
@@ -373,89 +377,89 @@ export function ChannelPermissionsModal() {
               </div>
             </div>
           ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr]">
-            <aside className="overflow-y-auto border-r border-line/60 bg-surface/40 p-2">
-              <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-4">
-                Roles
-              </p>
-              <ul className="space-y-0.5">
-                {roles.map((role) => {
-                  const active = role.id === selectedRoleId;
-                  const hasOverride = Boolean(scopedOverrideForRole(overrides, target, role.id));
-                  return (
-                    <li key={role.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRoleId(role.id)}
-                        className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] transition-colors ${
-                          active
-                            ? 'bg-surface-active text-ink'
-                            : 'text-ink-2 hover:bg-surface-hover/60 hover:text-ink'
-                        }`}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ background: roleColorCss(role.color) }}
-                        />
-                        <span className="min-w-0 flex-1 truncate font-medium">
-                          {role.is_everyone ? '@everyone' : role.name}
-                        </span>
-                        {hasOverride ? (
-                          <span className="font-mono text-[10px] text-accent">●</span>
-                        ) : null}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </aside>
-
-            <div className="min-h-0 overflow-y-auto p-5">
-              {!selectedRole ? (
-                <p className="text-sm text-ink-3">Select a role to edit overrides.</p>
-              ) : (
-                <div className="max-w-lg space-y-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-ink">
-                      {selectedRole.is_everyone ? '@everyone' : selectedRole.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-ink-3">
-                      {isChannel
-                        ? 'Channel overrides stack on role grants and category overrides. Deny beats allow within each layer.'
-                        : 'Category overrides apply to every channel in this category unless a channel override replaces them.'}
-                    </p>
-                  </div>
-
-                  {inheritedSummary ? (
-                    <p className="rounded-lg border border-line/50 bg-surface/50 px-3 py-2 text-[13px] text-ink-3">
-                      <span className="font-medium text-ink-2">Category: </span>
-                      {inheritedSummary}
-                    </p>
-                  ) : null}
-
-                  {PERM_BITS.map((perm) => {
-                    const value = readTri(draft, perm.family, perm.bit);
+            <div className="grid min-h-0 flex-1 grid-cols-[220px_1fr]">
+              <aside className="overflow-y-auto border-r border-line/60 bg-surface/40 p-2">
+                <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-4">
+                  Roles
+                </p>
+                <ul className="space-y-0.5">
+                  {roles.map((role) => {
+                    const active = role.id === selectedRoleId;
+                    const hasOverride = Boolean(scopedOverrideForRole(overrides, target, role.id));
                     return (
-                      <div
-                        key={perm.code}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-line/50 px-3 py-2"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-ink">{perm.label}</div>
-                          <div className="font-mono text-2xs text-ink-3">{perm.code}</div>
-                        </div>
-                        <TriStateToggle
-                          value={value}
-                          disabled={pending}
-                          onChange={(next) => void setPerm(perm.family, perm.bit, next)}
-                        />
-                      </div>
+                      <li key={role.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRoleId(role.id)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] transition-colors ${
+                            active
+                              ? 'bg-surface-active text-ink'
+                              : 'text-ink-2 hover:bg-surface-hover/60 hover:text-ink'
+                          }`}
+                        >
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ background: roleColorCss(role.color) }}
+                          />
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {role.is_everyone ? '@everyone' : role.name}
+                          </span>
+                          {hasOverride ? (
+                            <span className="font-mono text-[10px] text-accent">●</span>
+                          ) : null}
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
-              )}
+                </ul>
+              </aside>
+
+              <div className="min-h-0 overflow-y-auto p-5">
+                {!selectedRole ? (
+                  <p className="text-sm text-ink-3">Select a role to edit overrides.</p>
+                ) : (
+                  <div className="max-w-lg space-y-4">
+                    <div>
+                      <h3 className="text-base font-semibold text-ink">
+                        {selectedRole.is_everyone ? '@everyone' : selectedRole.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-ink-3">
+                        {isChannel
+                          ? 'Channel overrides stack on role grants and category overrides. Deny beats allow within each layer.'
+                          : 'Category overrides apply to every channel in this category unless a channel override replaces them.'}
+                      </p>
+                    </div>
+
+                    {inheritedSummary ? (
+                      <p className="rounded-lg border border-line/50 bg-surface/50 px-3 py-2 text-[13px] text-ink-3">
+                        <span className="font-medium text-ink-2">Category: </span>
+                        {inheritedSummary}
+                      </p>
+                    ) : null}
+
+                    {PERM_BITS.map((perm) => {
+                      const value = readTri(draft, perm.family, perm.bit);
+                      return (
+                        <div
+                          key={perm.code}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-line/50 px-3 py-2"
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-ink">{perm.label}</div>
+                            <div className="font-mono text-2xs text-ink-3">{perm.code}</div>
+                          </div>
+                          <TriStateToggle
+                            value={value}
+                            disabled={pending}
+                            onChange={(next) => void setPerm(perm.family, perm.bit, next)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           )}
         </div>
       </div>

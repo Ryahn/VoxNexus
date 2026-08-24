@@ -95,7 +95,12 @@ pub fn parse_role_permissions(value: &Value) -> RolePermissionSet {
             .merge_family(Family::Community, community::MANAGE_ROLES);
     }
     // Clear overlapping bits: explicit deny wins within a single role.
-    for family in [Family::Community, Family::Space, Family::Text, Family::Voice] {
+    for family in [
+        Family::Community,
+        Family::Space,
+        Family::Text,
+        Family::Voice,
+    ] {
         let deny = set.deny.get(family);
         if deny != 0 {
             let allow = set.allow.get(family) & !deny;
@@ -118,7 +123,12 @@ pub fn collapse_roles_by_weight(roles: &[(i32, RolePermissionSet)]) -> GrantSet 
     let mut grants = GrantSet::new();
 
     for (_weight, perms) in ordered {
-        for family in [Family::Community, Family::Space, Family::Text, Family::Voice] {
+        for family in [
+            Family::Community,
+            Family::Space,
+            Family::Text,
+            Family::Voice,
+        ] {
             let undecided = !(decided.get(family));
             let allow = perms.allow.get(family) & undecided;
             let deny = perms.deny.get(family) & undecided;

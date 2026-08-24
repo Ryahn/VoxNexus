@@ -12,15 +12,7 @@ import {
   uploadCommunityInviteSplash,
   uploadCommunityTagBadge,
 } from '@voxnexus/api-client';
-import {
-  type LucideIcon,
-  ImagePlus,
-  Shield,
-  Settings2,
-  Trash2,
-  Users,
-  X,
-} from 'lucide-react';
+import { ImagePlus, type LucideIcon, Settings2, Shield, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 import { readApiErrorMessage } from '../lib/apiError';
@@ -43,7 +35,11 @@ function rgbStringToHex(color: string): string {
   const parts = color.trim().split(/\s+/).map(Number);
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return '#36d2cd';
   return `#${parts
-    .map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'))
+    .map((n) =>
+      Math.max(0, Math.min(255, Math.round(n)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
     .join('')}`;
 }
 
@@ -197,9 +193,7 @@ export function CommunitySettingsModal({ communityId }: Props) {
     const small = kind === 'icon' || kind === 'tagBadge';
     const maxBytes = small ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxBytes) {
-      setError(
-        small ? 'Image must be 2 MB or smaller.' : 'Image must be 5 MB or smaller.',
-      );
+      setError(small ? 'Image must be 2 MB or smaller.' : 'Image must be 5 MB or smaller.');
       return;
     }
     if (!/^image\/(png|jpeg|gif|webp)$/.test(file.type)) {
@@ -629,7 +623,9 @@ export function CommunitySettingsModal({ communityId }: Props) {
                           onChange={(e) => setTagColor(hexToRgbString(e.target.value))}
                           className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-line bg-surface p-0.5 disabled:opacity-60"
                         />
-                        <span className="text-[12px] text-ink-3">Used when no badge image is set.</span>
+                        <span className="text-[12px] text-ink-3">
+                          Used when no badge image is set.
+                        </span>
                       </div>
                     </label>
                     <div>
@@ -715,7 +711,8 @@ export function CommunitySettingsModal({ communityId }: Props) {
                         className="mt-1 w-full rounded-lg border border-line-2/80 bg-surface px-3 py-2 font-mono text-sm normal-case tracking-normal text-ink outline-none focus:border-accent/50 disabled:opacity-60"
                       />
                       <span className="mt-1 block text-[11px] normal-case tracking-normal text-ink-4">
-                        Instance-local path for invite links. Leave empty to use the default slug only.
+                        Instance-local path for invite links. Leave empty to use the default slug
+                        only.
                       </span>
                     </label>
                   </section>

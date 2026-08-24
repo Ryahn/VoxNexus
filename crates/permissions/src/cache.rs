@@ -58,10 +58,7 @@ impl PermissionCache {
         if let Ok(mut actors) = self.actors.write() {
             actors.insert(
                 (context.community_id, context.account_id),
-                CachedActor {
-                    version,
-                    context,
-                },
+                CachedActor { version, context },
             );
         }
     }

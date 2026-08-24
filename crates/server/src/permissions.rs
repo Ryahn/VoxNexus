@@ -9,8 +9,8 @@ use voxnexus_auth::{
 };
 use voxnexus_domain::{Channel, SpaceVisibility};
 use voxnexus_permissions::{
-    apply_override_layers, collapse_roles_by_weight, parse_role_permissions, ActorContext,
-    PermissionCode, resolve, GrantSet,
+    apply_override_layers, collapse_roles_by_weight, parse_role_permissions, resolve, ActorContext,
+    GrantSet, PermissionCode,
 };
 
 use crate::error::ApiError;
@@ -119,8 +119,7 @@ pub async fn allowed_for_channel(
     account_id: Uuid,
     permission: PermissionCode,
 ) -> Result<bool, ApiError> {
-    let mut ctx =
-        actor_context(state, channel.community_id, account_id, channel.space_id).await?;
+    let mut ctx = actor_context(state, channel.community_id, account_id, channel.space_id).await?;
     ctx.grants = effective_grants_for_channel(state, channel, account_id, ctx.grants).await?;
     Ok(resolve(&ctx, permission).is_allow())
 }
@@ -138,17 +137,13 @@ async fn effective_grants_for_channel(
             internal("permission role load")
         })?;
     let role_ids: Vec<Uuid> = roles.iter().map(|role| role.id).collect();
-    let bundle = override_bundle_for_channel(
-        &state.pool,
-        channel.id,
-        channel.category_id,
-        account_id,
-    )
-    .await
-    .map_err(|error| {
-        tracing::error!(error = %error, "override load failed");
-        internal("permission override load")
-    })?;
+    let bundle =
+        override_bundle_for_channel(&state.pool, channel.id, channel.category_id, account_id)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "override load failed");
+                internal("permission override load")
+            })?;
     Ok(apply_override_layers(base, &bundle, &role_ids))
 }
 
@@ -212,14 +207,7 @@ pub async fn visible_channels(
 ) -> Result<Vec<Channel>, ApiError> {
     let mut visible = Vec::new();
     for channel in channels {
-        if allowed_for_channel(
-            state,
-            &channel,
-            account_id,
-            PermissionCode::TEXT_VIEW,
-        )
-        .await?
-        {
+        if allowed_for_channel(state, &channel, account_id, PermissionCode::TEXT_VIEW).await? {
             visible.push(channel);
         }
     }

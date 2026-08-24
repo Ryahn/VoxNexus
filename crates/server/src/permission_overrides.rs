@@ -8,9 +8,10 @@ use axum::Json;
 use uuid::Uuid;
 use voxnexus_auth::{
     delete_override as persist_delete, get_category, get_channel, get_membership, get_role,
-    list_category_overrides as persist_list_category, list_channel_overrides as persist_list_channel,
-    upsert_category_member_override, upsert_category_role_override, upsert_channel_member_override,
-    upsert_channel_role_override, PermissionOverride,
+    list_category_overrides as persist_list_category,
+    list_channel_overrides as persist_list_channel, upsert_category_member_override,
+    upsert_category_role_override, upsert_channel_member_override, upsert_channel_role_override,
+    PermissionOverride,
 };
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
@@ -45,13 +46,7 @@ pub async fn list_channel_permission_overrides(
 ) -> Result<Json<PermissionOverrideListResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let channel = load_channel(&state, channel_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        channel.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, channel.community_id, user.account_id, &request_id).await?;
     let rows = persist_list_channel(&state.pool, channel.id, channel.category_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?;
@@ -87,13 +82,7 @@ pub async fn upsert_channel_role_permission_override(
 ) -> Result<Json<PermissionOverrideResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let channel = load_channel(&state, channel_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        channel.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, channel.community_id, user.account_id, &request_id).await?;
     let role = get_role(&state.pool, role_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?
@@ -141,13 +130,7 @@ pub async fn upsert_channel_member_permission_override(
 ) -> Result<Json<PermissionOverrideResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let channel = load_channel(&state, channel_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        channel.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, channel.community_id, user.account_id, &request_id).await?;
     let membership = get_membership(&state.pool, channel.community_id, account_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?
@@ -223,13 +206,7 @@ pub async fn list_category_permission_overrides(
 ) -> Result<Json<PermissionOverrideListResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let category = load_category(&state, category_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        category.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, category.community_id, user.account_id, &request_id).await?;
     let rows = persist_list_category(&state.pool, category.id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?;
@@ -265,13 +242,7 @@ pub async fn upsert_category_role_permission_override(
 ) -> Result<Json<PermissionOverrideResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let category = load_category(&state, category_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        category.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, category.community_id, user.account_id, &request_id).await?;
     let role = get_role(&state.pool, role_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?
@@ -319,13 +290,7 @@ pub async fn upsert_category_member_permission_override(
 ) -> Result<Json<PermissionOverrideResponse>, ApiError> {
     let request_id = request_id_from_headers(&headers);
     let category = load_category(&state, category_id, &request_id).await?;
-    require_manage_channels(
-        &state,
-        category.community_id,
-        user.account_id,
-        &request_id,
-    )
-    .await?;
+    require_manage_channels(&state, category.community_id, user.account_id, &request_id).await?;
     let membership = get_membership(&state.pool, category.community_id, account_id)
         .await
         .map_err(|error| map_auth(&error, request_id.clone()))?

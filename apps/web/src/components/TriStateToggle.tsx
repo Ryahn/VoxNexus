@@ -23,9 +23,9 @@ type Props = {
 
 export function TriStateToggle({ value, disabled = false, onChange }: Props) {
   return (
-    <div
-      className="inline-flex shrink-0 divide-x divide-line/60 overflow-hidden rounded-lg border border-line/60"
-      role="group"
+    <fieldset
+      disabled={disabled}
+      className="inline-flex shrink-0 divide-x divide-line/60 overflow-hidden rounded-lg border border-line/60 p-0 m-0 min-w-0"
       aria-label="Permission state"
     >
       {TRI_STATES.map((opt) => (
@@ -40,6 +40,6 @@ export function TriStateToggle({ value, disabled = false, onChange }: Props) {
           {opt.label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

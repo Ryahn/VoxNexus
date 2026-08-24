@@ -3,8 +3,8 @@
 use uuid::Uuid;
 
 use crate::family::Family;
-use crate::grants::RolePermissionSet;
 use crate::family::GrantSet;
+use crate::grants::RolePermissionSet;
 
 /// Overrides loaded for one channel (category + channel scopes).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -22,9 +22,17 @@ pub fn apply_override_layers(
     bundle: &OverrideBundle,
     actor_role_ids: &[Uuid],
 ) -> GrantSet {
-    let category = collapse_layer(&bundle.category_roles, actor_role_ids, bundle.category_member.as_ref());
+    let category = collapse_layer(
+        &bundle.category_roles,
+        actor_role_ids,
+        bundle.category_member.as_ref(),
+    );
     grants = apply_layer(grants, &category);
-    let channel = collapse_layer(&bundle.channel_roles, actor_role_ids, bundle.channel_member.as_ref());
+    let channel = collapse_layer(
+        &bundle.channel_roles,
+        actor_role_ids,
+        bundle.channel_member.as_ref(),
+    );
     grants = apply_layer(grants, &channel);
     grants
 }
@@ -48,8 +56,17 @@ fn collapse_layer(
     layer
 }
 
-fn merge_role_into_layer(layer_allow: &mut GrantSet, layer_deny: &mut GrantSet, perms: &RolePermissionSet) {
-    for family in [Family::Community, Family::Space, Family::Text, Family::Voice] {
+fn merge_role_into_layer(
+    layer_allow: &mut GrantSet,
+    layer_deny: &mut GrantSet,
+    perms: &RolePermissionSet,
+) {
+    for family in [
+        Family::Community,
+        Family::Space,
+        Family::Text,
+        Family::Voice,
+    ] {
         let allow = perms.allow.get(family);
         let deny = perms.deny.get(family);
         let effective_allow = allow & !deny;
@@ -64,7 +81,12 @@ fn merge_role_into_layer(layer_allow: &mut GrantSet, layer_deny: &mut GrantSet, 
 }
 
 fn apply_member_overwrite(layer: &mut RolePermissionSet, member: &RolePermissionSet) {
-    for family in [Family::Community, Family::Space, Family::Text, Family::Voice] {
+    for family in [
+        Family::Community,
+        Family::Space,
+        Family::Text,
+        Family::Voice,
+    ] {
         let deny = member.deny.get(family);
         let allow = member.allow.get(family) & !deny;
         if deny != 0 {
@@ -74,13 +96,20 @@ fn apply_member_overwrite(layer: &mut RolePermissionSet, member: &RolePermission
         }
         if allow != 0 {
             let current_deny = layer.deny.get(family);
-            layer.allow.set_family(family, (layer.allow.get(family) & !current_deny) | allow);
+            layer
+                .allow
+                .set_family(family, (layer.allow.get(family) & !current_deny) | allow);
         }
     }
 }
 
 fn apply_layer(mut grants: GrantSet, layer: &RolePermissionSet) -> GrantSet {
-    for family in [Family::Community, Family::Space, Family::Text, Family::Voice] {
+    for family in [
+        Family::Community,
+        Family::Space,
+        Family::Text,
+        Family::Voice,
+    ] {
         let deny = layer.deny.get(family);
         let allow = layer.allow.get(family) & !deny;
         let current = grants.get(family);

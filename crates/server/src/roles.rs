@@ -11,8 +11,8 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use voxnexus_auth::{
     assign_role as persist_assign, can_manage_role_weight, clone_role as persist_clone,
-    create_role as persist_create, delete_object_meta, delete_role as persist_delete, get_membership,
-    get_object, get_role, insert_object, list_member_account_ids,
+    create_role as persist_create, delete_object_meta, delete_role as persist_delete,
+    get_membership, get_object, get_role, insert_object, list_member_account_ids,
     list_member_roles as persist_list_member_roles, list_roles as persist_list,
     permissions_with_manage_roles, remove_role_assignment, role_actor, set_role_icon,
     update_role as persist_update, CreateRoleInput, RoleActor, RolePatch,
@@ -77,9 +77,9 @@ pub async fn create_role(
                 .to_owned(),
             hoist: body.hoist.unwrap_or(false),
             mentionable: body.mentionable.unwrap_or(false),
-            permissions: body
-                .permissions
-                .unwrap_or_else(|| permissions_with_manage_roles(body.manage_roles.unwrap_or(false))),
+            permissions: body.permissions.unwrap_or_else(|| {
+                permissions_with_manage_roles(body.manage_roles.unwrap_or(false))
+            }),
             weight: body.weight,
             group_id: body.group_id,
             short_tag: body.short_tag.unwrap_or_default().trim().to_owned(),
@@ -1148,10 +1148,9 @@ fn map_auth(error: &voxnexus_auth::AuthError, request_id: String) -> ApiError {
             None,
             request_id,
         ),
-        voxnexus_auth::AuthError::InvalidRoleWeight => validation(
-            request_id,
-            "Role weight must be between 1 and 1000.",
-        ),
+        voxnexus_auth::AuthError::InvalidRoleWeight => {
+            validation(request_id, "Role weight must be between 1 and 1000.")
+        }
         voxnexus_auth::AuthError::RoleGroupNotFound => not_found(request_id),
         voxnexus_auth::AuthError::RoleGroupNameTaken => ApiError::new(
             StatusCode::CONFLICT,
@@ -1160,9 +1159,10 @@ fn map_auth(error: &voxnexus_auth::AuthError, request_id: String) -> ApiError {
             None,
             request_id,
         ),
-        voxnexus_auth::AuthError::EveryoneRoleImmutable => {
-            ApiError::permission_denied(request_id, "The @everyone role cannot be changed that way.")
-        }
+        voxnexus_auth::AuthError::EveryoneRoleImmutable => ApiError::permission_denied(
+            request_id,
+            "The @everyone role cannot be changed that way.",
+        ),
         voxnexus_auth::AuthError::RoleHierarchyDenied => hierarchy_denied(request_id),
         voxnexus_auth::AuthError::CannotManageRoles => cannot_manage_roles(request_id),
         voxnexus_auth::AuthError::RoleScopeMismatch => {

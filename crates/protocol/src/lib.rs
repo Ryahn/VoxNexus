@@ -34,9 +34,7 @@ pub use community::{
     TransferCommunityRequest, UpdateCommunityRequest, UpdateInviteRequest, UpdateNicknameRequest,
 };
 pub use error::{error_codes, ErrorBody};
-pub use explain::{
-    ExplainPermissionRequest, ExplainPermissionResponse, PermissionExplainStep,
-};
+pub use explain::{ExplainPermissionRequest, ExplainPermissionResponse, PermissionExplainStep};
 pub use gateway::{
     gateway_schema, gateway_schema_json, CommunityRolePayload, DevPingPayload, DevPongPayload,
     Envelope, EventScope, EventType, GatewaySchemaCatalog, HeartbeatAckPayload, HeartbeatPayload,
@@ -48,10 +46,10 @@ pub use gateway::{
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
-pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
 pub use permission_override::{
     PermissionOverrideListResponse, PermissionOverrideResponse, UpsertPermissionOverrideRequest,
 };
+pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
 pub use role::{
     AssignRoleRequest, BulkAssignRoleGroupRequest, CreateRoleGroupRequest, CreateRoleRequest,
     ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse, RoleListResponse, RoleResponse,

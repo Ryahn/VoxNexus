@@ -1,26 +1,32 @@
 import {
   assignMemberRole,
+  type CommunityMemberResponse,
   createRole,
   createRoleGroup,
   deleteRole,
   deleteRoleGroup,
   deleteRoleIcon,
-  type CommunityMemberResponse,
   listCommunityMembers,
   listMemberRoles,
   listRoleGroups,
   listRoles,
-  removeMemberRole,
-  reorderRoles,
   type RoleGroupResponse,
   type RoleResponse,
+  removeMemberRole,
+  reorderRoles,
   updateRole,
   uploadRoleIcon,
 } from '@voxnexus/api-client';
 import { ChevronDown, ChevronRight, GripVertical, ImagePlus, Plus, X } from 'lucide-react';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readApiErrorMessage } from '../lib/apiError';
-import { PERM_BITS, readTri, writeTri, type TriState } from '../lib/rolePermissions';
+import {
+  PERM_BITS,
+  parsePermissionJson,
+  readTri,
+  type TriState,
+  writeTri,
+} from '../lib/rolePermissions';
 import { TriStateToggle } from './TriStateToggle';
 
 type Props = {
@@ -51,7 +57,11 @@ function rgbStringToHex(color: string): string {
   const parts = color.trim().split(/\s+/).map(Number);
   if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return '#36d2cd';
   return `#${parts
-    .map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0'))
+    .map((n) =>
+      Math.max(0, Math.min(255, Math.round(n)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
     .join('')}`;
 }
 
@@ -220,8 +230,7 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
     });
   }, [memberRows, memberSearch]);
 
-  const memberLabel = (row: { username: string; nickname: string }) =>
-    row.nickname || row.username;
+  const memberLabel = (row: { username: string; nickname: string }) => row.nickname || row.username;
 
   const setMemberHas = (accountId: string, has: boolean) => {
     setMemberRows((prev) => prev.map((m) => (m.id === accountId ? { ...m, has } : m)));
@@ -318,7 +327,7 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
 
   const saveCard = async (next: RoleCard) => {
     const gradient =
-      next.style === 'gradient' ? cardGradientCss(next) : selected?.gradient ?? null;
+      next.style === 'gradient' ? cardGradientCss(next) : (selected?.gradient ?? null);
     await patchSelected({
       role_card: next,
       gradient: next.style === 'gradient' ? gradient : undefined,
@@ -398,7 +407,7 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
     } else {
       setDenyWarning(null);
     }
-    const permissions = writeTri(selected.permissions, family, bit, next);
+    const permissions = writeTri(parsePermissionJson(selected.permissions), family, bit, next);
     await patchSelected({ permissions });
   };
 
@@ -451,7 +460,10 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
         }`}
       >
         {canManage && !role.is_everyone ? (
-          <GripVertical size={14} className="shrink-0 cursor-grab text-ink-3 active:cursor-grabbing" />
+          <GripVertical
+            size={14}
+            className="shrink-0 cursor-grab text-ink-3 active:cursor-grabbing"
+          />
         ) : (
           <span className="w-3.5" />
         )}
@@ -883,7 +895,11 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                   </p>
                 ) : null}
                 {PERM_BITS.map((perm) => {
-                  const value = readTri(selected.permissions, perm.family, perm.bit);
+                  const value = readTri(
+                    parsePermissionJson(selected.permissions),
+                    perm.family,
+                    perm.bit,
+                  );
                   return (
                     <div
                       key={perm.code}
@@ -896,9 +912,7 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                       <TriStateToggle
                         value={value}
                         disabled={!canManage}
-                        onChange={(next) =>
-                          void setPerm(perm.family, perm.bit, perm.label, next)
-                        }
+                        onChange={(next) => void setPerm(perm.family, perm.bit, perm.label, next)}
                       />
                     </div>
                   );
@@ -933,7 +947,9 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                       {memberSearch.trim() ? (
                         <ul className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-line/50 p-1">
                           {memberSearchHits.length === 0 ? (
-                            <li className="px-3 py-2 text-[13px] text-ink-4">No matching members.</li>
+                            <li className="px-3 py-2 text-[13px] text-ink-4">
+                              No matching members.
+                            </li>
                           ) : (
                             memberSearchHits.map((row) => (
                               <li
@@ -941,8 +957,12 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                                 className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-hover/50"
                               >
                                 <div className="min-w-0 flex-1">
-                                  <p className="truncate text-[13px] text-ink">{memberLabel(row)}</p>
-                                  <p className="truncate font-mono text-[11px] text-ink-4">{row.id}</p>
+                                  <p className="truncate text-[13px] text-ink">
+                                    {memberLabel(row)}
+                                  </p>
+                                  <p className="truncate font-mono text-[11px] text-ink-4">
+                                    {row.id}
+                                  </p>
                                 </div>
                                 {canManage ? (
                                   <button
@@ -958,7 +978,9 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                           )}
                         </ul>
                       ) : (
-                        <p className="text-[12px] text-ink-4">Type to find members without this role.</p>
+                        <p className="text-[12px] text-ink-4">
+                          Type to find members without this role.
+                        </p>
                       )}
                     </section>
 
@@ -980,7 +1002,9 @@ export function CommunityRolesPanel({ communityId, canManage }: Props) {
                             >
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-[13px] text-ink">{memberLabel(row)}</p>
-                                <p className="truncate font-mono text-[11px] text-ink-4">{row.id}</p>
+                                <p className="truncate font-mono text-[11px] text-ink-4">
+                                  {row.id}
+                                </p>
                               </div>
                               {canManage ? (
                                 <button
@@ -1082,7 +1106,9 @@ function RoleCardPreview({
       style={{
         background,
         borderColor: style === 'outline' ? roleColorCss(role.color) : undefined,
-        boxShadow: card.glow ? `0 0 24px color-mix(in srgb, ${roleColorCss(role.color)} 45%, transparent)` : undefined,
+        boxShadow: card.glow
+          ? `0 0 24px color-mix(in srgb, ${roleColorCss(role.color)} 45%, transparent)`
+          : undefined,
       }}
     >
       <div className="flex items-center gap-3">
@@ -1118,9 +1144,7 @@ function RoleWeightBadge({ weight, onCard = false }: { weight: number; onCard?: 
   return (
     <span
       className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-3xs font-semibold tabular-nums ${
-        onCard
-          ? 'bg-black/35 text-white/90'
-          : 'border border-line/60 bg-surface-active text-ink'
+        onCard ? 'bg-black/35 text-white/90' : 'border border-line/60 bg-surface-active text-ink'
       }`}
       title={`Weight ${weight}`}
     >
@@ -1131,9 +1155,9 @@ function RoleWeightBadge({ weight, onCard = false }: { weight: number; onCard?: 
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="block text-xs font-medium uppercase tracking-wide text-ink-3">
-      {label}
+    <div className="block text-xs font-medium uppercase tracking-wide text-ink-3">
+      <span className="block">{label}</span>
       {children}
-    </label>
+    </div>
   );
 }

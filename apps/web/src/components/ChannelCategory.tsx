@@ -77,12 +77,7 @@ export function ChannelCategory({
       </div>
       <div className="flex flex-col gap-px pl-1">
         {visible.map((c) => (
-          <ChannelItem
-            key={c.id}
-            channel={c}
-            communityId={communityId}
-            canManage={canManage}
-          />
+          <ChannelItem key={c.id} channel={c} communityId={communityId} canManage={canManage} />
         ))}
       </div>
     </section>

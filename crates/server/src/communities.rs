@@ -14,8 +14,8 @@ use voxnexus_auth::{
     get_community, get_instance, get_membership, get_object, get_profile, insert_object,
     join_community as persist_join, leave_community as persist_leave, list_communities_for_account,
     list_member_account_ids, list_members, set_community_banner, set_community_icon,
-    set_community_invite_splash, set_community_tag_badge, set_nickname,
-    slugify, transfer_community as persist_transfer, unique_slug, update_community, CommunityPatch,
+    set_community_invite_splash, set_community_tag_badge, set_nickname, slugify,
+    transfer_community as persist_transfer, unique_slug, update_community, CommunityPatch,
     CreateCommunityInput, MemberListItem,
 };
 use voxnexus_domain::{Community, CommunityMemberRole, JoinMode};
@@ -389,7 +389,15 @@ pub async fn upload_community_tag_badge(
     Path(community_id): Path<Uuid>,
     body: Bytes,
 ) -> Result<Json<CommunityResponse>, ApiError> {
-    upload_image(&state, user, headers, community_id, body, ImageSlot::TagBadge).await
+    upload_image(
+        &state,
+        user,
+        headers,
+        community_id,
+        body,
+        ImageSlot::TagBadge,
+    )
+    .await
 }
 
 /// Upload community invite splash (owner).
@@ -414,7 +422,15 @@ pub async fn upload_community_invite_splash(
     Path(community_id): Path<Uuid>,
     body: Bytes,
 ) -> Result<Json<CommunityResponse>, ApiError> {
-    upload_image(&state, user, headers, community_id, body, ImageSlot::InviteSplash).await
+    upload_image(
+        &state,
+        user,
+        headers,
+        community_id,
+        body,
+        ImageSlot::InviteSplash,
+    )
+    .await
 }
 
 /// Serve community icon bytes.

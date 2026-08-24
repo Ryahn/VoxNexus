@@ -29,8 +29,8 @@ use uuid::Uuid;
 use voxnexus_config::{Secret, Url};
 use voxnexus_db::PgPool;
 use voxnexus_jobs::RedisConn;
-use voxnexus_protocol::MetaResponse;
 use voxnexus_permissions::PermissionCache;
+use voxnexus_protocol::MetaResponse;
 use voxnexus_realtime::{PresenceHub, ResumeStore};
 use voxnexus_search::SearchEngine;
 use voxnexus_storage::ObjectStore;
@@ -208,9 +208,15 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::categories::get_category_by_id))
         .routes(routes!(crate::categories::update_category))
         .routes(routes!(crate::categories::delete_category))
-        .routes(routes!(crate::permission_overrides::list_category_permission_overrides))
-        .routes(routes!(crate::permission_overrides::upsert_category_role_permission_override))
-        .routes(routes!(crate::permission_overrides::upsert_category_member_permission_override))
+        .routes(routes!(
+            crate::permission_overrides::list_category_permission_overrides
+        ))
+        .routes(routes!(
+            crate::permission_overrides::upsert_category_role_permission_override
+        ))
+        .routes(routes!(
+            crate::permission_overrides::upsert_category_member_permission_override
+        ))
         .routes(routes!(crate::channels::create_channel))
         .routes(routes!(crate::channels::list_channels))
         .routes(routes!(crate::channels::reorder_channels))
@@ -220,10 +226,18 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::channels::archive_channel))
         .routes(routes!(crate::channels::restore_channel))
         .routes(routes!(crate::channels::clone_channel))
-        .routes(routes!(crate::permission_overrides::list_channel_permission_overrides))
-        .routes(routes!(crate::permission_overrides::upsert_channel_role_permission_override))
-        .routes(routes!(crate::permission_overrides::upsert_channel_member_permission_override))
-        .routes(routes!(crate::permission_overrides::delete_permission_override))
+        .routes(routes!(
+            crate::permission_overrides::list_channel_permission_overrides
+        ))
+        .routes(routes!(
+            crate::permission_overrides::upsert_channel_role_permission_override
+        ))
+        .routes(routes!(
+            crate::permission_overrides::upsert_channel_member_permission_override
+        ))
+        .routes(routes!(
+            crate::permission_overrides::delete_permission_override
+        ))
         .routes(routes!(crate::explain::explain_permission))
         .routes(routes!(crate::roles::create_role))
         .routes(routes!(crate::roles::list_roles))

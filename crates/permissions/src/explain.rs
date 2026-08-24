@@ -1,7 +1,7 @@
 //! Permission explanation trace (F031).
 
 use crate::code::PermissionCode;
-use crate::eval::{ActorContext, Decision, resolve};
+use crate::eval::{resolve, ActorContext, Decision};
 
 /// One step in a permission explanation chain.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,7 +13,10 @@ pub struct ExplainStep {
 
 /// Resolve with an audit trail matching [`resolve`].
 #[must_use]
-pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decision, Vec<ExplainStep>) {
+pub fn resolve_traced(
+    ctx: &ActorContext,
+    permission: PermissionCode,
+) -> (Decision, Vec<ExplainStep>) {
     let mut steps = Vec::new();
     if !ctx.is_community_member && !ctx.is_instance_admin {
         steps.push(step(
@@ -37,7 +40,11 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
         steps.push(step("owner", "allow", "Community owner bypass."));
         return (Decision::Allow, steps);
     }
-    steps.push(step("owner", "continue", "Actor is not the community owner."));
+    steps.push(step(
+        "owner",
+        "continue",
+        "Actor is not the community owner.",
+    ));
 
     if ctx.space_restricted && !ctx.is_space_member {
         steps.push(step(
@@ -48,7 +55,11 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
         return (Decision::Deny, steps);
     }
     if ctx.space_restricted {
-        steps.push(step("space", "continue", "Space is restricted; actor is a space member."));
+        steps.push(step(
+            "space",
+            "continue",
+            "Space is restricted; actor is a space member.",
+        ));
     } else {
         steps.push(step("space", "continue", "No restricted-space gate."));
     }
@@ -68,7 +79,11 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
             "Administrator does not bypass owner-only permissions.",
         ));
     } else {
-        steps.push(step("administrator", "continue", "No administrator bypass."));
+        steps.push(step(
+            "administrator",
+            "continue",
+            "No administrator bypass.",
+        ));
     }
 
     if ctx.is_timed_out() && permission_stripped_by_timeout(permission) {
@@ -80,7 +95,11 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
         return (Decision::Deny, steps);
     }
     if ctx.is_timed_out() {
-        steps.push(step("timeout", "continue", "Timeout does not affect this permission."));
+        steps.push(step(
+            "timeout",
+            "continue",
+            "Timeout does not affect this permission.",
+        ));
     } else {
         steps.push(step("timeout", "continue", "Actor is not timed out."));
     }
@@ -89,10 +108,7 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
         steps.push(step(
             "grants",
             "allow",
-            format!(
-                "Effective grants include {}.",
-                permission.as_str()
-            ),
+            format!("Effective grants include {}.", permission.as_str()),
         ));
         return (Decision::Allow, steps);
     }
@@ -100,10 +116,7 @@ pub fn resolve_traced(ctx: &ActorContext, permission: PermissionCode) -> (Decisi
     steps.push(step(
         "grants",
         "deny",
-        format!(
-            "Effective grants do not include {}.",
-            permission.as_str()
-        ),
+        format!("Effective grants do not include {}.", permission.as_str()),
     ));
     let decision = resolve(ctx, permission);
     debug_assert_eq!(decision, Decision::Deny);

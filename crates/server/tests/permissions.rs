@@ -12,8 +12,8 @@ use voxnexus_db::{connect_and_migrate, test_database_url, PgPool};
 use voxnexus_domain::CommunityCreationMode;
 use voxnexus_jobs::{connect, RedisConn};
 use voxnexus_protocol::{
-    AuthSessionResponse, CategoryResponse, ChannelListResponse, ChannelResponse,
-    CommunityResponse, SpaceResponse,
+    AuthSessionResponse, CategoryResponse, ChannelListResponse, ChannelResponse, CommunityResponse,
+    SpaceResponse,
 };
 use voxnexus_search::{MemorySearchEngine, SearchEngine};
 use voxnexus_storage::{MemoryObjectStore, ObjectStore};
@@ -95,7 +95,8 @@ async fn register(router: &axum::Router, email: &str) -> (String, uuid::Uuid) {
         .expect("oneshot");
     assert_eq!(response.status(), StatusCode::CREATED);
     let cookie = cookie_from(&response);
-    let body: AuthSessionResponse = serde_json::from_slice(&json_body(response).await).expect("json");
+    let body: AuthSessionResponse =
+        serde_json::from_slice(&json_body(response).await).expect("json");
     (cookie, body.account.id)
 }
 
@@ -246,8 +247,15 @@ async fn channel_list_filtered_without_text_view_grant() {
     let community = create_community(&router, &owner, "Perm Hub").await;
     let space = create_space(&router, &owner, community.id, "Main").await;
     let category = create_category(&router, &owner, community.id, space.id, "General").await;
-    let channel =
-        create_text_channel(&router, &owner, community.id, space.id, category.id, "hidden").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "hidden",
+    )
+    .await;
 
     sqlx::query(
         r"
@@ -472,8 +480,15 @@ async fn lower_weight_deny_hides_channel_despite_everyone_allow() {
     let community = create_community(&router, &owner, "Weight Hub").await;
     let space = create_space(&router, &owner, community.id, "Main").await;
     let category = create_category(&router, &owner, community.id, space.id, "General").await;
-    let channel =
-        create_text_channel(&router, &owner, community.id, space.id, category.id, "lobby").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "lobby",
+    )
+    .await;
 
     let create_role = router
         .clone()
@@ -592,8 +607,15 @@ async fn channel_override_deny_everyone_allow_role_grants_view() {
     let community = create_community(&router, &owner, "Override Hub").await;
     let space = create_space(&router, &owner, community.id, "Main").await;
     let category = create_category(&router, &owner, community.id, space.id, "General").await;
-    let channel =
-        create_text_channel(&router, &owner, community.id, space.id, category.id, "private").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "private",
+    )
+    .await;
 
     let roles = router
         .clone()
@@ -647,7 +669,9 @@ async fn channel_override_deny_everyone_allow_role_grants_view() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .header(header::COOKIE, &owner)
-                .body(Body::from(r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#))
+                .body(Body::from(
+                    r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#,
+                ))
                 .expect("request"),
         )
         .await
@@ -666,7 +690,9 @@ async fn channel_override_deny_everyone_allow_role_grants_view() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .header(header::COOKIE, &owner)
-                .body(Body::from(r#"{"permissions":{"allow":{"text":1},"deny":{}}}"#))
+                .body(Body::from(
+                    r#"{"permissions":{"allow":{"text":1},"deny":{}}}"#,
+                ))
                 .expect("request"),
         )
         .await
@@ -867,8 +893,15 @@ async fn explain_trace_matches_channel_override_deny() {
     let community = create_community(&router, &owner, "Explain Trace").await;
     let space = create_space(&router, &owner, community.id, "Main").await;
     let category = create_category(&router, &owner, community.id, space.id, "General").await;
-    let channel =
-        create_text_channel(&router, &owner, community.id, space.id, category.id, "locked").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "locked",
+    )
+    .await;
 
     let roles = router
         .clone()
@@ -903,7 +936,9 @@ async fn explain_trace_matches_channel_override_deny() {
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ORIGIN, "http://127.0.0.1:8080")
                 .header(header::COOKIE, &owner)
-                .body(Body::from(r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#))
+                .body(Body::from(
+                    r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#,
+                ))
                 .expect("request"),
         )
         .await

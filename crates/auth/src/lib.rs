@@ -33,8 +33,8 @@ pub use community::{
     first_instance_admin_id, get_community, get_membership, join_community, leave_community,
     list_communities_for_account, list_member_account_ids, list_members, set_community_banner,
     set_community_icon, set_community_invite_splash, set_community_tag_badge, set_nickname,
-    slug_taken, slugify, transfer_community, unique_slug,
-    update_community, CommunityPatch, CreateCommunityInput, MemberListItem, MembersPage,
+    slug_taken, slugify, transfer_community, unique_slug, update_community, CommunityPatch,
+    CreateCommunityInput, MemberListItem, MembersPage,
 };
 pub use instance::{
     ensure_instance, get_instance, sync_locked_community_creation_mode, sync_oidc_from_config,

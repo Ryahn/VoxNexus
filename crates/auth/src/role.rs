@@ -6,8 +6,8 @@ use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::CommunityRole;
 use voxnexus_permissions::{
-    parse_role_permissions, permissions_with_manage_roles as perm_json_manage_roles,
-    default_everyone_permissions_json, empty_role_permissions_json, Family,
+    default_everyone_permissions_json, empty_role_permissions_json, parse_role_permissions,
+    permissions_with_manage_roles as perm_json_manage_roles, Family,
 };
 
 use crate::community::get_community;
@@ -521,12 +521,13 @@ pub fn can_manage_role_position(actor: RoleActor, target_position: i32) -> bool 
 #[must_use]
 pub fn permissions_manage_roles(permissions: &Value) -> bool {
     let set = parse_role_permissions(permissions);
-    set.allow
-        .has(Family::Community, voxnexus_permissions::community::MANAGE_ROLES)
-        || permissions
-            .get("manage_roles")
-            .and_then(Value::as_bool)
-            .unwrap_or(false)
+    set.allow.has(
+        Family::Community,
+        voxnexus_permissions::community::MANAGE_ROLES,
+    ) || permissions
+        .get("manage_roles")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
 }
 
 /// Build permissions JSON with `manage_roles` allow bit.

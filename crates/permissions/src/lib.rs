@@ -1,24 +1,24 @@
 //! Permission evaluation, caching, and stable codes (F029).
 
-mod explain;
-mod override_layer;
 mod cache;
 mod code;
 mod eval;
+mod explain;
 mod family;
 mod grants;
+mod override_layer;
 
-pub use explain::{resolve_traced, ExplainStep};
-pub use override_layer::{apply_override_layers, OverrideBundle};
 pub use cache::PermissionCache;
 pub use code::PermissionCode;
-pub use eval::{ActorContext, Decision, resolve};
+pub use eval::{resolve, ActorContext, Decision};
+pub use explain::{resolve_traced, ExplainStep};
 pub use family::{community, text, Family, GrantSet};
 pub use grants::{
     collapse_roles_by_weight, default_everyone_grants, default_everyone_permissions_json,
     empty_role_permissions_json, parse_role_permissions, parse_role_permissions_allow_only,
     permissions_with_manage_roles, RolePermissionSet,
 };
+pub use override_layer::{apply_override_layers, OverrideBundle};
 
 /// Product crate name.
 pub const CRATE_NAME: &str = "voxnexus-permissions";
@@ -106,7 +106,8 @@ mod tests {
     #[test]
     fn timeout_strips_send() {
         let mut ctx = base_ctx();
-        ctx.grants.merge_family(Family::Text, text::VIEW | text::SEND);
+        ctx.grants
+            .merge_family(Family::Text, text::VIEW | text::SEND);
         ctx.timeout_until = Some(Utc::now() + chrono::Duration::hours(1));
         assert!(!resolve(&ctx, PermissionCode::TEXT_SEND).is_allow());
     }
