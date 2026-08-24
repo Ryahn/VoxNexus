@@ -5,12 +5,12 @@
 use uuid::Uuid;
 use voxnexus_auth::{
     get_account, get_community, get_membership, get_space, is_space_member,
-    member_roles_for_grants,
+    member_roles_for_grants, override_bundle_for_channel,
 };
 use voxnexus_domain::{Channel, SpaceVisibility};
 use voxnexus_permissions::{
-    collapse_roles_by_weight, parse_role_permissions, ActorContext, PermissionCode, resolve,
-    GrantSet,
+    apply_override_layers, collapse_roles_by_weight, parse_role_permissions, ActorContext,
+    PermissionCode, resolve, GrantSet,
 };
 
 use crate::error::ApiError;
@@ -112,6 +112,46 @@ pub async fn allowed(
     Ok(resolve(&ctx, permission).is_allow())
 }
 
+/// Whether the actor may exercise `permission` on a specific channel (includes overrides).
+pub async fn allowed_for_channel(
+    state: &AppState,
+    channel: &Channel,
+    account_id: Uuid,
+    permission: PermissionCode,
+) -> Result<bool, ApiError> {
+    let mut ctx =
+        actor_context(state, channel.community_id, account_id, channel.space_id).await?;
+    ctx.grants = effective_grants_for_channel(state, channel, account_id, ctx.grants).await?;
+    Ok(resolve(&ctx, permission).is_allow())
+}
+
+async fn effective_grants_for_channel(
+    state: &AppState,
+    channel: &Channel,
+    account_id: Uuid,
+    base: GrantSet,
+) -> Result<GrantSet, ApiError> {
+    let roles = member_roles_for_grants(&state.pool, channel.community_id, account_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "role grant load failed");
+            internal("permission role load")
+        })?;
+    let role_ids: Vec<Uuid> = roles.iter().map(|role| role.id).collect();
+    let bundle = override_bundle_for_channel(
+        &state.pool,
+        channel.id,
+        channel.category_id,
+        account_id,
+    )
+    .await
+    .map_err(|error| {
+        tracing::error!(error = %error, "override load failed");
+        internal("permission override load")
+    })?;
+    Ok(apply_override_layers(base, &bundle, &role_ids))
+}
+
 /// Require `permission` or return 403 (404 when the community does not exist).
 pub async fn require_permission(
     state: &AppState,
@@ -166,17 +206,16 @@ pub async fn require_manage_channels(
 /// Filter channels to those the actor may view (`text.view`).
 pub async fn visible_channels(
     state: &AppState,
-    community_id: Uuid,
+    _community_id: Uuid,
     account_id: Uuid,
     channels: Vec<Channel>,
 ) -> Result<Vec<Channel>, ApiError> {
     let mut visible = Vec::new();
     for channel in channels {
-        if allowed(
+        if allowed_for_channel(
             state,
-            community_id,
+            &channel,
             account_id,
-            channel.space_id,
             PermissionCode::TEXT_VIEW,
         )
         .await?
@@ -214,15 +253,7 @@ pub async fn require_channel_view(
             "You must be a community member to view channels.",
         ));
     }
-    if allowed(
-        state,
-        channel.community_id,
-        account_id,
-        channel.space_id,
-        PermissionCode::TEXT_VIEW,
-    )
-    .await?
-    {
+    if allowed_for_channel(state, channel, account_id, PermissionCode::TEXT_VIEW).await? {
         Ok(())
     } else {
         Err(not_found(request_id))

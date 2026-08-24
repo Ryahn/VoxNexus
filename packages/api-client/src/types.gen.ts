@@ -389,6 +389,28 @@ export type MetaResponse = {
 };
 
 /**
+ * Overrides for a channel (includes category-scoped rows when applicable).
+ */
+export type PermissionOverrideListResponse = {
+    overrides: Array<PermissionOverrideResponse>;
+};
+
+/**
+ * Stored permission override.
+ */
+export type PermissionOverrideResponse = {
+    account_id?: string | null;
+    category_id?: string | null;
+    channel_id?: string | null;
+    community_id: string;
+    created_at: string;
+    id: string;
+    permissions: unknown;
+    role_id?: string | null;
+    updated_at: string;
+};
+
+/**
  * Instance-wide presence snapshot (F018).
  */
 export type PresenceEntry = {
@@ -700,6 +722,13 @@ export type UpdateSpaceRequest = {
     position?: number | null;
     topic?: string | null;
     visibility?: null | SpaceVisibility;
+};
+
+/**
+ * Upsert a role or member override on a channel.
+ */
+export type UpsertPermissionOverrideRequest = {
+    permissions: unknown;
 };
 
 export type LoginData = {
@@ -1224,6 +1253,128 @@ export type CloneChannelResponses = {
 };
 
 export type CloneChannelResponse = CloneChannelResponses[keyof CloneChannelResponses];
+
+export type ListChannelPermissionOverridesData = {
+    body?: never;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/permission-overrides';
+};
+
+export type ListChannelPermissionOverridesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type ListChannelPermissionOverridesError = ListChannelPermissionOverridesErrors[keyof ListChannelPermissionOverridesErrors];
+
+export type ListChannelPermissionOverridesResponses = {
+    /**
+     * Override list
+     */
+    200: PermissionOverrideListResponse;
+};
+
+export type ListChannelPermissionOverridesResponse = ListChannelPermissionOverridesResponses[keyof ListChannelPermissionOverridesResponses];
+
+export type UpsertChannelMemberPermissionOverrideData = {
+    body: UpsertPermissionOverrideRequest;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+        /**
+         * Member account id
+         */
+        account_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/permission-overrides/members/{account_id}';
+};
+
+export type UpsertChannelMemberPermissionOverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpsertChannelMemberPermissionOverrideError = UpsertChannelMemberPermissionOverrideErrors[keyof UpsertChannelMemberPermissionOverrideErrors];
+
+export type UpsertChannelMemberPermissionOverrideResponses = {
+    /**
+     * Override saved
+     */
+    200: PermissionOverrideResponse;
+};
+
+export type UpsertChannelMemberPermissionOverrideResponse = UpsertChannelMemberPermissionOverrideResponses[keyof UpsertChannelMemberPermissionOverrideResponses];
+
+export type UpsertChannelRolePermissionOverrideData = {
+    body: UpsertPermissionOverrideRequest;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+        /**
+         * Role id
+         */
+        role_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/permission-overrides/roles/{role_id}';
+};
+
+export type UpsertChannelRolePermissionOverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UpsertChannelRolePermissionOverrideError = UpsertChannelRolePermissionOverrideErrors[keyof UpsertChannelRolePermissionOverrideErrors];
+
+export type UpsertChannelRolePermissionOverrideResponses = {
+    /**
+     * Override saved
+     */
+    200: PermissionOverrideResponse;
+};
+
+export type UpsertChannelRolePermissionOverrideResponse = UpsertChannelRolePermissionOverrideResponses[keyof UpsertChannelRolePermissionOverrideResponses];
 
 export type RestoreChannelData = {
     body?: never;
@@ -2355,6 +2506,48 @@ export type RemoveMemberRoleResponses = {
 };
 
 export type RemoveMemberRoleResponse = RemoveMemberRoleResponses[keyof RemoveMemberRoleResponses];
+
+export type DeletePermissionOverrideData = {
+    body?: never;
+    path: {
+        /**
+         * Community id
+         */
+        community_id: string;
+        /**
+         * Override id
+         */
+        override_id: string;
+    };
+    query?: never;
+    url: '/api/v1/communities/{community_id}/permission-overrides/{override_id}';
+};
+
+export type DeletePermissionOverrideErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DeletePermissionOverrideError = DeletePermissionOverrideErrors[keyof DeletePermissionOverrideErrors];
+
+export type DeletePermissionOverrideResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeletePermissionOverrideResponse = DeletePermissionOverrideResponses[keyof DeletePermissionOverrideResponses];
 
 export type ListRoleGroupsData = {
     body?: never;

@@ -17,7 +17,8 @@ use voxnexus_protocol::{
     SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest, UpdateChannelRequest,
     UpdateCommunityRequest, UpdateInstanceSettingsRequest, UpdateInviteRequest,
     UpdateNicknameRequest, UpdateProfileRequest, UpdateRoleGroupRequest, UpdateRoleRequest,
-    UpdateSpaceRequest, BulkAssignRoleGroupRequest,
+    UpdateSpaceRequest, BulkAssignRoleGroupRequest, PermissionOverrideListResponse,
+    PermissionOverrideResponse, UpsertPermissionOverrideRequest,
 };
 
 use crate::auth;
@@ -28,6 +29,7 @@ use crate::http;
 use crate::instance;
 use crate::invites;
 use crate::oidc;
+use crate::permission_overrides;
 use crate::presence;
 use crate::profile;
 use crate::roles;
@@ -101,6 +103,10 @@ use crate::spaces;
         channels::archive_channel,
         channels::restore_channel,
         channels::clone_channel,
+        permission_overrides::list_channel_permission_overrides,
+        permission_overrides::upsert_channel_role_permission_override,
+        permission_overrides::upsert_channel_member_permission_override,
+        permission_overrides::delete_permission_override,
         roles::create_role,
         roles::list_roles,
         roles::reorder_roles,
@@ -171,6 +177,9 @@ use crate::spaces;
         ReorderChannelsRequest,
         ListChannelsQuery,
         ChannelType,
+        PermissionOverrideResponse,
+        PermissionOverrideListResponse,
+        UpsertPermissionOverrideRequest,
         RoleResponse,
         RoleListResponse,
         CreateRoleRequest,

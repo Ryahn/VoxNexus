@@ -9,6 +9,7 @@ mod gateway;
 mod instance;
 mod meta;
 mod pagination;
+mod permission_override;
 mod profile;
 mod role;
 mod space;
@@ -44,6 +45,9 @@ pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};
 pub use profile::{PresenceEntry, PresenceListResponse, ProfileResponse, UpdateProfileRequest};
+pub use permission_override::{
+    PermissionOverrideListResponse, PermissionOverrideResponse, UpsertPermissionOverrideRequest,
+};
 pub use role::{
     AssignRoleRequest, BulkAssignRoleGroupRequest, CreateRoleGroupRequest, CreateRoleRequest,
     ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse, RoleListResponse, RoleResponse,

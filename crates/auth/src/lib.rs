@@ -7,6 +7,7 @@ mod instance;
 mod invite;
 mod oidc;
 mod password;
+mod permission_override;
 mod profile;
 mod role;
 mod role_group;
@@ -45,6 +46,10 @@ pub use invite::{
 };
 pub use oidc::{resolve_oidc_login, OidcIdentity};
 pub use password::{hash_password, verify_password, PasswordError};
+pub use permission_override::{
+    delete_override, list_channel_overrides, override_bundle_for_channel,
+    upsert_channel_member_override, upsert_channel_role_override, PermissionOverride,
+};
 pub use profile::{
     delete_object_meta, ensure_profile, ensure_profile_with_name, get_object, get_profile,
     insert_object, set_avatar_object, set_banner_object, update_profile,

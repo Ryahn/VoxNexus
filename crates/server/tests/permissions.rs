@@ -560,3 +560,207 @@ async fn lower_weight_deny_hides_channel_despite_everyone_allow() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+async fn channel_override_deny_everyone_allow_role_grants_view() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let (owner, _) = register(
+        &router,
+        &format!("perm-override-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Override Hub").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel =
+        create_text_channel(&router, &owner, community.id, space.id, category.id, "private").await;
+
+    let roles = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/communities/{}/roles", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("list roles");
+    assert_eq!(roles.status(), StatusCode::OK);
+    let role_list: voxnexus_protocol::RoleListResponse =
+        serde_json::from_slice(&json_body(roles).await).expect("roles");
+    let everyone = role_list
+        .roles
+        .iter()
+        .find(|role| role.is_everyone)
+        .expect("@everyone");
+
+    let create_role = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/roles", community.id))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"name":"VIP","weight":50}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("create role");
+    assert_eq!(create_role.status(), StatusCode::CREATED);
+    let vip: voxnexus_protocol::RoleResponse =
+        serde_json::from_slice(&json_body(create_role).await).expect("vip role");
+
+    let deny_everyone = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(format!(
+                    "/api/v1/channels/{}/permission-overrides/roles/{}",
+                    channel.id, everyone.id
+                ))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"permissions":{"allow":{},"deny":{"text":1}}}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("deny everyone");
+    assert_eq!(deny_everyone.status(), StatusCode::OK);
+
+    let allow_vip = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri(format!(
+                    "/api/v1/channels/{}/permission-overrides/roles/{}",
+                    channel.id, vip.id
+                ))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(r#"{"permissions":{"allow":{"text":1},"deny":{}}}"#))
+                .expect("request"),
+        )
+        .await
+        .expect("allow vip");
+    assert_eq!(allow_vip.status(), StatusCode::OK);
+
+    let (plain, _plain_id) = register(
+        &router,
+        &format!("perm-override-plain-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let join_plain = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &plain)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join plain");
+    assert_eq!(join_plain.status(), StatusCode::CREATED);
+
+    let plain_get = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/channels/{}", channel.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &plain)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("plain get");
+    assert_eq!(plain_get.status(), StatusCode::NOT_FOUND);
+
+    let (vip_member, vip_id) = register(
+        &router,
+        &format!("perm-override-vip-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let join_vip = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &vip_member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join vip");
+    assert_eq!(join_vip.status(), StatusCode::CREATED);
+
+    let assign = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!(
+                    "/api/v1/communities/{}/members/{}/roles",
+                    community.id, vip_id
+                ))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::from(format!(r#"{{"role_id":"{}"}}"#, vip.id)))
+                .expect("request"),
+        )
+        .await
+        .expect("assign vip");
+    assert_eq!(assign.status(), StatusCode::NO_CONTENT);
+
+    let vip_get = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/channels/{}", channel.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &vip_member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("vip get");
+    assert_eq!(vip_get.status(), StatusCode::OK);
+
+    unlock_instance_mode(&pool).await;
+}

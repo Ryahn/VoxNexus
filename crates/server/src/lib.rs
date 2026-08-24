@@ -15,6 +15,7 @@ pub mod instance;
 pub mod invites;
 pub mod oidc;
 pub mod openapi;
+pub mod permission_overrides;
 pub mod permissions;
 pub mod presence;
 pub mod profile;
