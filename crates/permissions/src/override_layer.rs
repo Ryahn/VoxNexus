@@ -181,7 +181,7 @@ mod tests {
             ],
             ..Default::default()
         };
-        let without_vip = apply_override_layers(grants, &bundle, &[everyone]);
+        let without_vip = apply_override_layers(grants.clone(), &bundle, &[everyone]);
         assert!(!without_vip.has(Family::Text, text::VIEW));
         let with_vip = apply_override_layers(grants, &bundle, &[everyone, vip]);
         assert!(with_vip.has(Family::Text, text::VIEW));
