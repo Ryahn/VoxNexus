@@ -35,6 +35,7 @@ use crate::permissions::{actor_context, merge_role_grants_public};
         (status = 404, description = "Not found", body = voxnexus_protocol::ErrorBody)
     )
 )]
+#[allow(clippy::too_many_lines)]
 pub async fn explain_permission(
     State(state): State<AppState>,
     user: AuthUser,

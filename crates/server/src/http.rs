@@ -155,6 +155,7 @@ pub fn app(state: AppState) -> Router {
     with_middleware(router, &public_url, cookie_secure)
 }
 
+#[allow(clippy::too_many_lines)]
 fn api_v1() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(meta))

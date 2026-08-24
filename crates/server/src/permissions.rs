@@ -257,6 +257,7 @@ fn merge_role_grants(roles: &[voxnexus_domain::CommunityRole]) -> GrantSet {
 }
 
 /// Collapse assigned roles into effective grants (for explain / debug).
+#[must_use]
 pub fn merge_role_grants_public(roles: &[voxnexus_domain::CommunityRole]) -> GrantSet {
     let pairs: Vec<(i32, voxnexus_permissions::RolePermissionSet)> = roles
         .iter()
