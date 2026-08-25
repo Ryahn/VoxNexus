@@ -114,6 +114,9 @@ jobs:
       - name: pnpm build
         run: pnpm build
 
+      - name: web unit tests
+        run: pnpm --filter @voxnexus/web test
+
       - name: pnpm build:site
         run: pnpm build:site
 

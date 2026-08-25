@@ -41,7 +41,7 @@ Members with `text.view` can list messages; `text.send` (alias `message.send`) i
 | `PATCH` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author only. Body `{ "content" }`. Sets `edited_at`. Emits `MESSAGE_UPDATE`. |
 | `DELETE` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author or `text.manage_messages`. Soft-delete. Emits `MESSAGE_DELETE`. Parent replies keep a deleted preview. |
 
-Content may include structured mentions: `@{account_id}`, `@&{role_id}`, `@everyone`, `@here`. `@everyone`/`@here` require `community.mention_everyone` (rejected with 400 otherwise). Role mentions require `text.mention_roles`; non-mentionable roles need `community.manage_roles` or `community.mention_everyone`. Parsed mentions are stored for inbox (F043) and returned on message payloads.
+Content may include structured mentions: `@{account_id}`, `@&{role_id}`, `@everyone`, `@here`. `@everyone`/`@here` require `community.mention_everyone` (rejected with 400 otherwise). Role mentions require `text.mention_roles`; non-mentionable roles need `community.manage_roles` or `community.mention_everyone`. Parsed mentions are stored for inbox (F043) and returned on message payloads. Text formatting (bold, code, spoilers) is documented under [Message formatting](/docs/guides/formatting).
 
 `@everyone` defaults to view + send + attach + mention_roles. Live clients receive `MESSAGE_CREATE` over the gateway (see [Gateway](/docs/guides/gateway)); HTTP list remains the history source of truth.
 

@@ -9,6 +9,7 @@ import composeMd from '../../content/compose.md?raw';
 import configMd from '../../content/config.md?raw';
 import databaseMd from '../../content/database.md?raw';
 import developMd from '../../content/develop.md?raw';
+import formattingMd from '../../content/formatting.md?raw';
 import gatewayMd from '../../content/gateway.md?raw';
 import instanceMd from '../../content/instance.md?raw';
 import invitesMd from '../../content/invites.md?raw';
@@ -50,6 +51,11 @@ export const docPages: Record<string, DocEntry> = {
   'guides/invites': { slug: 'guides/invites', title: 'Invites', body: invitesMd },
   'guides/spaces': { slug: 'guides/spaces', title: 'Spaces', body: spacesMd },
   'guides/channels': { slug: 'guides/channels', title: 'Categories & channels', body: channelsMd },
+  'guides/formatting': {
+    slug: 'guides/formatting',
+    title: 'Message formatting',
+    body: formattingMd,
+  },
   'guides/roles': { slug: 'guides/roles', title: 'Roles', body: rolesMd },
   'guides/permissions': { slug: 'guides/permissions', title: 'Permissions', body: permissionsMd },
   'guides/codegen': { slug: 'guides/codegen', title: 'Codegen', body: codegenMd },

@@ -10,7 +10,7 @@ import {
   type MessageResponse,
   updateMessage,
 } from '@voxnexus/api-client';
-import { Archive, Paperclip, Send, X } from 'lucide-react';
+import { Archive, Eye, EyeOff, Paperclip, Send, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 import { apiTypeToUi } from '../lib/apiChannel';
@@ -24,6 +24,7 @@ import {
 import { useUI } from '../store';
 import type { Message as UiMessage, User } from '../types';
 import { Message } from './Message';
+import { RichText } from './RichText';
 import { Tooltip } from './ui/Tooltip';
 
 type Props = {
@@ -125,6 +126,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
   const [mentionOptions, setMentionOptions] = useState<MentionOption[]>([]);
   const [mentionFilter, setMentionFilter] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [previewMarkup, setPreviewMarkup] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -647,6 +649,14 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
               </div>
             ) : null}
             <div className="relative">
+              {previewMarkup && draft.trim() ? (
+                <div className="mb-1 max-h-40 overflow-y-auto rounded-lg border border-line-2/70 bg-elevated px-3 py-2 text-[14px] leading-relaxed text-ink">
+                  <p className="mb-1 font-mono text-3xs uppercase tracking-wider text-ink-4">
+                    Preview
+                  </p>
+                  <RichText text={draft} labels={mentionLabels} />
+                </div>
+              ) : null}
               {mentionOpen && filteredMentions.length > 0 ? (
                 <div className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-48 overflow-y-auto rounded-lg border border-line-2/70 bg-elevated shadow-panel">
                   {filteredMentions.map((item, idx) => (
@@ -696,6 +706,21 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                     <Paperclip size={18} strokeWidth={2} />
                   </button>
                 </Tooltip>
+                <Tooltip label={previewMarkup ? 'Hide preview' : 'Preview markup'} side="top">
+                  <button
+                    type="button"
+                    aria-label={previewMarkup ? 'Hide preview' : 'Preview markup'}
+                    aria-pressed={previewMarkup}
+                    onClick={() => setPreviewMarkup((v) => !v)}
+                    className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-2 transition-colors hover:bg-surface-hover hover:text-accent"
+                  >
+                    {previewMarkup ? (
+                      <EyeOff size={18} strokeWidth={2} />
+                    ) : (
+                      <Eye size={18} strokeWidth={2} />
+                    )}
+                  </button>
+                </Tooltip>
                 <textarea
                   ref={textareaRef}
                   rows={1}
@@ -737,7 +762,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                       }
                       if (e.key === 'Escape') {
                         e.preventDefault();
-                        setMentionOpen(false);
+                        setMentionFilter(null);
                         return;
                       }
                     }
