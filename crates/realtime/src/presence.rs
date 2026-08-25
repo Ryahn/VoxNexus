@@ -11,7 +11,7 @@ use voxnexus_domain::{PresenceStatus, PublicPresenceStatus};
 use voxnexus_protocol::{
     CommunityRolePayload, MemberJoinPayload, MemberLeavePayload, MemberRoleUpdatePayload,
     MessageCreatePayload, MessageDeletePayload, MessageUpdatePayload, PresenceUpdatePayload,
-    RoleDeletePayload,
+    RoleDeletePayload, TypingStartPayload,
 };
 
 /// Outbound gateway fanout for one WebSocket connection.
@@ -42,11 +42,17 @@ pub enum PresenceHubMessage {
     MessageUpdate(MessageUpdatePayload),
     /// Text message deleted (F036).
     MessageDelete(MessageDeletePayload),
+    /// Ephemeral typing pulse (F041) — not resume-buffered.
+    TypingStart(TypingStartPayload),
 }
+
+/// Minimum interval between typing fanouts for the same account+channel.
+pub const TYPING_COOLDOWN: Duration = Duration::from_secs(5);
 
 #[derive(Clone)]
 pub struct PresenceHub {
     inner: Arc<RwLock<HashMap<Uuid, AccountPresence>>>,
+    typing_last: Arc<RwLock<HashMap<(Uuid, Uuid), std::time::Instant>>>,
     grace: Duration,
 }
 
@@ -63,8 +69,23 @@ impl PresenceHub {
     pub fn new(grace: Duration) -> Self {
         Self {
             inner: Arc::new(RwLock::new(HashMap::new())),
+            typing_last: Arc::new(RwLock::new(HashMap::new())),
             grace,
         }
+    }
+
+    /// Returns true when a typing event may be fanout (cooldown elapsed).
+    pub async fn allow_typing(&self, account_id: Uuid, channel_id: Uuid) -> bool {
+        let key = (account_id, channel_id);
+        let mut last = self.typing_last.write().await;
+        let now = std::time::Instant::now();
+        if let Some(prev) = last.get(&key) {
+            if now.duration_since(*prev) < TYPING_COOLDOWN {
+                return false;
+            }
+        }
+        last.insert(key, now);
+        true
     }
 
     /// Default grace matching gateway heartbeat timeout (2× default interval).
@@ -416,5 +437,15 @@ mod tests {
 
         // Drain sync + self update (+ public broadcast to same conn).
         while rx.try_recv().is_ok() {}
+    }
+
+    #[tokio::test]
+    async fn typing_cooldown_rate_limits() {
+        let hub = PresenceHub::new(Duration::from_secs(1));
+        let account = Uuid::now_v7();
+        let channel = Uuid::now_v7();
+        assert!(hub.allow_typing(account, channel).await);
+        assert!(!hub.allow_typing(account, channel).await);
+        assert!(hub.allow_typing(account, Uuid::now_v7()).await);
     }
 }

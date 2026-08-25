@@ -16,4 +16,6 @@ export type {
   PresenceSyncPayload,
   PresenceUpdatePayload,
   StatusUpdatePayload,
+  TypingStartPayload,
+  TypingStartRequest,
 } from './generated/gateway';

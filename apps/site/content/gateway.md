@@ -42,6 +42,10 @@ Envelope:
 
 On successful `POST …/messages`, the server emits `MESSAGE_CREATE` (channel scope) to **online** members who can `text.view` that channel. Hidden members do not receive the event. `MESSAGE_UPDATE` / `MESSAGE_DELETE` fan out on edit/delete. Create/update payloads include `referenced_message_id` and `reply_to` when the message is a reply, plus `attachments` and `mentions` when present.
 
+### Typing
+
+Clients send `TYPING_START` with `{ "channel_id" }` after identify. The server checks `text.send`, rate-limits to once per 5s per account+channel, and fans out an ephemeral `TYPING_START` (with `account_id` + `display_name`) to other members who can `text.view` the channel. Typing events are **not** written to the resume buffer.
+
 Clients should HTTP-list history on open, then apply gateway creates. Resume replays buffered fanout envelopes while the ring still holds them (capacity 1000 per session).
 
 ## Types

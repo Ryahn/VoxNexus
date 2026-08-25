@@ -15,7 +15,7 @@ use voxnexus_domain::PresenceStatus;
 use voxnexus_protocol::{
     DevPingPayload, DevPongPayload, Envelope, EventScope, EventType, HeartbeatAckPayload,
     HeartbeatPayload, HelloPayload, IdentifyPayload, InvalidSessionPayload, PresenceSyncPayload,
-    ReadyPayload, ResumePayload, ResumedPayload, StatusUpdatePayload,
+    ReadyPayload, ResumePayload, ResumedPayload, StatusUpdatePayload, TypingStartRequest,
     DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION,
 };
 
@@ -28,6 +28,9 @@ pub const HEARTBEAT_TIMEOUT_FACTOR: u32 = 2;
 /// Persist gateway status changes (optional in unit tests).
 pub type PresenceChangeHandler =
     Arc<dyn Fn(Uuid, Option<PresenceStatus>, Option<String>) + Send + Sync>;
+
+/// Handle authenticated typing pulses (server validates channel authz + fans out).
+pub type TypingStartHandler = Arc<dyn Fn(Uuid, Uuid) + Send + Sync>;
 
 /// Options for one gateway WebSocket session.
 #[derive(Clone)]
@@ -43,6 +46,8 @@ pub struct GatewaySessionOptions {
     pub stored_custom_status: String,
     /// Persist presence changes from the gateway (optional in unit tests).
     pub on_presence_change: Option<PresenceChangeHandler>,
+    /// Fan out typing after authz (optional in unit tests).
+    pub on_typing_start: Option<TypingStartHandler>,
 }
 
 impl Default for GatewaySessionOptions {
@@ -56,6 +61,7 @@ impl Default for GatewaySessionOptions {
             stored_presence: PresenceStatus::Online,
             stored_custom_status: String::new(),
             on_presence_change: None,
+            on_typing_start: None,
         }
     }
 }
@@ -369,6 +375,23 @@ pub async fn run_session(socket: WebSocket, options: GatewaySessionOptions) {
                             break;
                         }
                     }
+                    Some(PresenceHubMessage::TypingStart(payload)) => {
+                        sequence += 1;
+                        let channel_id = payload.channel_id;
+                        let envelope = Envelope::with_scope(
+                            sequence,
+                            EventType::TypingStart,
+                            EventScope {
+                                scope_type: "channel".to_owned(),
+                                id: channel_id,
+                            },
+                            payload,
+                        );
+                        // Ephemeral: do not append to the resume buffer.
+                        if send_envelope(&mut sink, &envelope).await.is_err() {
+                            break;
+                        }
+                    }
                     None => break,
                 }
             }
@@ -577,6 +600,16 @@ async fn handle_text(
                 .await;
             Ok(())
         }
+        EventType::TypingStart if *identified => {
+            let request: TypingStartRequest = match serde_json::from_value(envelope.payload) {
+                Ok(value) => value,
+                Err(_) => return Err(false),
+            };
+            if let Some(handler) = &options.on_typing_start {
+                handler(options.account_id, request.channel_id);
+            }
+            Ok(())
+        }
         EventType::Hello
         | EventType::HeartbeatAck
         | EventType::Ready
@@ -585,6 +618,7 @@ async fn handle_text(
         | EventType::DevPong
         | EventType::DevPing
         | EventType::StatusUpdate
+        | EventType::TypingStart
         | EventType::PresenceUpdate
         | EventType::PresenceSync
         | EventType::MemberJoin

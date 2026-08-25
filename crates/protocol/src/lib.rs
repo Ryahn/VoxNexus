@@ -46,8 +46,8 @@ pub use gateway::{
     HelloPayload, IdentifyPayload, InvalidSessionPayload, MemberJoinPayload, MemberLeavePayload,
     MemberRoleUpdatePayload, MessageCreatePayload, MessageDeletePayload, MessageUpdatePayload,
     PresenceSyncPayload, PresenceUpdatePayload, ReadyPayload, ResumePayload, ResumedPayload,
-    RoleDeletePayload, StatusUpdatePayload, DEFAULT_HEARTBEAT_INTERVAL_MS,
-    GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
+    RoleDeletePayload, StatusUpdatePayload, TypingStartPayload, TypingStartRequest,
+    DEFAULT_HEARTBEAT_INTERVAL_MS, GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
 };
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use mention::{parse_mentions, MentionSet, MessageMentions};

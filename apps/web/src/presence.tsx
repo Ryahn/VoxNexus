@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useAuth } from './auth';
@@ -26,6 +27,7 @@ type PresenceContextValue = {
   self: PresenceEntry | null;
   online: PresenceEntry[];
   setStatus: (status: PresenceState, customStatus?: string) => Promise<void>;
+  sendTyping: (channelId: string) => void;
 };
 
 const credentials = { credentials: 'include' as const };
@@ -66,6 +68,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
   const accountId = session.account.id;
   const [self, setSelf] = useState<PresenceEntry | null>(null);
   const [online, setOnline] = useState<PresenceEntry[]>([]);
+  const gatewayRef = useRef<ReturnType<typeof createGatewayClient> | null>(null);
 
   const applyUpdate = useCallback(
     (payload: PresenceUpdatePayload) => {
@@ -127,9 +130,17 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
         }
       },
     });
+    gatewayRef.current = client;
     client.connect();
-    return () => client.disconnect();
+    return () => {
+      gatewayRef.current = null;
+      client.disconnect();
+    };
   }, [accountId, applyUpdate]);
+
+  const sendTyping = useCallback((channelId: string) => {
+    gatewayRef.current?.typingStart(channelId);
+  }, []);
 
   const setStatus = useCallback(
     async (status: PresenceState, customStatus?: string) => {
@@ -161,8 +172,9 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
       self,
       online,
       setStatus,
+      sendTyping,
     }),
-    [self, online, setStatus],
+    [self, online, setStatus, sendTyping],
   );
 
   return <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>;

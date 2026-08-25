@@ -26,6 +26,7 @@ pub mod profile;
 pub mod roles;
 pub mod spaces;
 pub mod telemetry;
+pub mod typing;
 pub mod view_as;
 
 /// Product name.

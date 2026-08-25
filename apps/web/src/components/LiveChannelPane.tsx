@@ -20,7 +20,9 @@ import {
   subscribeMessageCreate,
   subscribeMessageDelete,
   subscribeMessageUpdate,
+  subscribeTypingStart,
 } from '../lib/gatewayMessages';
+import { usePresence } from '../presence';
 import { useUI } from '../store';
 import type { Message as UiMessage, User } from '../types';
 import { Message } from './Message';
@@ -104,6 +106,7 @@ type PendingUpload = {
 
 export function LiveChannelPane({ channelId, onArchived }: Props) {
   const { session } = useAuth();
+  const { sendTyping } = usePresence();
   const setChannel = useUI((s) => s.setChannel);
   const replyingTo = useUI((s) => s.replyingTo);
   const setReplyingTo = useUI((s) => s.setReplyingTo);
@@ -127,6 +130,10 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
   const [mentionFilter, setMentionFilter] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [previewMarkup, setPreviewMarkup] = useState(false);
+  const [typingNames, setTypingNames] = useState<Record<string, { name: string; until: number }>>(
+    {},
+  );
+  const lastTypingSent = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -264,9 +271,50 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
   }, [apiType, channelId, mergeAuthors]);
 
   useEffect(() => {
+    if (apiType !== 'text') return;
+    const unsub = subscribeTypingStart((payload) => {
+      if (payload.channel_id !== channelId) return;
+      if (payload.account_id === accountId) return;
+      const until = Date.now() + 8_000;
+      setTypingNames((prev) => ({
+        ...prev,
+        [payload.account_id]: { name: payload.display_name, until },
+      }));
+    });
+    const tick = window.setInterval(() => {
+      const now = Date.now();
+      setTypingNames((prev) => {
+        const next: typeof prev = {};
+        for (const [id, row] of Object.entries(prev)) {
+          if (row.until > now) next[id] = row;
+        }
+        return next;
+      });
+    }, 1_000);
+    return () => {
+      unsub();
+      window.clearInterval(tick);
+    };
+  }, [accountId, apiType, channelId]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const pulseTyping = () => {
+    const now = Date.now();
+    if (now - lastTypingSent.current < 4_000) return;
+    lastTypingSent.current = now;
+    sendTyping(channelId);
+  };
+
+  const typingLabel = (() => {
+    const names = Object.values(typingNames).map((row) => row.name);
+    if (names.length === 0) return null;
+    if (names.length === 1) return `${names[0]} is typing…`;
+    if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
+    return 'Several people are typing…';
+  })();
   const uiType = apiTypeToUi(apiType);
   const { Icon, label } = channelMeta[uiType] ?? channelMeta.text;
   const isText = apiType === 'text';
@@ -729,6 +777,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                     const next = e.target.value;
                     setDraft(next);
                     updateMentionFilter(next, e.target.selectionStart ?? next.length);
+                    if (next.trim()) pulseTyping();
                     grow();
                   }}
                   onClick={(e) => {
@@ -801,6 +850,11 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 </Tooltip>
               </div>
             </div>
+            {typingLabel ? (
+              <p className="mt-1 truncate px-1 font-mono text-[11px] text-ink-3">{typingLabel}</p>
+            ) : (
+              <div className="mt-1 h-[16px]" />
+            )}
           </div>
         </>
       ) : (

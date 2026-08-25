@@ -1474,3 +1474,156 @@ async fn everyone_mention_without_permission_is_rejected() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+async fn typing_start_fans_out_rate_limited_and_scoped() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("msg-typing-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let member = register(
+        &router,
+        &format!("msg-typing-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Msg Typing").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel =
+        create_text_channel(&router, &owner, community.id, space.id, category.id, "chat").await;
+    let other = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "other",
+    )
+    .await;
+
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join");
+    assert_eq!(join.status(), StatusCode::CREATED);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
+    let addr = listener.local_addr().expect("addr");
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.expect("serve");
+    });
+
+    let mut owner_ws = connect_gateway(addr, &owner).await;
+    let mut member_ws = connect_gateway(addr, &member).await;
+    identify_gateway(&mut owner_ws).await;
+    identify_gateway(&mut member_ws).await;
+
+    let typing = Envelope::new(
+        0,
+        EventType::TypingStart,
+        voxnexus_protocol::TypingStartRequest {
+            channel_id: channel.id,
+        },
+    );
+    owner_ws
+        .send(Message::Text(
+            serde_json::to_string(&typing).expect("ser").into(),
+        ))
+        .await
+        .expect("send typing");
+
+    let payload = next_typing_start(&mut member_ws).await;
+    assert_eq!(payload.channel_id, channel.id);
+    assert_ne!(payload.display_name, "");
+
+    // Immediate second pulse is rate-limited (no second event).
+    owner_ws
+        .send(Message::Text(
+            serde_json::to_string(&typing).expect("ser").into(),
+        ))
+        .await
+        .expect("send typing again");
+    let second = tokio::time::timeout(Duration::from_millis(400), member_ws.next()).await;
+    assert!(second.is_err(), "rate-limited typing should not fan out");
+
+    // Typing for another channel is ignored by UI clients watching `channel`
+    // (server still fans to viewers; assert payload channel_id differs).
+    let other_typing = Envelope::new(
+        0,
+        EventType::TypingStart,
+        voxnexus_protocol::TypingStartRequest {
+            channel_id: other.id,
+        },
+    );
+    // Cooldown is per channel — other channel is allowed.
+    owner_ws
+        .send(Message::Text(
+            serde_json::to_string(&other_typing).expect("ser").into(),
+        ))
+        .await
+        .expect("send other typing");
+    let other_payload = next_typing_start(&mut member_ws).await;
+    assert_eq!(other_payload.channel_id, other.id);
+    assert_ne!(
+        other_payload.channel_id, channel.id,
+        "wrong-channel typing must carry the other channel id"
+    );
+
+    unlock_instance_mode(&pool).await;
+}
+
+async fn next_typing_start(
+    ws: &mut tokio_tungstenite::WebSocketStream<
+        tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
+    >,
+) -> voxnexus_protocol::TypingStartPayload {
+    loop {
+        let frame = tokio::time::timeout(Duration::from_secs(5), ws.next())
+            .await
+            .expect("frame timeout")
+            .expect("frame")
+            .expect("ok");
+        let Message::Text(text) = frame else {
+            continue;
+        };
+        let envelope: Envelope = serde_json::from_str(&text).expect("envelope");
+        if envelope.event_type == EventType::TypingStart {
+            let scope = envelope.scope.expect("channel scope");
+            assert_eq!(scope.scope_type, "channel");
+            return serde_json::from_value(envelope.payload).expect("payload");
+        }
+    }
+}

@@ -42,6 +42,7 @@ pub enum EventType {
     MessageCreate,
     MessageUpdate,
     MessageDelete,
+    TypingStart,
 }
 
 /// Subscription / fanout scope (connection-level events omit this).
@@ -279,6 +280,20 @@ pub struct MessageDeletePayload {
     pub community_id: Uuid,
 }
 
+/// Client → server typing pulse (channel only). Server fills account fields on fanout.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct TypingStartRequest {
+    pub channel_id: Uuid,
+}
+
+/// Ephemeral typing indicator (not stored; not resume-buffered).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct TypingStartPayload {
+    pub channel_id: Uuid,
+    pub account_id: Uuid,
+    pub display_name: String,
+}
+
 /// Schema catalog for TypeScript codegen (`schemars` → `packages/protocol`).
 #[derive(Debug, Clone, JsonSchema)]
 pub struct GatewaySchemaCatalog {
@@ -306,6 +321,8 @@ pub struct GatewaySchemaCatalog {
     pub message_create_payload: MessageCreatePayload,
     pub message_update_payload: MessageUpdatePayload,
     pub message_delete_payload: MessageDeletePayload,
+    pub typing_start_request: TypingStartRequest,
+    pub typing_start_payload: TypingStartPayload,
 }
 
 /// Root JSON Schema for gateway types (deterministic export).

@@ -3,15 +3,18 @@ import type {
   MessageCreatePayload,
   MessageDeletePayload,
   MessageUpdatePayload,
+  TypingStartPayload,
 } from '@voxnexus/protocol';
 
 type MessageCreateListener = (payload: MessageCreatePayload, envelope: Envelope) => void;
 type MessageUpdateListener = (payload: MessageUpdatePayload, envelope: Envelope) => void;
 type MessageDeleteListener = (payload: MessageDeletePayload, envelope: Envelope) => void;
+type TypingStartListener = (payload: TypingStartPayload, envelope: Envelope) => void;
 
 const messageCreateListeners = new Set<MessageCreateListener>();
 const messageUpdateListeners = new Set<MessageUpdateListener>();
 const messageDeleteListeners = new Set<MessageDeleteListener>();
+const typingStartListeners = new Set<TypingStartListener>();
 
 export function subscribeMessageCreate(listener: MessageCreateListener): () => void {
   messageCreateListeners.add(listener);
@@ -34,6 +37,13 @@ export function subscribeMessageDelete(listener: MessageDeleteListener): () => v
   };
 }
 
+export function subscribeTypingStart(listener: TypingStartListener): () => void {
+  typingStartListeners.add(listener);
+  return () => {
+    typingStartListeners.delete(listener);
+  };
+}
+
 export function dispatchGatewayEnvelope(envelope: Envelope): void {
   if (envelope.event_type === 'MESSAGE_CREATE') {
     const payload = envelope.payload as MessageCreatePayload;
@@ -52,6 +62,13 @@ export function dispatchGatewayEnvelope(envelope: Envelope): void {
   if (envelope.event_type === 'MESSAGE_DELETE') {
     const payload = envelope.payload as MessageDeletePayload;
     for (const listener of messageDeleteListeners) {
+      listener(payload, envelope);
+    }
+    return;
+  }
+  if (envelope.event_type === 'TYPING_START') {
+    const payload = envelope.payload as TypingStartPayload;
+    for (const listener of typingStartListeners) {
       listener(payload, envelope);
     }
   }

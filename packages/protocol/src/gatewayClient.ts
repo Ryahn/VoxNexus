@@ -20,6 +20,7 @@ export type GatewayClient = {
   disconnect: () => void;
   identify: () => void;
   resume: (input: { session_id: string; last_sequence: number; resume_token: string }) => void;
+  typingStart: (channelId: string) => void;
   readonly readyState: number;
 };
 
@@ -105,6 +106,9 @@ export function createGatewayClient(options: GatewayClientOptions): GatewayClien
     },
     resume(input) {
       send('RESUME', input);
+    },
+    typingStart(channelId) {
+      send('TYPING_START', { channel_id: channelId });
     },
   };
 }

@@ -27,7 +27,9 @@
     "resume_payload",
     "resumed_payload",
     "role_delete_payload",
-    "status_update_payload"
+    "status_update_payload",
+    "typing_start_payload",
+    "typing_start_request"
   ],
   "properties": {
     "community_role_payload": {
@@ -101,6 +103,12 @@
     },
     "status_update_payload": {
       "$ref": "#/definitions/StatusUpdatePayload"
+    },
+    "typing_start_payload": {
+      "$ref": "#/definitions/TypingStartPayload"
+    },
+    "typing_start_request": {
+      "$ref": "#/definitions/TypingStartRequest"
     }
   },
   "definitions": {
@@ -341,7 +349,8 @@
         "MEMBER_ROLE_UPDATE",
         "MESSAGE_CREATE",
         "MESSAGE_UPDATE",
-        "MESSAGE_DELETE"
+        "MESSAGE_DELETE",
+        "TYPING_START"
       ]
     },
     "HeartbeatAckPayload": {
@@ -886,6 +895,41 @@
               "type": "null"
             }
           ]
+        }
+      }
+    },
+    "TypingStartPayload": {
+      "description": "Ephemeral typing indicator (not stored; not resume-buffered).",
+      "type": "object",
+      "required": [
+        "account_id",
+        "channel_id",
+        "display_name"
+      ],
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channel_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "display_name": {
+          "type": "string"
+        }
+      }
+    },
+    "TypingStartRequest": {
+      "description": "Client → server typing pulse (channel only). Server fills account fields on fanout.",
+      "type": "object",
+      "required": [
+        "channel_id"
+      ],
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "format": "uuid"
         }
       }
     }

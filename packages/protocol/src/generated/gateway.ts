@@ -32,7 +32,8 @@ export type EventType =
   | 'MEMBER_ROLE_UPDATE'
   | 'MESSAGE_CREATE'
   | 'MESSAGE_UPDATE'
-  | 'MESSAGE_DELETE';
+  | 'MESSAGE_DELETE'
+  | 'TYPING_START';
 /**
  * Presence exposed to clients (offline when disconnected or hidden from viewers).
  *
@@ -76,6 +77,8 @@ export interface GatewaySchemaCatalog {
   resumed_payload: ResumedPayload;
   role_delete_payload: RoleDeletePayload;
   status_update_payload: StatusUpdatePayload;
+  typing_start_payload: TypingStartPayload;
+  typing_start_request: TypingStartRequest;
   [k: string]: unknown;
 }
 /**
@@ -411,5 +414,27 @@ export interface RoleDeletePayload {
 export interface StatusUpdatePayload {
   custom_status?: string | null;
   status?: PresenceStatus | null;
+  [k: string]: unknown;
+}
+/**
+ * Ephemeral typing indicator (not stored; not resume-buffered).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "TypingStartPayload".
+ */
+export interface TypingStartPayload {
+  account_id: string;
+  channel_id: string;
+  display_name: string;
+  [k: string]: unknown;
+}
+/**
+ * Client → server typing pulse (channel only). Server fills account fields on fanout.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "TypingStartRequest".
+ */
+export interface TypingStartRequest {
+  channel_id: string;
   [k: string]: unknown;
 }
