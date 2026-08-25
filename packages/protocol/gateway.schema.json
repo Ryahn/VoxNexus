@@ -520,6 +520,19 @@
           "type": "string",
           "format": "uuid"
         },
+        "mentions": {
+          "default": {
+            "account_ids": [],
+            "everyone": false,
+            "here": false,
+            "role_ids": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/MessageMentions"
+            }
+          ]
+        },
         "nonce": {
           "type": [
             "string",
@@ -565,6 +578,38 @@
         "id": {
           "type": "string",
           "format": "uuid"
+        }
+      }
+    },
+    "MessageMentions": {
+      "description": "API shape for mentions on a message.",
+      "type": "object",
+      "required": [
+        "account_ids",
+        "everyone",
+        "here",
+        "role_ids"
+      ],
+      "properties": {
+        "account_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "everyone": {
+          "type": "boolean"
+        },
+        "here": {
+          "type": "boolean"
+        },
+        "role_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       }
     },
@@ -650,6 +695,19 @@
         "id": {
           "type": "string",
           "format": "uuid"
+        },
+        "mentions": {
+          "default": {
+            "account_ids": [],
+            "everyone": false,
+            "here": false,
+            "role_ids": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/MessageMentions"
+            }
+          ]
         },
         "nonce": {
           "type": [

@@ -44,6 +44,8 @@ pub struct MessageResponse {
     pub reply_to: Option<MessageReplyPreview>,
     #[serde(default)]
     pub attachments: Vec<AttachmentResponse>,
+    #[serde(default)]
+    pub mentions: crate::MessageMentions,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
     #[schema(value_type = Option<String>, format = DateTime)]

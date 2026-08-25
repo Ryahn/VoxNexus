@@ -8,17 +8,18 @@ use axum::Json;
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 use voxnexus_auth::{
-    create_message as persist_create, get_channel, get_message, list_attachments_for_messages,
-    list_member_account_ids, list_messages as persist_list, soft_delete_message as persist_delete,
+    create_message as persist_create, get_channel, get_membership, get_message, get_role,
+    list_attachments_for_messages, list_member_account_ids, list_mentions_for_messages,
+    list_messages as persist_list, replace_message_mentions, soft_delete_message as persist_delete,
     update_message as persist_update, AuthError, MessageWithAuthor, MESSAGE_EDIT_WINDOW_SECS,
 };
 use voxnexus_domain::{Channel, ChannelType};
 use voxnexus_permissions::PermissionCode;
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
-    AttachmentResponse, CreateMessageRequest, ListMessagesQuery, MessageCreatePayload,
-    MessageDeletePayload, MessageListResponse, MessageResponse, MessageUpdatePayload,
-    UpdateMessageRequest,
+    parse_mentions, AttachmentResponse, CreateMessageRequest, ListMessagesQuery,
+    MessageCreatePayload, MessageDeletePayload, MessageListResponse, MessageMentions,
+    MessageResponse, MessageUpdatePayload, UpdateMessageRequest,
 };
 use voxnexus_realtime::PresenceHubMessage;
 
@@ -69,6 +70,15 @@ pub async fn create_message(
     let nonce = body.nonce.as_deref().or(header_nonce.as_deref());
 
     let attachment_ids = body.attachment_ids.clone().unwrap_or_default();
+    let pending_mentions = validate_mentions(
+        &state,
+        &channel,
+        user.account_id,
+        &body.content,
+        &request_id,
+    )
+    .await?;
+
     let (row, created) = persist_create(
         &state.pool,
         channel.id,
@@ -83,6 +93,22 @@ pub async fn create_message(
     .map_err(|error| map_message_auth(error, request_id.clone()))?;
 
     let attachments = load_message_attachments(&state, &[row.message.id], &request_id).await?;
+    let mentions = if created {
+        replace_message_mentions(&state.pool, row.message.id, &pending_mentions)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "store mentions failed");
+                internal(request_id.clone())
+            })?;
+        MessageMentions::from(pending_mentions)
+    } else {
+        load_message_mentions(&state, &[row.message.id], &request_id)
+            .await?
+            .into_iter()
+            .next()
+            .map(|(_, m)| m)
+            .unwrap_or_default()
+    };
     let status = if created {
         StatusCode::CREATED
     } else {
@@ -92,11 +118,11 @@ pub async fn create_message(
         broadcast_message_event(
             &state,
             &channel,
-            PresenceHubMessage::MessageCreate(to_create_payload(&row, &attachments)),
+            PresenceHubMessage::MessageCreate(to_create_payload(&row, &attachments, &mentions)),
         )
         .await;
     }
-    Ok((status, Json(to_response(&row, &attachments))))
+    Ok((status, Json(to_response(&row, &attachments, &mentions))))
 }
 
 /// List messages in a channel (newest first). Requires `text.view` (404 if hidden).
@@ -152,8 +178,9 @@ pub async fn list_messages(
         .await
         .map_err(|error| {
             tracing::error!(error = %error, "list attachments failed");
-            internal(request_id)
+            internal(request_id.clone())
         })?;
+    let mention_rows = load_message_mentions(&state, &ids, &request_id).await?;
     Ok(Json(MessageListResponse {
         items: page
             .items
@@ -164,7 +191,12 @@ pub async fn list_messages(
                     .filter(|att| att.message_id == Some(row.message.id))
                     .map(to_attachment_response)
                     .collect::<Vec<_>>();
-                to_response(row, &attachments)
+                let mentions = mention_rows
+                    .iter()
+                    .find(|(id, _)| *id == row.message.id)
+                    .map(|(_, m)| m.clone())
+                    .unwrap_or_default();
+                to_response(row, &attachments, &mentions)
             })
             .collect(),
         has_more: page.has_more,
@@ -226,19 +258,36 @@ pub async fn update_message(
         }
     }
 
+    let pending_mentions = validate_mentions(
+        &state,
+        &channel,
+        user.account_id,
+        &body.content,
+        &request_id,
+    )
+    .await?;
+
     let row = persist_update(&state.pool, message_id, &body.content)
         .await
         .map_err(|error| map_message_auth(error, request_id.clone()))?;
+
+    replace_message_mentions(&state.pool, row.message.id, &pending_mentions)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "store mentions failed");
+            internal(request_id.clone())
+        })?;
+    let mentions = MessageMentions::from(pending_mentions);
 
     let attachments = load_message_attachments(&state, &[row.message.id], &request_id).await?;
     broadcast_message_event(
         &state,
         &channel,
-        PresenceHubMessage::MessageUpdate(to_update_payload(&row, &attachments)),
+        PresenceHubMessage::MessageUpdate(to_update_payload(&row, &attachments, &mentions)),
     )
     .await;
 
-    Ok(Json(to_response(&row, &attachments)))
+    Ok(Json(to_response(&row, &attachments, &mentions)))
 }
 
 /// Soft-delete a message. Author or `text.manage_messages`.
@@ -346,7 +395,11 @@ fn require_not_archived(channel: &Channel, request_id: String) -> Result<(), Api
     Ok(())
 }
 
-fn to_response(row: &MessageWithAuthor, attachments: &[AttachmentResponse]) -> MessageResponse {
+fn to_response(
+    row: &MessageWithAuthor,
+    attachments: &[AttachmentResponse],
+    mentions: &MessageMentions,
+) -> MessageResponse {
     MessageResponse {
         id: row.message.id,
         channel_id: row.message.channel_id,
@@ -358,6 +411,7 @@ fn to_response(row: &MessageWithAuthor, attachments: &[AttachmentResponse]) -> M
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
         attachments: attachments.to_vec(),
+        mentions: mentions.clone(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
@@ -366,6 +420,7 @@ fn to_response(row: &MessageWithAuthor, attachments: &[AttachmentResponse]) -> M
 fn to_create_payload(
     row: &MessageWithAuthor,
     attachments: &[AttachmentResponse],
+    mentions: &MessageMentions,
 ) -> MessageCreatePayload {
     MessageCreatePayload {
         id: row.message.id,
@@ -378,6 +433,7 @@ fn to_create_payload(
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
         attachments: attachments.to_vec(),
+        mentions: mentions.clone(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
@@ -386,6 +442,7 @@ fn to_create_payload(
 fn to_update_payload(
     row: &MessageWithAuthor,
     attachments: &[AttachmentResponse],
+    mentions: &MessageMentions,
 ) -> MessageUpdatePayload {
     MessageUpdatePayload {
         id: row.message.id,
@@ -398,6 +455,7 @@ fn to_update_payload(
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
         attachments: attachments.to_vec(),
+        mentions: mentions.clone(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
@@ -415,6 +473,107 @@ async fn load_message_attachments(
             internal(request_id.to_owned())
         })?;
     Ok(rows.iter().map(to_attachment_response).collect())
+}
+
+async fn load_message_mentions(
+    state: &AppState,
+    message_ids: &[Uuid],
+    request_id: &str,
+) -> Result<Vec<(Uuid, MessageMentions)>, ApiError> {
+    list_mentions_for_messages(&state.pool, message_ids)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "list mentions failed");
+            internal(request_id.to_owned())
+        })
+}
+
+async fn validate_mentions(
+    state: &AppState,
+    channel: &Channel,
+    actor_id: Uuid,
+    content: &str,
+    request_id: &str,
+) -> Result<voxnexus_protocol::MentionSet, ApiError> {
+    let set = parse_mentions(content);
+    if set.everyone || set.here {
+        let allowed = allowed_for_channel(
+            state,
+            channel,
+            actor_id,
+            PermissionCode::COMMUNITY_MENTION_EVERYONE,
+        )
+        .await?;
+        if !allowed {
+            return Err(bad_request(
+                request_id.to_owned(),
+                "You do not have permission to mention @everyone or @here.",
+            ));
+        }
+    }
+    if !set.role_ids.is_empty() {
+        let can_mention_roles =
+            allowed_for_channel(state, channel, actor_id, PermissionCode::TEXT_MENTION_ROLES)
+                .await?;
+        if !can_mention_roles {
+            return Err(bad_request(
+                request_id.to_owned(),
+                "You do not have permission to mention roles.",
+            ));
+        }
+        let can_force = allowed_for_channel(
+            state,
+            channel,
+            actor_id,
+            PermissionCode::COMMUNITY_MANAGE_ROLES,
+        )
+        .await?
+            || allowed_for_channel(
+                state,
+                channel,
+                actor_id,
+                PermissionCode::COMMUNITY_MENTION_EVERYONE,
+            )
+            .await?;
+        for role_id in &set.role_ids {
+            let role = get_role(&state.pool, *role_id)
+                .await
+                .map_err(|error| {
+                    tracing::error!(error = %error, "get role for mention failed");
+                    internal(request_id.to_owned())
+                })?
+                .ok_or_else(|| {
+                    bad_request(request_id.to_owned(), "Mentioned role was not found.")
+                })?;
+            if role.community_id != channel.community_id {
+                return Err(bad_request(
+                    request_id.to_owned(),
+                    "Mentioned role is not in this community.",
+                ));
+            }
+            if !role.mentionable && !can_force {
+                return Err(bad_request(
+                    request_id.to_owned(),
+                    "That role is not mentionable.",
+                ));
+            }
+        }
+    }
+    for account_id in &set.account_ids {
+        let member = get_membership(&state.pool, channel.community_id, *account_id)
+            .await
+            .map_err(|error| {
+                tracing::error!(error = %error, "membership lookup for mention failed");
+                internal(request_id.to_owned())
+            })?;
+        if member.is_none() {
+            return Err(bad_request(
+                request_id.to_owned(),
+                "Mentioned user is not a community member.",
+            ));
+        }
+    }
+    Ok(set)
 }
 
 fn to_reply_preview(
@@ -462,6 +621,7 @@ fn map_message_auth(error: AuthError, request_id: String) -> ApiError {
             request_id,
             "One or more attachments are invalid or already used.",
         ),
+        AuthError::InvalidMention => bad_request(request_id, "Invalid mention."),
         other => {
             tracing::error!(error = %other, "message auth error");
             internal(request_id)

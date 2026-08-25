@@ -100,9 +100,7 @@ pub async fn upload_channel_attachment(
         .filter(|part| !part.is_empty() && part.len() <= 16)
         .map_or_else(
             || {
-                sniff_image(&body)
-                    .map(|kind| kind.extension().to_owned())
-                    .unwrap_or_else(|| "bin".to_owned())
+                sniff_image(&body).map_or_else(|| "bin".to_owned(), |kind| kind.extension().to_owned())
             },
             str::to_ascii_lowercase,
         );
@@ -164,7 +162,10 @@ pub async fn upload_channel_attachment(
         .map_err(|error| map_auth(error, request_id))?
         .unwrap_or(attachment);
 
-    Ok((StatusCode::CREATED, Json(to_attachment_response(&refreshed))))
+    Ok((
+        StatusCode::CREATED,
+        Json(to_attachment_response(&refreshed)),
+    ))
 }
 
 /// Download an attachment (or thumbnail). Requires `text.view` on its channel.

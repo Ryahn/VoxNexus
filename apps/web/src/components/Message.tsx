@@ -16,6 +16,7 @@ export function Message({
   onEdit,
   onDelete,
   onJumpToReply,
+  mentionLabels,
 }: {
   message: Msg;
   grouped: boolean;
@@ -25,6 +26,7 @@ export function Message({
   onEdit?: () => void;
   onDelete?: () => void;
   onJumpToReply?: (messageId: string) => void;
+  mentionLabels?: Record<string, string>;
 }) {
   const author = authorProp ?? users[message.authorId];
   const compact = useUI((s) => s.compact);
@@ -116,7 +118,7 @@ export function Message({
               className={`font-body text-[14px] leading-[1.5] text-ink-2 ${compact ? 'inline' : ''}`}
             >
               <span className="text-ink">
-                <RichText text={message.content} />
+                <RichText text={message.content} labels={mentionLabels} />
               </span>
               {message.edited && (
                 <span className="ml-1 font-mono text-[10px] text-ink-4">(edited)</span>

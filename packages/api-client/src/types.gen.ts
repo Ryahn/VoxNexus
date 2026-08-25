@@ -477,6 +477,16 @@ export type MessageListResponse = {
 };
 
 /**
+ * API shape for mentions on a message.
+ */
+export type MessageMentions = {
+    account_ids: Array<string>;
+    everyone: boolean;
+    here: boolean;
+    role_ids: Array<string>;
+};
+
+/**
  * Preview of the message being replied to.
  */
 export type MessageReplyPreview = {
@@ -500,6 +510,7 @@ export type MessageResponse = {
     created_at: string;
     edited_at?: string | null;
     id: string;
+    mentions?: MessageMentions;
     nonce?: string | null;
     referenced_message_id?: string | null;
     reply_to?: null | MessageReplyPreview;
@@ -929,9 +940,9 @@ export type DownloadAttachmentData = {
     };
     query?: {
         /**
-         * Prefer thumbnail when available
+         * Prefer thumbnail when available (`true`/`1`)
          */
-        thumb?: boolean;
+        thumb?: string;
     };
     url: '/api/v1/attachments/{attachment_id}';
 };

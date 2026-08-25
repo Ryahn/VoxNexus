@@ -245,6 +245,8 @@ pub struct MessageCreatePayload {
     pub reply_to: Option<crate::MessageReplyPreview>,
     #[serde(default)]
     pub attachments: Vec<crate::AttachmentResponse>,
+    #[serde(default)]
+    pub mentions: crate::MessageMentions,
     pub created_at: DateTime<Utc>,
     pub edited_at: Option<DateTime<Utc>>,
 }
@@ -263,6 +265,8 @@ pub struct MessageUpdatePayload {
     pub reply_to: Option<crate::MessageReplyPreview>,
     #[serde(default)]
     pub attachments: Vec<crate::AttachmentResponse>,
+    #[serde(default)]
+    pub mentions: crate::MessageMentions,
     pub created_at: DateTime<Utc>,
     pub edited_at: Option<DateTime<Utc>>,
 }

@@ -4,7 +4,9 @@ import {
   deleteMessage,
   getChannel,
   getCommunity,
+  listCommunityMembers,
   listMessages,
+  listRoles,
   type MessageResponse,
   updateMessage,
 } from '@voxnexus/api-client';
@@ -27,6 +29,13 @@ import { Tooltip } from './ui/Tooltip';
 type Props = {
   channelId: string;
   onArchived?: () => void;
+};
+
+type MentionOption = {
+  id: string;
+  kind: 'user' | 'role' | 'everyone' | 'here';
+  label: string;
+  insert: string;
 };
 
 function authorFromApi(msg: MessageResponse): User {
@@ -112,6 +121,10 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
   const [editPending, setEditPending] = useState(false);
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [communityId, setCommunityId] = useState<string | null>(null);
+  const [mentionOptions, setMentionOptions] = useState<MentionOption[]>([]);
+  const [mentionFilter, setMentionFilter] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +150,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
     setName(channel.name);
     setTopic(channel.topic);
     setApiType(channel.type);
+    setCommunityId(channel.community_id);
     setError(null);
 
     const communityResult = await getCommunity({
@@ -189,6 +203,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
         referenced_message_id: payload.referenced_message_id,
         reply_to: payload.reply_to,
         attachments: payload.attachments ?? [],
+        mentions: payload.mentions,
         created_at: payload.created_at,
         edited_at: payload.edited_at,
       };
@@ -211,6 +226,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 referenced_message_id: payload.referenced_message_id,
                 reply_to: payload.reply_to,
                 attachments: payload.attachments ?? m.attachments,
+                mentions: payload.mentions ?? m.mentions,
               }
             : m,
         ),
@@ -227,6 +243,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
           referenced_message_id: payload.referenced_message_id,
           reply_to: payload.reply_to,
           attachments: payload.attachments ?? [],
+          mentions: payload.mentions,
           created_at: payload.created_at,
           edited_at: payload.edited_at,
         },
@@ -345,6 +362,72 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
     setError(null);
   };
 
+  useEffect(() => {
+    if (!communityId) return;
+    void (async () => {
+      const [membersResult, rolesResult] = await Promise.all([
+        listCommunityMembers({ path: { community_id: communityId }, query: { limit: 100 } }),
+        listRoles({ path: { community_id: communityId } }),
+      ]);
+      const options: MentionOption[] = [
+        { id: 'everyone', kind: 'everyone', label: 'everyone', insert: '@everyone' },
+        { id: 'here', kind: 'here', label: 'here', insert: '@here' },
+      ];
+      for (const member of membersResult.data?.items ?? []) {
+        options.push({
+          id: member.account_id,
+          kind: 'user',
+          label: member.nickname || member.display_name,
+          insert: `@{${member.account_id}}`,
+        });
+      }
+      for (const role of rolesResult.data?.roles ?? []) {
+        if (role.is_everyone) continue;
+        options.push({
+          id: role.id,
+          kind: 'role',
+          label: role.name,
+          insert: `@&{${role.id}}`,
+        });
+      }
+      setMentionOptions(options);
+    })();
+  }, [communityId]);
+
+  const mentionOpen = mentionFilter !== null;
+  const filteredMentions =
+    mentionFilter === null
+      ? []
+      : mentionOptions
+          .filter((opt) => opt.label.toLowerCase().includes(mentionFilter.toLowerCase()))
+          .slice(0, 8);
+
+  const updateMentionFilter = (value: string, caret: number) => {
+    const before = value.slice(0, caret);
+    const match = /(^|\s)@([^\s@]*)$/.exec(before);
+    setMentionFilter(match ? (match[2] ?? '') : null);
+    setMentionIndex(0);
+  };
+
+  const applyMention = (option: MentionOption) => {
+    const el = textareaRef.current;
+    const caret = el?.selectionStart ?? draft.length;
+    const before = draft.slice(0, caret);
+    const after = draft.slice(caret);
+    const replaced = before.replace(/(^|\s)@([^\s@]*)$/, `$1${option.insert} `);
+    const next = `${replaced}${after}`;
+    setDraft(next);
+    setMentionFilter(null);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      const pos = replaced.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const mentionLabels = Object.fromEntries(mentionOptions.map((opt) => [opt.id, opt.label]));
+
   const jumpToReply = (messageId: string) => {
     const el = document.getElementById(`msg-${messageId}`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -387,7 +470,16 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
     setError(null);
   };
 
-  const uiMessages = messages.map(toUiMessage);
+  const uiMessages = messages.map((m) => {
+    const ui = toUiMessage(m);
+    const mentions = m.mentions;
+    return {
+      ...ui,
+      mentionsMe: Boolean(
+        mentions?.everyone || mentions?.here || mentions?.account_ids?.includes(accountId),
+      ),
+    };
+  });
   const replyParent = replyingTo ? messages.find((m) => m.id === replyingTo) : null;
 
   return (
@@ -488,6 +580,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                     onEdit={raw ? () => startEdit(raw) : undefined}
                     onDelete={raw ? () => void removeMessage(raw.id) : undefined}
                     onJumpToReply={jumpToReply}
+                    mentionLabels={mentionLabels}
                   />
                 );
               })}
@@ -553,80 +646,135 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 ))}
               </div>
             ) : null}
-            <div
-              className={`group flex items-end gap-2 border border-line-2/60 bg-input px-2 py-1.5 transition-colors focus-within:border-accent/60 focus-within:shadow-accent-glow ${
-                replyParent || pendingUploads.length ? 'rounded-b-lg rounded-t-none' : 'rounded-lg'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.length) void uploadFiles(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-              <Tooltip label="Attach file" side="top">
-                <button
-                  type="button"
-                  aria-label="Attach file"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-2 transition-colors hover:bg-surface-hover hover:text-accent"
-                >
-                  <Paperclip size={18} strokeWidth={2} />
-                </button>
-              </Tooltip>
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={draft}
-                onChange={(e) => {
-                  setDraft(e.target.value);
-                  grow();
-                }}
-                onPaste={(e) => {
-                  const files = e.clipboardData?.files;
-                  if (files && files.length > 0) {
-                    e.preventDefault();
-                    void uploadFiles(files);
+            <div className="relative">
+              {mentionOpen && filteredMentions.length > 0 ? (
+                <div className="absolute bottom-full left-0 right-0 z-20 mb-1 max-h-48 overflow-y-auto rounded-lg border border-line-2/70 bg-elevated shadow-panel">
+                  {filteredMentions.map((item, idx) => (
+                    <button
+                      key={`${item.kind}-${item.id}`}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyMention(item);
+                      }}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
+                        idx === mentionIndex
+                          ? 'bg-accent/15 text-ink'
+                          : 'text-ink-2 hover:bg-surface-hover'
+                      }`}
+                    >
+                      <span className="font-medium text-accent">{item.label}</span>
+                      <span className="text-xs text-ink-4">{item.kind}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div
+                className={`group flex items-end gap-2 border border-line-2/60 bg-input px-2 py-1.5 transition-colors focus-within:border-accent/60 focus-within:shadow-accent-glow ${
+                  replyParent || pendingUploads.length
+                    ? 'rounded-b-lg rounded-t-none'
+                    : 'rounded-lg'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.length) void uploadFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+                <Tooltip label="Attach file" side="top">
+                  <button
+                    type="button"
+                    aria-label="Attach file"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-2 transition-colors hover:bg-surface-hover hover:text-accent"
+                  >
+                    <Paperclip size={18} strokeWidth={2} />
+                  </button>
+                </Tooltip>
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={draft}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setDraft(next);
+                    updateMentionFilter(next, e.target.selectionStart ?? next.length);
+                    grow();
+                  }}
+                  onClick={(e) => {
+                    updateMentionFilter(draft, e.currentTarget.selectionStart ?? draft.length);
+                  }}
+                  onPaste={(e) => {
+                    const files = e.clipboardData?.files;
+                    if (files && files.length > 0) {
+                      e.preventDefault();
+                      void uploadFiles(files);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (mentionOpen && filteredMentions.length > 0) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setMentionIndex((i) => (i + 1) % filteredMentions.length);
+                        return;
+                      }
+                      if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setMentionIndex(
+                          (i) => (i - 1 + filteredMentions.length) % filteredMentions.length,
+                        );
+                        return;
+                      }
+                      if (e.key === 'Enter' || e.key === 'Tab') {
+                        e.preventDefault();
+                        applyMention(filteredMentions[mentionIndex] ?? filteredMentions[0]!);
+                        return;
+                      }
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        setMentionOpen(false);
+                        return;
+                      }
+                    }
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void send();
+                    }
+                    if (e.key === 'Escape' && replyingTo) {
+                      e.preventDefault();
+                      setReplyingTo(null);
+                    }
+                  }}
+                  placeholder={
+                    replyParent ? `Reply to ${replyParent.author_display_name}` : `Message #${name}`
                   }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void send();
-                  }
-                  if (e.key === 'Escape' && replyingTo) {
-                    e.preventDefault();
-                    setReplyingTo(null);
-                  }
-                }}
-                placeholder={
-                  replyParent ? `Reply to ${replyParent.author_display_name}` : `Message #${name}`
-                }
-                className="my-1 max-h-[220px] min-h-[24px] flex-1 resize-none bg-transparent font-body text-[14px] leading-relaxed text-ink outline-none placeholder:text-ink-4"
-              />
-              <Tooltip label="Send message" side="top">
-                <button
-                  type="button"
-                  aria-label="Send message"
-                  disabled={
-                    sending ||
-                    (!draft.trim() && !pendingUploads.some((p) => p.attachmentId && !p.error)) ||
-                    pendingUploads.some((p) => !p.attachmentId && !p.error)
-                  }
-                  onClick={() => void send()}
-                  className={`mb-0.5 ml-1 grid h-8 w-8 place-items-center rounded-md transition-all ${
-                    (draft.trim() || pendingUploads.some((p) => p.attachmentId)) && !sending
-                      ? 'bg-accent/90 text-app hover:bg-accent'
-                      : 'cursor-default bg-surface/60 text-ink-4'
-                  }`}
-                >
-                  <Send size={16} strokeWidth={2} />
-                </button>
-              </Tooltip>
+                  className="my-1 max-h-[220px] min-h-[24px] flex-1 resize-none bg-transparent font-body text-[14px] leading-relaxed text-ink outline-none placeholder:text-ink-4"
+                />
+                <Tooltip label="Send message" side="top">
+                  <button
+                    type="button"
+                    aria-label="Send message"
+                    disabled={
+                      sending ||
+                      (!draft.trim() && !pendingUploads.some((p) => p.attachmentId && !p.error)) ||
+                      pendingUploads.some((p) => !p.attachmentId && !p.error)
+                    }
+                    onClick={() => void send()}
+                    className={`mb-0.5 ml-1 grid h-8 w-8 place-items-center rounded-md transition-all ${
+                      (draft.trim() || pendingUploads.some((p) => p.attachmentId)) && !sending
+                        ? 'bg-accent/90 text-app hover:bg-accent'
+                        : 'cursor-default bg-surface/60 text-ink-4'
+                    }`}
+                  >
+                    <Send size={16} strokeWidth={2} />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </>

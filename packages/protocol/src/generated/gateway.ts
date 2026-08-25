@@ -251,6 +251,7 @@ export interface MessageCreatePayload {
   created_at: string;
   edited_at?: string | null;
   id: string;
+  mentions?: MessageMentions;
   nonce?: string | null;
   referenced_message_id?: string | null;
   reply_to?: MessageReplyPreview | null;
@@ -271,6 +272,19 @@ export interface AttachmentResponse {
   thumbnail_url?: string | null;
   url: string;
   width?: number | null;
+  [k: string]: unknown;
+}
+/**
+ * API shape for mentions on a message.
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "MessageMentions".
+ */
+export interface MessageMentions {
+  account_ids: string[];
+  everyone: boolean;
+  here: boolean;
+  role_ids: string[];
   [k: string]: unknown;
 }
 /**
@@ -315,6 +329,7 @@ export interface MessageUpdatePayload {
   created_at: string;
   edited_at?: string | null;
   id: string;
+  mentions?: MessageMentions;
   nonce?: string | null;
   referenced_message_id?: string | null;
   reply_to?: MessageReplyPreview | null;

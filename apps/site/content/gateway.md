@@ -40,7 +40,7 @@ Envelope:
 
 ## Messages
 
-On successful `POST …/messages`, the server emits `MESSAGE_CREATE` (channel scope) to **online** members who can `text.view` that channel. Hidden members do not receive the event. `MESSAGE_UPDATE` / `MESSAGE_DELETE` fan out on edit/delete. Create/update payloads include `referenced_message_id` and `reply_to` when the message is a reply.
+On successful `POST …/messages`, the server emits `MESSAGE_CREATE` (channel scope) to **online** members who can `text.view` that channel. Hidden members do not receive the event. `MESSAGE_UPDATE` / `MESSAGE_DELETE` fan out on edit/delete. Create/update payloads include `referenced_message_id` and `reply_to` when the message is a reply, plus `attachments` and `mentions` when present.
 
 Clients should HTTP-list history on open, then apply gateway creates. Resume replays buffered fanout envelopes while the ring still holds them (capacity 1000 per session).
 

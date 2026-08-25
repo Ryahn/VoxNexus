@@ -31,6 +31,11 @@ impl PermissionCode {
         bit: community::VIEW_AUDIT,
         owner_only: false,
     };
+    pub const COMMUNITY_MENTION_EVERYONE: Self = Self {
+        family: Family::Community,
+        bit: community::MENTION_EVERYONE,
+        owner_only: false,
+    };
     pub const TEXT_VIEW: Self = Self {
         family: Family::Text,
         bit: text::VIEW,
@@ -44,6 +49,11 @@ impl PermissionCode {
     pub const TEXT_ATTACH: Self = Self {
         family: Family::Text,
         bit: text::ATTACH,
+        owner_only: false,
+    };
+    pub const TEXT_MENTION_ROLES: Self = Self {
+        family: Family::Text,
+        bit: text::MENTION_ROLES,
         owner_only: false,
     };
     pub const TEXT_MANAGE_MESSAGES: Self = Self {
@@ -60,9 +70,13 @@ impl PermissionCode {
             "community.manage_channels" => Some(Self::COMMUNITY_MANAGE_CHANNELS),
             "community.manage_roles" => Some(Self::COMMUNITY_MANAGE_ROLES),
             "community.view_audit" => Some(Self::COMMUNITY_VIEW_AUDIT),
+            "community.mention_everyone" | "mention_everyone" => {
+                Some(Self::COMMUNITY_MENTION_EVERYONE)
+            }
             "text.view" | "channel.view" => Some(Self::TEXT_VIEW),
             "text.send" | "message.send" => Some(Self::TEXT_SEND),
             "text.attach" | "message.attach" => Some(Self::TEXT_ATTACH),
+            "text.mention_roles" | "mention_roles" => Some(Self::TEXT_MENTION_ROLES),
             "text.manage_messages" | "message.manage" | "manage_messages" => {
                 Some(Self::TEXT_MANAGE_MESSAGES)
             }
@@ -77,9 +91,11 @@ impl PermissionCode {
             Self::COMMUNITY_MANAGE_CHANNELS => "community.manage_channels",
             Self::COMMUNITY_MANAGE_ROLES => "community.manage_roles",
             Self::COMMUNITY_VIEW_AUDIT => "community.view_audit",
+            Self::COMMUNITY_MENTION_EVERYONE => "community.mention_everyone",
             Self::TEXT_VIEW => "text.view",
             Self::TEXT_SEND => "text.send",
             Self::TEXT_ATTACH => "text.attach",
+            Self::TEXT_MENTION_ROLES => "text.mention_roles",
             Self::TEXT_MANAGE_MESSAGES => "text.manage_messages",
             Self { .. } => "unknown",
         }

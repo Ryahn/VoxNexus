@@ -340,7 +340,8 @@ fn map_auth_error(error: &AuthError, request_id: String) -> ApiError {
         | AuthError::InvitePaused
         | AuthError::InvalidMessage
         | AuthError::InvalidReplyTarget
-        | AuthError::InvalidAttachment => {
+        | AuthError::InvalidAttachment
+        | AuthError::InvalidMention => {
             tracing::error!(error = %error, "unexpected community auth error in auth routes");
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,

@@ -132,7 +132,10 @@ pub async fn list_attachments_for_messages(
     .bind(message_ids)
     .fetch_all(pool)
     .await?;
-    Ok(rows.into_iter().map(AttachmentRow::into_attachment).collect())
+    Ok(rows
+        .into_iter()
+        .map(AttachmentRow::into_attachment)
+        .collect())
 }
 
 /// Bind pending attachments owned by `created_by` in `channel_id` to a message.

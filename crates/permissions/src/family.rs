@@ -43,6 +43,7 @@ pub mod community {
     pub const MANAGE_ROLES: u64 = 1 << 2;
     pub const MANAGE_CHANNELS: u64 = 1 << 3;
     pub const VIEW_AUDIT: u64 = 1 << 4;
+    pub const MENTION_EVERYONE: u64 = 1 << 5;
 }
 
 /// Text-channel bits.
@@ -50,6 +51,8 @@ pub mod text {
     pub const VIEW: u64 = 1 << 0;
     pub const SEND: u64 = 1 << 1;
     pub const ATTACH: u64 = 1 << 2;
+    /// Mention roles in messages (role must also be `mentionable`).
+    pub const MENTION_ROLES: u64 = 1 << 6;
     /// Delete others' messages (and later pin/purge). Bit 12 matches MASTER_PLAN §5.7 order.
     pub const MANAGE_MESSAGES: u64 = 1 << 12;
 }

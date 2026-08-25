@@ -9,6 +9,7 @@ mod error;
 mod explain;
 mod gateway;
 mod instance;
+mod mention;
 mod message;
 mod meta;
 mod pagination;
@@ -49,6 +50,7 @@ pub use gateway::{
     GATEWAY_PROTOCOL_VERSION, GATEWAY_SUBPROTOCOL,
 };
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
+pub use mention::{parse_mentions, MentionSet, MessageMentions};
 pub use message::{
     AttachmentResponse, CreateMessageRequest, ListMessagesQuery, MessageListResponse,
     MessageReplyPreview, MessageResponse, UpdateMessageRequest,

@@ -35,13 +35,15 @@ Members with `text.view` can list messages; `text.send` (alias `message.send`) i
 | Method | Path | Notes |
 |---|---|---|
 | `POST` | `/api/v1/channels/{channel_id}/messages` | Body `{ "content", "nonce"?, "referenced_message_id"?, "attachment_ids"? }`. Optional `Idempotency-Key` header. Content 0–4000 chars (empty allowed with attachments). Idempotent nonce → 200 with existing row. Reply target must be in the same channel (else 400). |
-| `GET` | `/api/v1/channels/{channel_id}/messages` | Newest first. Query: `before`, `after`, `limit` (default 50, max 100). Each item may include `reply_to` and `attachments`. |
+| `GET` | `/api/v1/channels/{channel_id}/messages` | Newest first. Query: `before`, `after`, `limit` (default 50, max 100). Each item may include `reply_to`, `attachments`, and `mentions`. |
 | `POST` | `/api/v1/channels/{channel_id}/attachments` | Raw body upload. Requires `text.attach`. Header `X-Filename`. Images/PDF/text allowed (≤5 MiB). Executables rejected. Returns attachment metadata; enqueue thumbnail job for images. |
 | `GET` | `/api/v1/attachments/{attachment_id}` | Requires `text.view` on the attachment’s channel (404 if hidden). Query `thumb=1` for thumbnail when present. |
 | `PATCH` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author only. Body `{ "content" }`. Sets `edited_at`. Emits `MESSAGE_UPDATE`. |
 | `DELETE` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author or `text.manage_messages`. Soft-delete. Emits `MESSAGE_DELETE`. Parent replies keep a deleted preview. |
 
-`@everyone` defaults to view + send. Live clients receive `MESSAGE_CREATE` over the gateway (see [Gateway](/docs/guides/gateway)); HTTP list remains the history source of truth.
+Content may include structured mentions: `@{account_id}`, `@&{role_id}`, `@everyone`, `@here`. `@everyone`/`@here` require `community.mention_everyone` (rejected with 400 otherwise). Role mentions require `text.mention_roles`; non-mentionable roles need `community.manage_roles` or `community.mention_everyone`. Parsed mentions are stored for inbox (F043) and returned on message payloads.
+
+`@everyone` defaults to view + send + attach + mention_roles. Live clients receive `MESSAGE_CREATE` over the gateway (see [Gateway](/docs/guides/gateway)); HTTP list remains the history source of truth.
 
 ### HTTP
 

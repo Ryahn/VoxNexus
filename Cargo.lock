@@ -4441,6 +4441,7 @@ dependencies = [
  "voxnexus-db",
  "voxnexus-domain",
  "voxnexus-permissions",
+ "voxnexus-protocol",
 ]
 
 [[package]]

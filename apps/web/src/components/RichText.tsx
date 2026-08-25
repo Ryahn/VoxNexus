@@ -1,26 +1,52 @@
+/**
+ * Lightweight message markup renderer (mentions, inline code, bold).
+ * Mentions use `@{uuid}` / `@&{uuid}` / `@everyone` / `@here`.
+ */
 import { Fragment, type ReactNode } from 'react';
 
-/* Minimal inline renderer for mock content:
-   - @mentions  → accent pill
-   - `code`      → inline code
-   - **bold**    → bold
-   Real markdown/AST parsing belongs in a later layer. */
-export function RichText({ text }: { text: string }) {
-  return <>{parse(text)}</>;
+export function RichText({ text, labels }: { text: string; labels?: Record<string, string> }) {
+  return <>{parse(text, labels)}</>;
 }
 
-function parse(text: string): ReactNode {
-  // split on mentions / inline code / bold, keeping delimiters
-  const parts = text.split(/(@[\w.]+|`[^`]+`|\*\*[^*]+\*\*)/g);
+function parse(text: string, labels?: Record<string, string>): ReactNode {
+  const parts = text.split(
+    /(@everyone|@here|@&\{[0-9a-fA-F-]{36}\}|@\{[0-9a-fA-F-]{36}\}|`[^`]+`|\*\*[^*]+\*\*)/g,
+  );
   return parts.map((p, i) => {
     if (!p) return null;
-    if (p.startsWith('@')) {
+    if (p === '@everyone' || p === '@here') {
       return (
         <span
           key={i}
           className="cursor-pointer rounded bg-accent-2/15 px-1 font-medium text-accent-2 transition-colors hover:bg-accent-2/25"
         >
           {p}
+        </span>
+      );
+    }
+    const role = p.match(/^@&\{([0-9a-fA-F-]{36})\}$/);
+    if (role) {
+      const id = role[1];
+      const label = labels?.[id] ?? labels?.[`role:${id}`] ?? 'role';
+      return (
+        <span
+          key={i}
+          className="cursor-pointer rounded bg-accent-2/15 px-1 font-medium text-accent-2 transition-colors hover:bg-accent-2/25"
+        >
+          @{label}
+        </span>
+      );
+    }
+    const user = p.match(/^@\{([0-9a-fA-F-]{36})\}$/);
+    if (user) {
+      const id = user[1];
+      const label = labels?.[id] ?? 'member';
+      return (
+        <span
+          key={i}
+          className="cursor-pointer rounded bg-accent-2/15 px-1 font-medium text-accent-2 transition-colors hover:bg-accent-2/25"
+        >
+          @{label}
         </span>
       );
     }

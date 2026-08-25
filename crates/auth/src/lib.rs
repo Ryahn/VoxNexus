@@ -1,12 +1,13 @@
 //! Passwords, sessions, and account persistence.
 
-mod audit;
 mod attachment;
+mod audit;
 mod category;
 mod channel;
 mod community;
 mod instance;
 mod invite;
+mod mention;
 mod message;
 mod oidc;
 mod password;
@@ -55,6 +56,7 @@ pub use invite::{
     accept_invite, create_invite, get_invite, get_invite_by_code, list_invites, revoke_invite,
     update_invite, CreateInviteInput, InvitePatch,
 };
+pub use mention::{list_mentions_for_messages, replace_message_mentions};
 pub use message::{
     create_message, get_message, list_messages, soft_delete_message, update_message,
     MessageReplyPreview, MessageWithAuthor, MessagesPage, MESSAGE_CONTENT_MAX,
@@ -173,6 +175,8 @@ pub enum AuthError {
     InvalidReplyTarget,
     #[error("invalid attachment")]
     InvalidAttachment,
+    #[error("invalid mention")]
+    InvalidMention,
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }

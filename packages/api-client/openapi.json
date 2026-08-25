@@ -31,10 +31,10 @@
           {
             "name": "thumb",
             "in": "query",
-            "description": "Prefer thumbnail when available",
+            "description": "Prefer thumbnail when available (`true`/`1`)",
             "required": false,
             "schema": {
-              "type": "boolean"
+              "type": "string"
             }
           }
         ],
@@ -7822,6 +7822,38 @@
           }
         }
       },
+      "MessageMentions": {
+        "type": "object",
+        "description": "API shape for mentions on a message.",
+        "required": [
+          "account_ids",
+          "role_ids",
+          "everyone",
+          "here"
+        ],
+        "properties": {
+          "account_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "everyone": {
+            "type": "boolean"
+          },
+          "here": {
+            "type": "boolean"
+          },
+          "role_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "MessageReplyPreview": {
         "type": "object",
         "description": "Preview of the message being replied to.",
@@ -7903,6 +7935,9 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "mentions": {
+            "$ref": "#/components/schemas/MessageMentions"
           },
           "nonce": {
             "type": [

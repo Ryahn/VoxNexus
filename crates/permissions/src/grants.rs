@@ -30,17 +30,20 @@ impl RolePermissionSet {
     }
 }
 
-/// Default `@everyone` grants for new communities (view/send/attach in public text channels).
+/// Default `@everyone` grants for new communities (view/send/attach/mention roles).
 #[must_use]
 pub fn default_everyone_grants() -> GrantSet {
-    GrantSet::new().with_family(Family::Text, text::VIEW | text::SEND | text::ATTACH)
+    GrantSet::new().with_family(
+        Family::Text,
+        text::VIEW | text::SEND | text::ATTACH | text::MENTION_ROLES,
+    )
 }
 
-/// Default `@everyone` permission JSON (allow text.view + text.send + text.attach).
+/// Default `@everyone` permission JSON.
 #[must_use]
 pub fn default_everyone_permissions_json() -> Value {
     json!({
-        "allow": { "text": text::VIEW | text::SEND | text::ATTACH },
+        "allow": { "text": text::VIEW | text::SEND | text::ATTACH | text::MENTION_ROLES },
         "deny": {}
     })
 }

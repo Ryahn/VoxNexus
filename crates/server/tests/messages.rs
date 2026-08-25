@@ -1328,8 +1328,15 @@ async fn attachment_rejects_executable_and_hides_download() {
     let community = create_community(&router, &owner, "Msg Attach").await;
     let space = create_space(&router, &owner, community.id, "Main").await;
     let category = create_category(&router, &owner, community.id, space.id, "General").await;
-    let channel =
-        create_text_channel(&router, &owner, community.id, space.id, category.id, "files").await;
+    let channel = create_text_channel(
+        &router,
+        &owner,
+        community.id,
+        space.id,
+        category.id,
+        "files",
+    )
+    .await;
 
     let exe = router
         .clone()
@@ -1399,6 +1406,71 @@ async fn attachment_rejects_executable_and_hides_download() {
     assert_eq!(ok.status(), StatusCode::OK);
     let bytes = json_body(ok).await;
     assert_eq!(bytes.as_slice(), b"hello attachment");
+
+    unlock_instance_mode(&pool).await;
+}
+
+#[tokio::test]
+async fn everyone_mention_without_permission_is_rejected() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("msg-mention-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let member = register(
+        &router,
+        &format!("msg-mention-member-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Msg Mentions").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel =
+        create_text_channel(&router, &owner, community.id, space.id, category.id, "chat").await;
+
+    let join = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/communities/{}/join", community.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &member)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("join");
+    assert_eq!(join.status(), StatusCode::CREATED);
+
+    let denied = post_message(&router, &member, channel.id, "ping @everyone", None).await;
+    assert_eq!(denied.status(), StatusCode::BAD_REQUEST);
+
+    let allowed = post_message(&router, &owner, channel.id, "ping @everyone", None).await;
+    assert_eq!(allowed.status(), StatusCode::CREATED);
+    let msg: MessageResponse = serde_json::from_slice(&json_body(allowed).await).expect("msg");
+    assert!(msg.mentions.everyone);
 
     unlock_instance_mode(&pool).await;
 }

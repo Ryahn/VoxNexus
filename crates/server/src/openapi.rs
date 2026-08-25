@@ -13,11 +13,11 @@ use voxnexus_protocol::{
     ExplainPermissionRequest, ExplainPermissionResponse, InstanceSettingsResponse,
     InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
     ListAuditEventsQuery, ListCategoriesQuery, ListChannelsQuery, ListMessagesQuery, LoginRequest,
-    MessageListResponse, MessageReplyPreview, MessageResponse, MetaResponse, PermissionExplainStep,
-    PermissionOverrideListResponse, PermissionOverrideResponse, PresenceEntry,
-    PresenceListResponse, ProfileResponse, RegisterRequest, ReorderCategoriesRequest,
-    ReorderChannelsRequest, ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse,
-    RoleListResponse, RoleResponse, SpaceListResponse, SpaceMemberListResponse,
+    MessageListResponse, MessageMentions, MessageReplyPreview, MessageResponse, MetaResponse,
+    PermissionExplainStep, PermissionOverrideListResponse, PermissionOverrideResponse,
+    PresenceEntry, PresenceListResponse, ProfileResponse, RegisterRequest,
+    ReorderCategoriesRequest, ReorderChannelsRequest, ReorderRolesRequest, RoleGroupListResponse,
+    RoleGroupResponse, RoleListResponse, RoleResponse, SpaceListResponse, SpaceMemberListResponse,
     SpaceMemberResponse, SpaceResponse, TransferCommunityRequest, UpdateCategoryRequest,
     UpdateChannelRequest, UpdateCommunityRequest, UpdateInstanceSettingsRequest,
     UpdateInviteRequest, UpdateMessageRequest, UpdateNicknameRequest, UpdateProfileRequest,
@@ -25,8 +25,8 @@ use voxnexus_protocol::{
     ViewAsChannelsRequest, ViewAsChannelsResponse, ViewAsMode,
 };
 
-use crate::audit;
 use crate::attachments;
+use crate::audit;
 use crate::auth;
 use crate::categories;
 use crate::channels;
@@ -201,6 +201,7 @@ use crate::view_as;
         MessageResponse,
         MessageReplyPreview,
         AttachmentResponse,
+        MessageMentions,
         MessageListResponse,
         CreateMessageRequest,
         UpdateMessageRequest,
