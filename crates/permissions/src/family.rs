@@ -49,6 +49,7 @@ pub mod community {
 pub mod text {
     pub const VIEW: u64 = 1 << 0;
     pub const SEND: u64 = 1 << 1;
+    pub const ATTACH: u64 = 1 << 2;
     /// Delete others' messages (and later pin/purge). Bit 12 matches MASTER_PLAN §5.7 order.
     pub const MANAGE_MESSAGES: u64 = 1 << 12;
 }

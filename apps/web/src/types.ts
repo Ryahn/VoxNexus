@@ -103,6 +103,8 @@ export interface Attachment {
   kind: 'image' | 'file';
   name: string;
   meta?: string; // "1440×900 · 284 KB"
+  url?: string;
+  thumbnailUrl?: string;
   hueA?: string;
   hueB?: string;
 }

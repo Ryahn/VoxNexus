@@ -3,17 +3,17 @@
 use utoipa::OpenApi;
 use voxnexus_domain::{ChannelType, CommunityMemberRole, JoinMode, SpaceVisibility};
 use voxnexus_protocol::{
-    AccountResponse, AddSpaceMemberRequest, AssignRoleRequest, AuditEventListResponse,
-    AuditEventResponse, AuthSessionResponse, BulkAssignRoleGroupRequest, CategoryListResponse,
-    CategoryResponse, ChangeEmailRequest, ChangePasswordRequest, ChannelListResponse,
-    ChannelResponse, CommunityListResponse, CommunityMemberListResponse, CommunityMemberResponse,
-    CommunityResponse, CreateCategoryRequest, CreateChannelRequest, CreateCommunityRequest,
-    CreateInviteRequest, CreateMessageRequest, CreateRoleGroupRequest, CreateRoleRequest,
-    CreateSpaceRequest, DeleteCommunityRequest, ErrorBody, ExplainPermissionRequest,
-    ExplainPermissionResponse, InstanceSettingsResponse, InviteExpireAfter, InviteExpireUnit,
-    InviteListResponse, InvitePreviewResponse, InviteResponse, ListAuditEventsQuery,
-    ListCategoriesQuery, ListChannelsQuery, ListMessagesQuery, LoginRequest, MessageListResponse,
-    MessageReplyPreview, MessageResponse, MetaResponse, PermissionExplainStep,
+    AccountResponse, AddSpaceMemberRequest, AssignRoleRequest, AttachmentResponse,
+    AuditEventListResponse, AuditEventResponse, AuthSessionResponse, BulkAssignRoleGroupRequest,
+    CategoryListResponse, CategoryResponse, ChangeEmailRequest, ChangePasswordRequest,
+    ChannelListResponse, ChannelResponse, CommunityListResponse, CommunityMemberListResponse,
+    CommunityMemberResponse, CommunityResponse, CreateCategoryRequest, CreateChannelRequest,
+    CreateCommunityRequest, CreateInviteRequest, CreateMessageRequest, CreateRoleGroupRequest,
+    CreateRoleRequest, CreateSpaceRequest, DeleteCommunityRequest, ErrorBody,
+    ExplainPermissionRequest, ExplainPermissionResponse, InstanceSettingsResponse,
+    InviteExpireAfter, InviteExpireUnit, InviteListResponse, InvitePreviewResponse, InviteResponse,
+    ListAuditEventsQuery, ListCategoriesQuery, ListChannelsQuery, ListMessagesQuery, LoginRequest,
+    MessageListResponse, MessageReplyPreview, MessageResponse, MetaResponse, PermissionExplainStep,
     PermissionOverrideListResponse, PermissionOverrideResponse, PresenceEntry,
     PresenceListResponse, ProfileResponse, RegisterRequest, ReorderCategoriesRequest,
     ReorderChannelsRequest, ReorderRolesRequest, RoleGroupListResponse, RoleGroupResponse,
@@ -26,6 +26,7 @@ use voxnexus_protocol::{
 };
 
 use crate::audit;
+use crate::attachments;
 use crate::auth;
 use crate::categories;
 use crate::channels;
@@ -119,6 +120,8 @@ use crate::view_as;
         messages::list_messages,
         messages::update_message,
         messages::delete_message,
+        attachments::upload_channel_attachment,
+        attachments::download_attachment,
         permission_overrides::list_channel_permission_overrides,
         permission_overrides::upsert_channel_role_permission_override,
         permission_overrides::upsert_channel_member_permission_override,
@@ -197,6 +200,7 @@ use crate::view_as;
         ChannelType,
         MessageResponse,
         MessageReplyPreview,
+        AttachmentResponse,
         MessageListResponse,
         CreateMessageRequest,
         UpdateMessageRequest,

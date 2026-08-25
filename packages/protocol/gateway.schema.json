@@ -104,6 +104,56 @@
     }
   },
   "definitions": {
+    "AttachmentResponse": {
+      "description": "Attachment metadata on a message (or pending upload).",
+      "type": "object",
+      "required": [
+        "byte_size",
+        "content_type",
+        "filename",
+        "id",
+        "url"
+      ],
+      "properties": {
+        "byte_size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "thumbnail_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "width": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
     "CommunityRolePayload": {
       "description": "Server → client when a role is created (F028).",
       "type": "object",
@@ -430,6 +480,13 @@
         "id"
       ],
       "properties": {
+        "attachments": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttachmentResponse"
+          }
+        },
         "author_display_name": {
           "type": "string"
         },
@@ -554,6 +611,13 @@
         "id"
       ],
       "properties": {
+        "attachments": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AttachmentResponse"
+          }
+        },
         "author_display_name": {
           "type": "string"
         },

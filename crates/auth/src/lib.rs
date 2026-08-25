@@ -1,6 +1,7 @@
 //! Passwords, sessions, and account persistence.
 
 mod audit;
+mod attachment;
 mod category;
 mod channel;
 mod community;
@@ -22,6 +23,10 @@ use sqlx::{PgPool, Transaction};
 use uuid::Uuid;
 use voxnexus_domain::{Account, AuthIdentity, Session, DEFAULT_INSTANCE_ID};
 
+pub use attachment::{
+    bind_attachments_to_message, create_pending_attachment, get_attachment,
+    list_attachments_for_messages, set_attachment_thumbnail, MESSAGE_ATTACHMENTS_MAX,
+};
 pub use audit::{
     get_audit_event, insert_audit_event, list_audit_events, AuditEventsPage, NewAuditEvent,
 };
@@ -166,6 +171,8 @@ pub enum AuthError {
     InvalidMessage,
     #[error("invalid reply target")]
     InvalidReplyTarget,
+    #[error("invalid attachment")]
+    InvalidAttachment,
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }

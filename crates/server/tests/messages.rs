@@ -1291,3 +1291,114 @@ async fn reply_requires_same_channel_and_returns_preview() {
 
     unlock_instance_mode(&pool).await;
 }
+
+#[tokio::test]
+async fn attachment_rejects_executable_and_hides_download() {
+    let Some(url) = test_database_url() else {
+        eprintln!("skipping: DATABASE_URL_TEST required");
+        return;
+    };
+    let Some(redis) = test_redis().await else {
+        eprintln!("skipping: Redis not reachable");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.expect("migrate");
+    lock_instance_mode(&pool).await;
+    update_instance(
+        &pool,
+        InstancePatch {
+            community_creation_mode: Some(CommunityCreationMode::Open),
+            ..InstancePatch::default()
+        },
+    )
+    .await
+    .expect("open mode");
+
+    let router = app(state(pool.clone(), redis));
+    let owner = register(
+        &router,
+        &format!("msg-att-owner-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let outsider = register(
+        &router,
+        &format!("msg-att-out-{}@example.com", uuid::Uuid::now_v7()),
+    )
+    .await;
+    let community = create_community(&router, &owner, "Msg Attach").await;
+    let space = create_space(&router, &owner, community.id, "Main").await;
+    let category = create_category(&router, &owner, community.id, space.id, "General").await;
+    let channel =
+        create_text_channel(&router, &owner, community.id, space.id, category.id, "files").await;
+
+    let exe = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/channels/{}/attachments", channel.id))
+                .header(header::CONTENT_TYPE, "application/octet-stream")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .header("x-filename", "payload.exe")
+                .body(Body::from(b"MZ\0\0not-a-real-pe".as_slice()))
+                .expect("request"),
+        )
+        .await
+        .expect("exe");
+    assert_eq!(exe.status(), StatusCode::BAD_REQUEST);
+
+    let upload = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/channels/{}/attachments", channel.id))
+                .header(header::CONTENT_TYPE, "application/octet-stream")
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .header("x-filename", "note.txt")
+                .body(Body::from("hello attachment"))
+                .expect("request"),
+        )
+        .await
+        .expect("upload");
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let att: voxnexus_protocol::AttachmentResponse =
+        serde_json::from_slice(&json_body(upload).await).expect("att");
+    assert_eq!(att.filename, "note.txt");
+
+    let denied = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/attachments/{}", att.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &outsider)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("denied");
+    assert_eq!(denied.status(), StatusCode::NOT_FOUND);
+
+    let ok = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/attachments/{}", att.id))
+                .header(header::ORIGIN, "http://127.0.0.1:8080")
+                .header(header::COOKIE, &owner)
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("download");
+    assert_eq!(ok.status(), StatusCode::OK);
+    let bytes = json_body(ok).await;
+    assert_eq!(bytes.as_slice(), b"hello attachment");
+
+    unlock_instance_mode(&pool).await;
+}

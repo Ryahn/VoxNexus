@@ -132,7 +132,10 @@ fn step(stage: &'static str, outcome: &'static str, detail: impl Into<String>) -
 }
 
 fn permission_stripped_by_timeout(permission: PermissionCode) -> bool {
-    matches!(permission, PermissionCode::TEXT_SEND)
+    matches!(
+        permission,
+        PermissionCode::TEXT_SEND | PermissionCode::TEXT_ATTACH
+    )
 }
 
 #[cfg(test)]

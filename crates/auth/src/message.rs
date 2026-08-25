@@ -51,6 +51,7 @@ pub struct MessageWithAuthor {
 /// # Errors
 ///
 /// Returns database errors, [`AuthError::InvalidMessage`], or [`AuthError::InvalidReplyTarget`].
+#[allow(clippy::too_many_arguments)]
 pub async fn create_message(
     pool: &PgPool,
     channel_id: Uuid,
@@ -59,10 +60,17 @@ pub async fn create_message(
     content: &str,
     nonce: Option<&str>,
     referenced_message_id: Option<Uuid>,
+    attachment_ids: &[Uuid],
 ) -> Result<(MessageWithAuthor, bool), AuthError> {
     let content = content.trim();
-    if content.is_empty() || content.chars().count() > MESSAGE_CONTENT_MAX {
+    if content.chars().count() > MESSAGE_CONTENT_MAX {
         return Err(AuthError::InvalidMessage);
+    }
+    if content.is_empty() && attachment_ids.is_empty() {
+        return Err(AuthError::InvalidMessage);
+    }
+    if attachment_ids.len() > crate::MESSAGE_ATTACHMENTS_MAX {
+        return Err(AuthError::InvalidAttachment);
     }
     let nonce = nonce
         .map(str::trim)
@@ -115,6 +123,10 @@ pub async fn create_message(
             return Ok((existing, false));
         }
         Err(error) => return Err(AuthError::Db(error)),
+    }
+
+    if !attachment_ids.is_empty() {
+        crate::bind_attachments_to_message(pool, id, channel_id, author_id, attachment_ids).await?;
     }
 
     get_message(pool, id, None)

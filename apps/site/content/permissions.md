@@ -12,6 +12,7 @@ Authz lives in `crates/permissions`. Handlers call `require_permission` / `requi
 | `community.view_audit` | | Read community audit log |
 | `text.view` | `channel.view` | See a channel (lists and GET) |
 | `text.send` | `message.send` | Send messages in a text channel (stripped under timeout) |
+| `text.attach` | `message.attach` | Upload attachments for messages (stripped under timeout) |
 | `text.manage_messages` | `message.manage`, `manage_messages` | Delete others' messages (authors can always delete their own) |
 
 Unknown codes fail validation on Explain Access.

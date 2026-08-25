@@ -34,8 +34,10 @@ Members with `text.view` can list messages; `text.send` (alias `message.send`) i
 
 | Method | Path | Notes |
 |---|---|---|
-| `POST` | `/api/v1/channels/{channel_id}/messages` | Body `{ "content", "nonce"?, "referenced_message_id"? }`. Optional `Idempotency-Key` header. Content 1–4000 chars. Idempotent nonce → 200 with existing row. Reply target must be in the same channel (else 400). |
-| `GET` | `/api/v1/channels/{channel_id}/messages` | Newest first. Query: `before`, `after`, `limit` (default 50, max 100). Each item may include `reply_to` preview (`message_id`, author, excerpt, `deleted`). |
+| `POST` | `/api/v1/channels/{channel_id}/messages` | Body `{ "content", "nonce"?, "referenced_message_id"?, "attachment_ids"? }`. Optional `Idempotency-Key` header. Content 0–4000 chars (empty allowed with attachments). Idempotent nonce → 200 with existing row. Reply target must be in the same channel (else 400). |
+| `GET` | `/api/v1/channels/{channel_id}/messages` | Newest first. Query: `before`, `after`, `limit` (default 50, max 100). Each item may include `reply_to` and `attachments`. |
+| `POST` | `/api/v1/channels/{channel_id}/attachments` | Raw body upload. Requires `text.attach`. Header `X-Filename`. Images/PDF/text allowed (≤5 MiB). Executables rejected. Returns attachment metadata; enqueue thumbnail job for images. |
+| `GET` | `/api/v1/attachments/{attachment_id}` | Requires `text.view` on the attachment’s channel (404 if hidden). Query `thumb=1` for thumbnail when present. |
 | `PATCH` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author only. Body `{ "content" }`. Sets `edited_at`. Emits `MESSAGE_UPDATE`. |
 | `DELETE` | `/api/v1/channels/{channel_id}/messages/{message_id}` | Author or `text.manage_messages`. Soft-delete. Emits `MESSAGE_DELETE`. Parent replies keep a deleted preview. |
 
@@ -59,4 +61,4 @@ Community **owner** always satisfies manage/view checks. See [Permissions](/docs
 
 ## Web UI
 
-Channel sidebar lists uncategorized channels first, then categories. Create a channel from the Space header (`+`) without a category, or from a category’s `+`. Categories remain optional grouping. Live text channels show a message transcript and composer; new messages arrive over the gateway. Reply from a message’s action bar; the composer shows a parent preview and clickable jump on replies.
+Channel sidebar lists uncategorized channels first, then categories. Create a channel from the Space header (`+`) without a category, or from a category’s `+`. Categories remain optional grouping. Live text channels show a message transcript and composer; new messages arrive over the gateway. Reply from a message’s action bar; the composer shows a parent preview and clickable jump on replies. Attach files via the paperclip control, drag-drop, or paste — images render inline after send.

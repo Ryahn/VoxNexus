@@ -243,6 +243,8 @@ pub struct MessageCreatePayload {
     pub nonce: Option<String>,
     pub referenced_message_id: Option<Uuid>,
     pub reply_to: Option<crate::MessageReplyPreview>,
+    #[serde(default)]
+    pub attachments: Vec<crate::AttachmentResponse>,
     pub created_at: DateTime<Utc>,
     pub edited_at: Option<DateTime<Utc>>,
 }
@@ -259,6 +261,8 @@ pub struct MessageUpdatePayload {
     pub nonce: Option<String>,
     pub referenced_message_id: Option<Uuid>,
     pub reply_to: Option<crate::MessageReplyPreview>,
+    #[serde(default)]
+    pub attachments: Vec<crate::AttachmentResponse>,
     pub created_at: DateTime<Utc>,
     pub edited_at: Option<DateTime<Utc>>,
 }

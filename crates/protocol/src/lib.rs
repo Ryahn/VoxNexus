@@ -50,8 +50,8 @@ pub use gateway::{
 };
 pub use instance::{InstanceSettingsResponse, UpdateInstanceSettingsRequest};
 pub use message::{
-    CreateMessageRequest, ListMessagesQuery, MessageListResponse, MessageReplyPreview,
-    MessageResponse, UpdateMessageRequest,
+    AttachmentResponse, CreateMessageRequest, ListMessagesQuery, MessageListResponse,
+    MessageReplyPreview, MessageResponse, UpdateMessageRequest,
 };
 pub use meta::MetaResponse;
 pub use pagination::{CursorPage, CursorQuery, DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT};

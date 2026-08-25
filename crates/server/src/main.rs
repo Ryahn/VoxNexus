@@ -5,7 +5,10 @@ use tokio::net::TcpListener;
 use voxnexus_auth::{ensure_instance, InstanceSeed};
 use voxnexus_config::Config;
 use voxnexus_domain::{CommunityCreationMode, RegistrationMode};
-use voxnexus_jobs::{connect, health_ping_storage, ping, run_health_ping_workers, RedisConn};
+use voxnexus_jobs::{
+    connect, health_ping_storage, ping, run_health_ping_workers, run_thumbnail_stub_workers,
+    thumbnail_storage, RedisConn,
+};
 use voxnexus_permissions::PermissionCache;
 use voxnexus_search::{SearchEngine, TypesenseClient, TypesenseConfig};
 use voxnexus_storage::{ObjectStore, S3ObjectStore, S3ObjectStoreConfig};
@@ -184,6 +187,12 @@ async fn run() -> Result<(), i32> {
             tracing::error!(error = %error, "job workers stopped");
         }
     });
+    let thumb_storage = thumbnail_storage(redis.clone());
+    let thumb_worker = tokio::spawn(async move {
+        if let Err(error) = run_thumbnail_stub_workers(thumb_storage, shutdown_signal()).await {
+            tracing::error!(error = %error, "thumbnail workers stopped");
+        }
+    });
 
     let listener = TcpListener::bind(config.listen_addr)
         .await
@@ -226,6 +235,7 @@ async fn run() -> Result<(), i32> {
             1
         });
     worker.abort();
+    thumb_worker.abort();
     serve
 }
 

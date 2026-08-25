@@ -242,6 +242,7 @@ export interface MemberRoleUpdatePayload {
  * via the `definition` "MessageCreatePayload".
  */
 export interface MessageCreatePayload {
+  attachments?: AttachmentResponse[];
   author_display_name: string;
   author_id: string;
   channel_id: string;
@@ -253,6 +254,23 @@ export interface MessageCreatePayload {
   nonce?: string | null;
   referenced_message_id?: string | null;
   reply_to?: MessageReplyPreview | null;
+  [k: string]: unknown;
+}
+/**
+ * Attachment metadata on a message (or pending upload).
+ *
+ * This interface was referenced by `GatewaySchemaCatalog`'s JSON-Schema
+ * via the `definition` "AttachmentResponse".
+ */
+export interface AttachmentResponse {
+  byte_size: number;
+  content_type: string;
+  filename: string;
+  height?: number | null;
+  id: string;
+  thumbnail_url?: string | null;
+  url: string;
+  width?: number | null;
   [k: string]: unknown;
 }
 /**
@@ -288,6 +306,7 @@ export interface MessageDeletePayload {
  * via the `definition` "MessageUpdatePayload".
  */
 export interface MessageUpdatePayload {
+  attachments?: AttachmentResponse[];
   author_display_name: string;
   author_id: string;
   channel_id: string;

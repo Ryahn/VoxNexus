@@ -29,6 +29,20 @@ export type AssignRoleRequest = {
 };
 
 /**
+ * Attachment metadata on a message (or pending upload).
+ */
+export type AttachmentResponse = {
+    byte_size: number;
+    content_type: string;
+    filename: string;
+    height?: number | null;
+    id: string;
+    thumbnail_url?: string | null;
+    url: string;
+    width?: number | null;
+};
+
+/**
  * Cursor page of audit events (newest first).
  */
 export type AuditEventListResponse = {
@@ -248,6 +262,10 @@ export type CreateInviteRequest = {
  * Create a message in a text channel.
  */
 export type CreateMessageRequest = {
+    /**
+     * Pending attachment ids from `POST …/attachments` (max 10).
+     */
+    attachment_ids?: Array<string> | null;
     content: string;
     nonce?: string | null;
     /**
@@ -473,6 +491,7 @@ export type MessageReplyPreview = {
  * Public message representation.
  */
 export type MessageResponse = {
+    attachments?: Array<AttachmentResponse>;
     author_display_name: string;
     author_id: string;
     channel_id: string;
@@ -899,6 +918,43 @@ export type ViewAsChannelsResponse = {
  * How to build the synthetic actor for View As.
  */
 export type ViewAsMode = 'member' | 'roles' | 'visitor';
+
+export type DownloadAttachmentData = {
+    body?: never;
+    path: {
+        /**
+         * Attachment id
+         */
+        attachment_id: string;
+    };
+    query?: {
+        /**
+         * Prefer thumbnail when available
+         */
+        thumb?: boolean;
+    };
+    url: '/api/v1/attachments/{attachment_id}';
+};
+
+export type DownloadAttachmentErrors = {
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type DownloadAttachmentError = DownloadAttachmentErrors[keyof DownloadAttachmentErrors];
+
+export type DownloadAttachmentResponses = {
+    /**
+     * Attachment bytes
+     */
+    200: unknown;
+};
 
 export type LoginData = {
     body: LoginRequest;
@@ -1506,6 +1562,51 @@ export type ArchiveChannelResponses = {
 };
 
 export type ArchiveChannelResponse = ArchiveChannelResponses[keyof ArchiveChannelResponses];
+
+export type UploadChannelAttachmentData = {
+    /**
+     * Raw file bytes
+     */
+    body?: unknown;
+    path: {
+        /**
+         * Channel id
+         */
+        channel_id: string;
+    };
+    query?: never;
+    url: '/api/v1/channels/{channel_id}/attachments';
+};
+
+export type UploadChannelAttachmentErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorBody;
+    /**
+     * Not authenticated
+     */
+    401: ErrorBody;
+    /**
+     * Not allowed
+     */
+    403: ErrorBody;
+    /**
+     * Not found
+     */
+    404: ErrorBody;
+};
+
+export type UploadChannelAttachmentError = UploadChannelAttachmentErrors[keyof UploadChannelAttachmentErrors];
+
+export type UploadChannelAttachmentResponses = {
+    /**
+     * Attachment stored
+     */
+    201: AttachmentResponse;
+};
+
+export type UploadChannelAttachmentResponse = UploadChannelAttachmentResponses[keyof UploadChannelAttachmentResponses];
 
 export type CloneChannelData = {
     body?: never;

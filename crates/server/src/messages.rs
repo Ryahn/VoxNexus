@@ -1,4 +1,4 @@
-//! Channel messages API (F034 / F036 / F037).
+//! Channel messages API (F034–F038).
 
 #![allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
 
@@ -8,19 +8,21 @@ use axum::Json;
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 use voxnexus_auth::{
-    create_message as persist_create, get_channel, get_message, list_member_account_ids,
-    list_messages as persist_list, soft_delete_message as persist_delete,
+    create_message as persist_create, get_channel, get_message, list_attachments_for_messages,
+    list_member_account_ids, list_messages as persist_list, soft_delete_message as persist_delete,
     update_message as persist_update, AuthError, MessageWithAuthor, MESSAGE_EDIT_WINDOW_SECS,
 };
 use voxnexus_domain::{Channel, ChannelType};
 use voxnexus_permissions::PermissionCode;
 use voxnexus_protocol::error_codes;
 use voxnexus_protocol::{
-    CreateMessageRequest, ListMessagesQuery, MessageCreatePayload, MessageDeletePayload,
-    MessageListResponse, MessageResponse, MessageUpdatePayload, UpdateMessageRequest,
+    AttachmentResponse, CreateMessageRequest, ListMessagesQuery, MessageCreatePayload,
+    MessageDeletePayload, MessageListResponse, MessageResponse, MessageUpdatePayload,
+    UpdateMessageRequest,
 };
 use voxnexus_realtime::PresenceHubMessage;
 
+use crate::attachments::to_attachment_response;
 use crate::error::ApiError;
 use crate::extract::ValidatedJson;
 use crate::extract_auth::AuthUser;
@@ -66,6 +68,7 @@ pub async fn create_message(
         .map(str::to_owned);
     let nonce = body.nonce.as_deref().or(header_nonce.as_deref());
 
+    let attachment_ids = body.attachment_ids.clone().unwrap_or_default();
     let (row, created) = persist_create(
         &state.pool,
         channel.id,
@@ -74,10 +77,12 @@ pub async fn create_message(
         &body.content,
         nonce,
         body.referenced_message_id,
+        &attachment_ids,
     )
     .await
     .map_err(|error| map_message_auth(error, request_id.clone()))?;
 
+    let attachments = load_message_attachments(&state, &[row.message.id], &request_id).await?;
     let status = if created {
         StatusCode::CREATED
     } else {
@@ -87,11 +92,11 @@ pub async fn create_message(
         broadcast_message_event(
             &state,
             &channel,
-            PresenceHubMessage::MessageCreate(to_create_payload(&row)),
+            PresenceHubMessage::MessageCreate(to_create_payload(&row, &attachments)),
         )
         .await;
     }
-    Ok((status, Json(to_response(&row))))
+    Ok((status, Json(to_response(&row, &attachments))))
 }
 
 /// List messages in a channel (newest first). Requires `text.view` (404 if hidden).
@@ -139,11 +144,29 @@ pub async fn list_messages(
     .await
     .map_err(|error| {
         tracing::error!(error = %error, "list messages failed");
-        internal(request_id)
+        internal(request_id.clone())
     })?;
 
+    let ids: Vec<Uuid> = page.items.iter().map(|row| row.message.id).collect();
+    let attached = list_attachments_for_messages(&state.pool, &ids)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "list attachments failed");
+            internal(request_id)
+        })?;
     Ok(Json(MessageListResponse {
-        items: page.items.iter().map(to_response).collect(),
+        items: page
+            .items
+            .iter()
+            .map(|row| {
+                let attachments = attached
+                    .iter()
+                    .filter(|att| att.message_id == Some(row.message.id))
+                    .map(to_attachment_response)
+                    .collect::<Vec<_>>();
+                to_response(row, &attachments)
+            })
+            .collect(),
         has_more: page.has_more,
     }))
 }
@@ -205,16 +228,17 @@ pub async fn update_message(
 
     let row = persist_update(&state.pool, message_id, &body.content)
         .await
-        .map_err(|error| map_message_auth(error, request_id))?;
+        .map_err(|error| map_message_auth(error, request_id.clone()))?;
 
+    let attachments = load_message_attachments(&state, &[row.message.id], &request_id).await?;
     broadcast_message_event(
         &state,
         &channel,
-        PresenceHubMessage::MessageUpdate(to_update_payload(&row)),
+        PresenceHubMessage::MessageUpdate(to_update_payload(&row, &attachments)),
     )
     .await;
 
-    Ok(Json(to_response(&row)))
+    Ok(Json(to_response(&row, &attachments)))
 }
 
 /// Soft-delete a message. Author or `text.manage_messages`.
@@ -322,7 +346,7 @@ fn require_not_archived(channel: &Channel, request_id: String) -> Result<(), Api
     Ok(())
 }
 
-fn to_response(row: &MessageWithAuthor) -> MessageResponse {
+fn to_response(row: &MessageWithAuthor, attachments: &[AttachmentResponse]) -> MessageResponse {
     MessageResponse {
         id: row.message.id,
         channel_id: row.message.channel_id,
@@ -333,12 +357,16 @@ fn to_response(row: &MessageWithAuthor) -> MessageResponse {
         nonce: row.message.nonce.clone(),
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
+        attachments: attachments.to_vec(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
 }
 
-fn to_create_payload(row: &MessageWithAuthor) -> MessageCreatePayload {
+fn to_create_payload(
+    row: &MessageWithAuthor,
+    attachments: &[AttachmentResponse],
+) -> MessageCreatePayload {
     MessageCreatePayload {
         id: row.message.id,
         channel_id: row.message.channel_id,
@@ -349,12 +377,16 @@ fn to_create_payload(row: &MessageWithAuthor) -> MessageCreatePayload {
         nonce: row.message.nonce.clone(),
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
+        attachments: attachments.to_vec(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
 }
 
-fn to_update_payload(row: &MessageWithAuthor) -> MessageUpdatePayload {
+fn to_update_payload(
+    row: &MessageWithAuthor,
+    attachments: &[AttachmentResponse],
+) -> MessageUpdatePayload {
     MessageUpdatePayload {
         id: row.message.id,
         channel_id: row.message.channel_id,
@@ -365,9 +397,24 @@ fn to_update_payload(row: &MessageWithAuthor) -> MessageUpdatePayload {
         nonce: row.message.nonce.clone(),
         referenced_message_id: row.message.referenced_message_id,
         reply_to: row.reply.as_ref().map(to_reply_preview),
+        attachments: attachments.to_vec(),
         created_at: row.message.created_at,
         edited_at: row.message.edited_at,
     }
+}
+
+async fn load_message_attachments(
+    state: &AppState,
+    message_ids: &[Uuid],
+    request_id: &str,
+) -> Result<Vec<AttachmentResponse>, ApiError> {
+    let rows = list_attachments_for_messages(&state.pool, message_ids)
+        .await
+        .map_err(|error| {
+            tracing::error!(error = %error, "list attachments failed");
+            internal(request_id.to_owned())
+        })?;
+    Ok(rows.iter().map(to_attachment_response).collect())
 }
 
 fn to_reply_preview(
@@ -410,6 +457,10 @@ fn map_message_auth(error: AuthError, request_id: String) -> ApiError {
         AuthError::InvalidReplyTarget => bad_request(
             request_id,
             "Reply target must be a message in this channel.",
+        ),
+        AuthError::InvalidAttachment => bad_request(
+            request_id,
+            "One or more attachments are invalid or already used.",
         ),
         other => {
             tracing::error!(error = %other, "message auth error");

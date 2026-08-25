@@ -293,6 +293,24 @@ pub async fn require_channel_send(
     }
 }
 
+/// Require `text.view` + `text.attach` (no view → 404; view without attach → 403).
+pub async fn require_channel_attach(
+    state: &AppState,
+    channel: &Channel,
+    account_id: Uuid,
+    request_id: String,
+) -> Result<(), ApiError> {
+    require_channel_view(state, channel, account_id, request_id.clone()).await?;
+    if allowed_for_channel(state, channel, account_id, PermissionCode::TEXT_ATTACH).await? {
+        Ok(())
+    } else {
+        Err(ApiError::permission_denied(
+            request_id,
+            "You do not have permission to attach files.",
+        ))
+    }
+}
+
 pub fn invalidate_community(state: &AppState, community_id: Uuid) {
     state.permission_cache.invalidate_community(community_id);
 }

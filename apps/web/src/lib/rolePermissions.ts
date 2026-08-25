@@ -10,6 +10,7 @@ export type PermissionJson = {
 export const PERM_BITS: { family: string; bit: number; code: string; label: string }[] = [
   { family: 'text', bit: 1, code: 'text.view', label: 'View channel' },
   { family: 'text', bit: 2, code: 'text.send', label: 'Send messages' },
+  { family: 'text', bit: 4, code: 'text.attach', label: 'Attach files' },
   { family: 'text', bit: 4096, code: 'text.manage_messages', label: 'Manage messages' },
   { family: 'community', bit: 8, code: 'community.manage_channels', label: 'Manage channels' },
   { family: 'community', bit: 4, code: 'community.manage_roles', label: 'Manage roles' },

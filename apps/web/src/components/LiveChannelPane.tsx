@@ -8,7 +8,7 @@ import {
   type MessageResponse,
   updateMessage,
 } from '@voxnexus/api-client';
-import { Archive, Send, X } from 'lucide-react';
+import { Archive, Paperclip, Send, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 import { apiTypeToUi } from '../lib/apiChannel';
@@ -41,6 +41,12 @@ function authorFromApi(msg: MessageResponse): User {
   };
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function toUiMessage(msg: MessageResponse): UiMessage {
   const created = new Date(msg.created_at);
   return {
@@ -60,8 +66,31 @@ function toUiMessage(msg: MessageResponse): UiMessage {
           deleted: msg.reply_to.deleted,
         }
       : undefined,
+    attachments: (msg.attachments ?? []).map((att) => {
+      const isImage = att.content_type.startsWith('image/');
+      const dims =
+        att.width && att.height
+          ? `${att.width}×${att.height} · ${formatBytes(att.byte_size)}`
+          : formatBytes(att.byte_size);
+      return {
+        id: att.id,
+        kind: isImage ? ('image' as const) : ('file' as const),
+        name: att.filename,
+        meta: dims,
+        url: att.url,
+        thumbnailUrl: att.thumbnail_url ?? undefined,
+      };
+    }),
   };
 }
+
+type PendingUpload = {
+  localId: string;
+  name: string;
+  progress: number;
+  attachmentId?: string;
+  error?: string;
+};
 
 export function LiveChannelPane({ channelId, onArchived }: Props) {
   const { session } = useAuth();
@@ -81,8 +110,11 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [editPending, setEditPending] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const accountId = session.account.id;
 
   const mergeAuthors = useCallback((items: MessageResponse[]) => {
@@ -156,6 +188,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
         nonce: payload.nonce,
         referenced_message_id: payload.referenced_message_id,
         reply_to: payload.reply_to,
+        attachments: payload.attachments ?? [],
         created_at: payload.created_at,
         edited_at: payload.edited_at,
       };
@@ -177,6 +210,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 author_display_name: payload.author_display_name,
                 referenced_message_id: payload.referenced_message_id,
                 reply_to: payload.reply_to,
+                attachments: payload.attachments ?? m.attachments,
               }
             : m,
         ),
@@ -192,6 +226,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
           nonce: payload.nonce,
           referenced_message_id: payload.referenced_message_id,
           reply_to: payload.reply_to,
+          attachments: payload.attachments ?? [],
           created_at: payload.created_at,
           edited_at: payload.edited_at,
         },
@@ -237,9 +272,51 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
     el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   };
 
+  const uploadFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    for (const file of list) {
+      const localId = crypto.randomUUID();
+      setPendingUploads((prev) => [...prev, { localId, name: file.name, progress: 10 }]);
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        setPendingUploads((prev) =>
+          prev.map((p) => (p.localId === localId ? { ...p, progress: 55 } : p)),
+        );
+        const response = await fetch(`/api/v1/channels/${channelId}/attachments`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-Filename': file.name,
+          },
+          body: bytes,
+        });
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || `Upload failed (${response.status})`);
+        }
+        const data = (await response.json()) as { id: string };
+        setPendingUploads((prev) =>
+          prev.map((p) =>
+            p.localId === localId ? { ...p, progress: 100, attachmentId: data.id } : p,
+          ),
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Upload failed';
+        setPendingUploads((prev) =>
+          prev.map((p) => (p.localId === localId ? { ...p, progress: 0, error: message } : p)),
+        );
+      }
+    }
+  };
+
   const send = async () => {
     const content = draft.trim();
-    if (!content || sending) return;
+    const attachmentIds = pendingUploads
+      .filter((p) => p.attachmentId && !p.error)
+      .map((p) => p.attachmentId as string);
+    if ((!content && attachmentIds.length === 0) || sending) return;
+    if (pendingUploads.some((p) => !p.attachmentId && !p.error)) return;
     setSending(true);
     const nonce = crypto.randomUUID();
     const result = await createMessage({
@@ -248,6 +325,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
         content,
         nonce,
         ...(replyingTo ? { referenced_message_id: replyingTo } : {}),
+        ...(attachmentIds.length ? { attachment_ids: attachmentIds } : {}),
       },
     });
     setSending(false);
@@ -256,6 +334,7 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
       return;
     }
     setDraft('');
+    setPendingUploads([]);
     setReplyingTo(null);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     setMessages((prev) => {
@@ -416,7 +495,19 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
             </div>
           </div>
 
-          <div className="shrink-0 px-4 pb-4 pt-1">
+          <div
+            className={`shrink-0 px-4 pb-4 pt-1 ${dragOver ? 'rounded-lg ring-2 ring-accent/50' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              if (e.dataTransfer.files.length) void uploadFiles(e.dataTransfer.files);
+            }}
+          >
             {replyParent ? (
               <div className="flex items-center gap-2 rounded-t-lg border border-b-0 border-line-2/60 bg-panel-2 px-3 py-1.5 text-[12px]">
                 <span className="text-ink-3">Replying to</span>
@@ -432,11 +523,61 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 </button>
               </div>
             ) : null}
+            {pendingUploads.length > 0 ? (
+              <div
+                className={`space-y-1 border border-b-0 border-line-2/60 bg-panel-2 px-3 py-2 ${
+                  replyParent ? '' : 'rounded-t-lg'
+                }`}
+              >
+                {pendingUploads.map((upload) => (
+                  <div key={upload.localId} className="flex items-center gap-2 text-[12px]">
+                    <span className="min-w-0 flex-1 truncate text-ink-2">{upload.name}</span>
+                    {upload.error ? (
+                      <span className="text-dnd">{upload.error}</span>
+                    ) : (
+                      <span className="font-mono text-ink-3">{upload.progress}%</span>
+                    )}
+                    <button
+                      type="button"
+                      aria-label="Remove attachment"
+                      onClick={() =>
+                        setPendingUploads((prev) =>
+                          prev.filter((p) => p.localId !== upload.localId),
+                        )
+                      }
+                      className="grid h-5 w-5 place-items-center rounded text-ink-3 hover:bg-surface-hover hover:text-ink"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div
               className={`group flex items-end gap-2 border border-line-2/60 bg-input px-2 py-1.5 transition-colors focus-within:border-accent/60 focus-within:shadow-accent-glow ${
-                replyParent ? 'rounded-b-lg rounded-t-none' : 'rounded-lg'
+                replyParent || pendingUploads.length ? 'rounded-b-lg rounded-t-none' : 'rounded-lg'
               }`}
             >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) void uploadFiles(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+              <Tooltip label="Attach file" side="top">
+                <button
+                  type="button"
+                  aria-label="Attach file"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-2 transition-colors hover:bg-surface-hover hover:text-accent"
+                >
+                  <Paperclip size={18} strokeWidth={2} />
+                </button>
+              </Tooltip>
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -445,10 +586,17 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                   setDraft(e.target.value);
                   grow();
                 }}
+                onPaste={(e) => {
+                  const files = e.clipboardData?.files;
+                  if (files && files.length > 0) {
+                    e.preventDefault();
+                    void uploadFiles(files);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (draft.trim()) void send();
+                    void send();
                   }
                   if (e.key === 'Escape' && replyingTo) {
                     e.preventDefault();
@@ -464,10 +612,14 @@ export function LiveChannelPane({ channelId, onArchived }: Props) {
                 <button
                   type="button"
                   aria-label="Send message"
-                  disabled={!draft.trim() || sending}
+                  disabled={
+                    sending ||
+                    (!draft.trim() && !pendingUploads.some((p) => p.attachmentId && !p.error)) ||
+                    pendingUploads.some((p) => !p.attachmentId && !p.error)
+                  }
                   onClick={() => void send()}
                   className={`mb-0.5 ml-1 grid h-8 w-8 place-items-center rounded-md transition-all ${
-                    draft.trim() && !sending
+                    (draft.trim() || pendingUploads.some((p) => p.attachmentId)) && !sending
                       ? 'bg-accent/90 text-app hover:bg-accent'
                       : 'cursor-default bg-surface/60 text-ink-4'
                   }`}

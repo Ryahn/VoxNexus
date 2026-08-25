@@ -225,19 +225,30 @@ function CodeBlock({ lang, body }: { lang: string; body: string }) {
 
 function Attachment({ att }: { att: NonNullable<Msg['attachments']>[number] }) {
   if (att.kind === 'image') {
+    const src = att.thumbnailUrl ?? att.url;
     return (
       <div className="my-1.5 w-fit max-w-[440px] overflow-hidden rounded-lg border border-line-2/50">
-        <div
-          className="relative grid aspect-[2/1] place-items-center"
-          style={{
-            background: `linear-gradient(135deg, rgb(${att.hueA ?? '54 210 205'} / 0.35), rgb(${att.hueB ?? '138 124 246'} / 0.35))`,
-          }}
-        >
-          <div className="absolute inset-0 grid-veil opacity-40" />
-          <span className="z-10 rounded-md border border-white/15 bg-black/25 px-2.5 py-1 font-mono text-2xs text-ink/90 backdrop-blur-sm">
-            {att.name}
-          </span>
-        </div>
+        {src ? (
+          <a href={att.url ?? src} target="_blank" rel="noreferrer">
+            <img
+              src={src}
+              alt={att.name}
+              className="max-h-[360px] max-w-full object-contain bg-surface/40"
+            />
+          </a>
+        ) : (
+          <div
+            className="relative grid aspect-[2/1] place-items-center"
+            style={{
+              background: `linear-gradient(135deg, rgb(${att.hueA ?? '54 210 205'} / 0.35), rgb(${att.hueB ?? '138 124 246'} / 0.35))`,
+            }}
+          >
+            <div className="absolute inset-0 grid-veil opacity-40" />
+            <span className="z-10 rounded-md border border-white/15 bg-black/25 px-2.5 py-1 font-mono text-2xs text-ink/90 backdrop-blur-sm">
+              {att.name}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between bg-surface/60 px-2.5 py-1 font-mono text-3xs text-ink-3">
           <span>{att.name}</span>
           <span>{att.meta}</span>
@@ -249,7 +260,18 @@ function Attachment({ att }: { att: NonNullable<Msg['attachments']>[number] }) {
     <div className="my-1.5 flex w-fit items-center gap-2.5 rounded-lg border border-line-2/50 bg-surface/60 px-3 py-2">
       <FileText size={20} className="text-accent" />
       <div className="leading-tight">
-        <div className="text-[13px] font-medium text-ink">{att.name}</div>
+        {att.url ? (
+          <a
+            href={att.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[13px] font-medium text-accent hover:underline"
+          >
+            {att.name}
+          </a>
+        ) : (
+          <div className="text-[13px] font-medium text-ink">{att.name}</div>
+        )}
         <div className="font-mono text-3xs text-ink-3">{att.meta}</div>
       </div>
     </div>

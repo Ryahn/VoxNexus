@@ -232,6 +232,8 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .routes(routes!(crate::messages::list_messages))
         .routes(routes!(crate::messages::update_message))
         .routes(routes!(crate::messages::delete_message))
+        .routes(routes!(crate::attachments::upload_channel_attachment))
+        .routes(routes!(crate::attachments::download_attachment))
         .routes(routes!(
             crate::permission_overrides::list_channel_permission_overrides
         ))

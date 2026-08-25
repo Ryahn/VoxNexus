@@ -41,6 +41,11 @@ impl PermissionCode {
         bit: text::SEND,
         owner_only: false,
     };
+    pub const TEXT_ATTACH: Self = Self {
+        family: Family::Text,
+        bit: text::ATTACH,
+        owner_only: false,
+    };
     pub const TEXT_MANAGE_MESSAGES: Self = Self {
         family: Family::Text,
         bit: text::MANAGE_MESSAGES,
@@ -57,6 +62,7 @@ impl PermissionCode {
             "community.view_audit" => Some(Self::COMMUNITY_VIEW_AUDIT),
             "text.view" | "channel.view" => Some(Self::TEXT_VIEW),
             "text.send" | "message.send" => Some(Self::TEXT_SEND),
+            "text.attach" | "message.attach" => Some(Self::TEXT_ATTACH),
             "text.manage_messages" | "message.manage" | "manage_messages" => {
                 Some(Self::TEXT_MANAGE_MESSAGES)
             }
@@ -73,6 +79,7 @@ impl PermissionCode {
             Self::COMMUNITY_VIEW_AUDIT => "community.view_audit",
             Self::TEXT_VIEW => "text.view",
             Self::TEXT_SEND => "text.send",
+            Self::TEXT_ATTACH => "text.attach",
             Self::TEXT_MANAGE_MESSAGES => "text.manage_messages",
             Self { .. } => "unknown",
         }

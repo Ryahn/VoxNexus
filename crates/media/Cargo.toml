@@ -4,7 +4,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "VoxNexus LiveKit control-plane client"
+description = "VoxNexus LiveKit control-plane client and media helpers"
 
 [lints]
 workspace = true
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }

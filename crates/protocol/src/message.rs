@@ -1,4 +1,4 @@
-//! Message HTTP DTOs (F034–F037).
+//! Message HTTP DTOs (F034–F038).
 
 use chrono::{DateTime, Utc};
 use schemars::JsonSchema;
@@ -17,6 +17,19 @@ pub struct MessageReplyPreview {
     pub deleted: bool,
 }
 
+/// Attachment metadata on a message (or pending upload).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, JsonSchema)]
+pub struct AttachmentResponse {
+    pub id: Uuid,
+    pub filename: String,
+    pub content_type: String,
+    pub byte_size: i64,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub url: String,
+    pub thumbnail_url: Option<String>,
+}
+
 /// Public message representation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct MessageResponse {
@@ -29,6 +42,8 @@ pub struct MessageResponse {
     pub nonce: Option<String>,
     pub referenced_message_id: Option<Uuid>,
     pub reply_to: Option<MessageReplyPreview>,
+    #[serde(default)]
+    pub attachments: Vec<AttachmentResponse>,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
     #[schema(value_type = Option<String>, format = DateTime)]
@@ -38,12 +53,14 @@ pub struct MessageResponse {
 /// Create a message in a text channel.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema, Validate)]
 pub struct CreateMessageRequest {
-    #[validate(length(min = 1, max = 4000))]
+    #[validate(length(max = 4000))]
     pub content: String,
     #[validate(length(min = 1, max = 128))]
     pub nonce: Option<String>,
     /// Reply target; must be a message in the same channel.
     pub referenced_message_id: Option<Uuid>,
+    /// Pending attachment ids from `POST …/attachments` (max 10).
+    pub attachment_ids: Option<Vec<Uuid>>,
 }
 
 /// Edit a message's content.

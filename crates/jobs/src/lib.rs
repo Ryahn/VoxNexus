@@ -3,14 +3,17 @@
 mod error;
 mod health_ping;
 mod redis;
+mod thumbnail;
 mod worker;
 
 pub use error::JobsError;
 pub use health_ping::{enqueue_health_ping, process_health_ping, HealthPing};
 pub use redis::{connect, ping, test_redis_url, RedisConn, TEST_REDIS_URL_ENV};
+pub use thumbnail::{enqueue_thumbnail, process_thumbnail_stub, ThumbnailJob};
 pub use worker::{
-    dead_letter_key, health_ping_storage, run_health_ping_workers, HEALTH_PING_NAMESPACE,
-    HEALTH_PING_RETRIES,
+    dead_letter_key, health_ping_storage, run_health_ping_workers, run_thumbnail_stub_workers,
+    thumbnail_storage, HEALTH_PING_NAMESPACE, HEALTH_PING_RETRIES, THUMBNAIL_NAMESPACE,
+    THUMBNAIL_RETRIES,
 };
 
 pub const CRATE_NAME: &str = "voxnexus-jobs";
